@@ -6,9 +6,7 @@ const catalog = {
     coursesBySemester: {
       1: [
         { code: "PHYS1037", name: "Mathematical Physics I", description: "Calculus, vector analysis, matrices, and mathematical methods for physics.", dataCard: "data/ug/sem1/mp1/datacard.json" },
-        { code: "PHY101", name: "Classical Mechanics", description: "Motion, forces, energy, and the foundations of classical dynamics.", dataCard: "data/ug/sem1/mechanics/datacard.json", content: "data/ug/sem1/mechanics/index.html" },
-        { code: "PHY105", name: "Experimental Physics", description: "Measurement, uncertainty, and scientific practice in the laboratory.", dataCard: "data/ug/sem1/optics/datacard.json" }
-      ],
+        ],
       2: [],
       3: [],
       4: [],
