@@ -1,0 +1,22 @@
+{
+  "courseCode": "PHY101",
+  "courseName": "Classical Mechanics",
+  "credits": { "L": 3, "T": 1, "P": 0, "C": 4 },
+  "objectives": [
+    "Develop a physical and mathematical understanding of motion and forces.",
+    "Apply conservation laws to particles and systems of particles.",
+    "Connect theoretical predictions with observable mechanical systems."
+  ],
+  "outcomes": [
+    { "code": "CO1", "statement": "Formulate and solve problems using Newton's laws of motion." },
+    { "code": "CO2", "statement": "Apply energy, momentum and angular-momentum conservation." },
+    { "code": "CO3", "statement": "Analyse oscillatory and central-force motion." },
+    { "code": "CO4", "statement": "Select appropriate coordinates and reference frames." }
+  ],
+  "syllabus": [
+    { "title": "Kinematics and Newton's Laws", "lectureHours": 10, "topics": "Reference frames, vectors, motion in one and three dimensions, force and equations of motion." },
+    { "title": "Conservation Laws", "lectureHours": 12, "topics": "Work and energy, linear momentum, collisions, centre-of-mass motion and angular momentum." },
+    { "title": "Oscillations", "lectureHours": 10, "topics": "Simple harmonic motion, damped and driven oscillations, resonance and coupled oscillators." },
+    { "title": "Central Forces", "lectureHours": 10, "topics": "Two-body motion, effective potential, planetary orbits and scattering." }
+  ]
+}

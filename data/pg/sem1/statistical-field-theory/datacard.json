@@ -1,0 +1,16 @@
+{
+  "courseCode": "PHY503",
+  "courseName": "Statistical Field Theory",
+  "credits": { "L": 3, "T": 1, "P": 0, "C": 4 },
+  "objectives": ["Connect microscopic models to continuum field descriptions.", "Understand universality and scale dependence near critical points."],
+  "outcomes": [
+    { "code": "CO1", "statement": "Construct field theories for equilibrium statistical systems." },
+    { "code": "CO2", "statement": "Use mean-field and Gaussian approximations." },
+    { "code": "CO3", "statement": "Apply renormalisation-group ideas to phase transitions." }
+  ],
+  "syllabus": [
+    { "title": "Fields and Phase Transitions", "lectureHours": 12, "topics": "Order parameters, Landau theory, correlation functions and fluctuations." },
+    { "title": "Functional Methods", "lectureHours": 12, "topics": "Path integrals, generating functionals and Gaussian field theory." },
+    { "title": "Renormalisation Group", "lectureHours": 16, "topics": "Scaling, universality, coarse graining, fixed points and critical exponents." }
+  ]
+}

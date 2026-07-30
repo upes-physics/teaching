@@ -1,0 +1,17 @@
+{
+  "courseCode": "PHY105",
+  "courseName": "Experimental Physics",
+  "credits": { "L": 1, "T": 0, "P": 4, "C": 3 },
+  "objectives": ["Develop safe and reliable laboratory practice.", "Quantify measurement uncertainty and communicate experimental results."],
+  "outcomes": [
+    { "code": "CO1", "statement": "Operate standard laboratory instruments safely." },
+    { "code": "CO2", "statement": "Estimate and propagate measurement uncertainties." },
+    { "code": "CO3", "statement": "Analyse experimental data and evaluate physical models." },
+    { "code": "CO4", "statement": "Prepare clear and reproducible laboratory reports." }
+  ],
+  "syllabus": [
+    { "title": "Measurement and Uncertainty", "lectureHours": 8, "topics": "Units, calibration, random and systematic errors, uncertainty propagation." },
+    { "title": "Data Analysis", "lectureHours": 10, "topics": "Graphical methods, regression, residuals and goodness of fit." },
+    { "title": "Laboratory Investigations", "lectureHours": 24, "topics": "Mechanics, oscillations, electrical measurements and optical experiments." }
+  ]
+}

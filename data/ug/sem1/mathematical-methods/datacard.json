@@ -1,0 +1,16 @@
+{
+  "courseCode": "PHY103",
+  "courseName": "Mathematical Methods",
+  "credits": { "L": 3, "T": 1, "P": 0, "C": 4 },
+  "objectives": ["Build fluency with the mathematical language used in physics.", "Choose suitable analytical methods for common physical problems."],
+  "outcomes": [
+    { "code": "CO1", "statement": "Use vector calculus in Cartesian and curvilinear coordinates." },
+    { "code": "CO2", "statement": "Solve ordinary differential equations arising in physics." },
+    { "code": "CO3", "statement": "Apply matrices, eigenvalues and eigenvectors to coupled systems." }
+  ],
+  "syllabus": [
+    { "title": "Vector Analysis", "lectureHours": 12, "topics": "Vector spaces, gradient, divergence, curl and integral theorems." },
+    { "title": "Differential Equations", "lectureHours": 14, "topics": "First- and second-order equations, series solutions and boundary-value problems." },
+    { "title": "Linear Algebra", "lectureHours": 12, "topics": "Matrices, determinants, eigenvalue problems and diagonalisation." }
+  ]
+}
