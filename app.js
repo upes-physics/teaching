@@ -90,19 +90,28 @@ async function coursePage(level, semester, courseId) {
     const response = await fetch(course.dataCard);
     if (!response.ok) throw new Error(`Could not load ${course.dataCard}`);
     const card = await response.json();
-    renderCourseDataCard(data.label, semester, course, card);
+    const dataCardUrl = response.url || new URL(course.dataCard, document.baseURI).href;
+    renderCourseDataCard(data.label, semester, course, card, dataCardUrl);
   } catch (error) {
     app.innerHTML = `<section class="page"><p class="eyebrow">Course unavailable</p><h1>We could not load this course.</h1><p class="lead">Check that <code>${course.dataCard}</code> exists and contains valid JSON.</p><button class="back-button" data-action="semester" data-level="${level}" data-semester="${semester}">← All courses</button></section>`;
     console.error(error);
   }
 }
 
-function renderCourseDataCard(levelLabel, semester, course, card) {
+function renderCourseDataCard(levelLabel, semester, course, card, dataCardUrl) {
   const credits = card.credits;
+  const simulators = Array.isArray(card.simulators) ? card.simulators : [];
+  const simulatorCards = simulators.length
+    ? simulators.map(simulator => {
+      const link = new URL(simulator.link, dataCardUrl).href;
+      return `<a class="simulator-card" href="${link}" target="_blank" rel="noopener"><span class="simulator-icon" aria-hidden="true">▶</span><div><h3>${simulator.name}</h3><p>${simulator.desc}</p><span class="launch-simulator">Launch simulator ↗</span></div></a>`;
+    }).join("")
+    : `<div class="simulator-empty"><p>Simulator information will be updated soon.</p></div>`;
+  const simulatorSection = `<section class="simulators"><p class="eyebrow">Interactive learning</p><h2>Simulators</h2><div class="simulator-grid">${simulatorCards}</div></section>`;
   const embeddedContent = course.content && course.content.includes(`/sem${semester}/`)
     ? `<section class="embedded-material"><div class="embedded-heading"><div><p class="eyebrow">Course material</p><h2>Lecture content</h2></div><a href="${course.content}" target="_blank" rel="noopener">Open in a new tab ↗</a></div><iframe src="${course.content}" title="${card.courseName} course content" loading="lazy"></iframe></section>`
     : "";
-  app.innerHTML = `<section class="page"><div class="breadcrumb"><button data-action="home">Home</button> &nbsp;/&nbsp; <button data-action="level" data-level="${levelLabel.toLowerCase()}">${levelLabel}</button> &nbsp;/&nbsp; <button data-action="semester" data-level="${levelLabel.toLowerCase()}" data-semester="${semester}">Semester ${semester}</button> &nbsp;/&nbsp; ${card.courseCode}</div><p class="eyebrow">${card.courseCode} · Semester ${semester}</p><h1>${card.courseName}</h1><div class="credit-grid"><div><b>${credits.L}</b><small>Lecture</small></div><div><b>${credits.T}</b><small>Tutorial</small></div><div><b>${credits.P}</b><small>Practical</small></div><div><b>${credits.C}</b><small>Total credits</small></div></div><div class="data-card-grid"><section><h2>Course objectives</h2><ol class="content-list">${card.objectives.map(item => `<li>${item}</li>`).join("")}</ol></section><section><h2>Course outcomes</h2><div class="outcome-list">${card.outcomes.map(item => `<div><b>${item.code}</b><p>${item.statement}</p></div>`).join("")}</div></section></div><section class="syllabus"><p class="eyebrow">Course structure</p><h2>Syllabus</h2>${card.syllabus.map((unit, index) => `<article><span>${String(index + 1).padStart(2, "0")}</span><div><h3>Unit ${toRoman(index + 1)} · ${unit.title}</h3><p>${unit.topics}</p></div><strong>${unit.lectureHours} hours</strong></article>`).join("")}</section>${embeddedContent}</section>`;
+  app.innerHTML = `<section class="page"><div class="breadcrumb"><button data-action="home">Home</button> &nbsp;/&nbsp; <button data-action="level" data-level="${levelLabel.toLowerCase()}">${levelLabel}</button> &nbsp;/&nbsp; <button data-action="semester" data-level="${levelLabel.toLowerCase()}" data-semester="${semester}">Semester ${semester}</button> &nbsp;/&nbsp; ${card.courseCode}</div><p class="eyebrow">${card.courseCode} · Semester ${semester}</p><h1>${card.courseName}</h1><div class="credit-grid"><div><b>${credits.L}</b><small>Lecture</small></div><div><b>${credits.T}</b><small>Tutorial</small></div><div><b>${credits.P}</b><small>Practical</small></div><div><b>${credits.C}</b><small>Total credits</small></div></div><div class="data-card-grid"><section><h2>Course objectives</h2><ol class="content-list">${card.objectives.map(item => `<li>${item}</li>`).join("")}</ol></section><section><h2>Course outcomes</h2><div class="outcome-list">${card.outcomes.map(item => `<div><b>${item.code}</b><p>${item.statement}</p></div>`).join("")}</div></section></div><section class="syllabus"><p class="eyebrow">Course structure</p><h2>Syllabus</h2>${card.syllabus.map((unit, index) => `<article><span>${String(index + 1).padStart(2, "0")}</span><div><h3>Unit ${toRoman(index + 1)} · ${unit.title}</h3><p>${unit.topics}</p></div><strong>${unit.lectureHours} hours</strong></article>`).join("")}</section>${simulatorSection}${embeddedContent}</section>`;
 }
 
 function toRoman(number) {

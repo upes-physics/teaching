@@ -56,11 +56,27 @@ Every course folder contains a `datacard.json` with the course identity, L–T�
       "lectureHours": 10,
       "topics": "Reference frames, vectors, motion and equations of motion."
     }
+  ],
+  "simulators": [
+    {
+      "name": "Projectile Motion",
+      "desc": "Explore how launch angle and speed affect a projectile's path.",
+      "link": "simulators/projectile-motion.html"
+    }
   ]
 }
 ```
 
-The course landing page reads this file at runtime, so objectives, outcomes, credit values and syllabus units can be updated without editing HTML or the rendering logic.
+The course landing page reads this file at runtime, so objectives, outcomes, credit values, syllabus units and simulators can be updated without editing HTML or the rendering logic. The `simulators` property is optional; when it is omitted or empty, the landing page displays an update-soon message.
+
+Each simulator is a standalone HTML or XML document stored in a `simulators` folder inside its course directory. Its `link` is resolved relative to `datacard.json`, so a typical course layout is:
+
+```text
+classical-mechanics/
+├── datacard.json
+└── simulators/
+    └── projectile-motion.html
+```
 
 The root `index.html` and `app.js` are shared by every course; do not create a
 separate landing-page `index.html` in each course folder. Once a course is added
