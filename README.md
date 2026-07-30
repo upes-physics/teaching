@@ -20,6 +20,7 @@ Courses are grouped under `coursesBySemester` in `app.js`. Add each course to th
 coursesBySemester: {
   1: [
     {
+      id: "classical-mechanics",
       code: "PHY101",
       name: "Classical Mechanics",
       description: "Course description.",
@@ -80,11 +81,12 @@ classical-mechanics/
 
 The root `index.html` and `app.js` are shared by every course; do not create a
 separate landing-page `index.html` in each course folder. Once a course is added
-to `coursesBySemester`, its card links to the shared renderer using the stable
-course code, for example:
+to `coursesBySemester`, its card links to the shared renderer using `id` when
+provided, or the course code otherwise. Give courses unique IDs whenever they
+share a provisional or cross-listed code. For example:
 
 ```text
-?view=course&level=undergraduate&semester=1&course=PHYS1037
+?view=course&level=undergraduate&semester=1&course=classical-mechanics
 ```
 
 Only add a course-folder `index.html` when the course has optional standalone
