@@ -5,7 +5,7 @@ const catalog = {
     description: "Build a rigorous foundation in the laws that govern matter, energy, space, and time.",
     coursesBySemester: {
       1: [
-        { code: "PHYS1037", name: "Mathematical Physics1", description: "", dataCard: "data/ug/sem1/mp1/datacard.json", content: "" },
+        { code: "PHYS1037", name: "Mathematical Physics I", description: "Calculus, vector analysis, matrices, and mathematical methods for physics.", dataCard: "data/ug/sem1/mp1/datacard.json" }
       ],
       2: [],
       3: [],
