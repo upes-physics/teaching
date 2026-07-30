@@ -112,3 +112,4 @@ footer p { color: #abb4c5; font-size: 13px; }
   .embedded-material iframe { min-height: 760px; }
 }
 @media (max-width: 520px) { .path-grid, .semester-grid { grid-template-columns: 1fr; }.path-card { padding: 30px; }.page { padding-top: 55px; } }
+

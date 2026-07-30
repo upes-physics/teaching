@@ -1,24 +1,28 @@
-const catalog = {
-  undergraduate: {
-    label: "Undergraduate",
-    description: "Build a rigorous foundation in the laws that govern matter, energy, space, and time.",
-    semesters: [
-      ["PHY101", "Classical Mechanics", "Motion, forces, energy and the mathematical language of mechanics.", "data/ug/sem1/classical-mechanics/index.html"],
-      ["PHY103", "Mathematical Methods", "Vectors, calculus and differential equations for physical systems."],
-      ["PHY105", "Experimental Physics", "Measurement, uncertainty and scientific practice in the laboratory."]
-    ]
-  },
-  postgraduate: {
-    label: "Postgraduate",
-    description: "Move beyond the fundamentals through advanced theory, computation, and research-led study.",
-    semesters: [
-      ["PHY501", "Advanced Quantum Mechanics", "Symmetries, approximation methods and quantum dynamics."],
-      ["PHY503", "Statistical Field Theory", "Collective phenomena, phase transitions and renormalisation."],
-      ["PHY505", "Research Methods", "Literature, reproducible computation and research communication."]
-    ]
-  }
-};
-
+ const catalog = {
+   undergraduate: {
+     label: "Undergraduate",
++    semesterCount: 8,
+     description: "Build a rigorous foundation in the laws that govern matter, energy, space, and time.",
+     semesters: [
+       ["PHYS1037", "Mathematical Physics 1", "4(3, 1, 0) credits", ""],
+       ["MECH1012", "Mechanics", "4(3, 0, 1) credits", "data/ug/sem1/mechanics/index.html"],
+       ["PHYSXXXX", "Waves and Oscillations", "2(2,0,0) credits"],
+       ["PHYSXXXX", "Optics", "4 (3,0,1) credits"],
+       ["CSEG1023", "Computational Techniques", "2(0,0,2) credits"]
+     ]
+   },
+   postgraduate: {
+     label: "Postgraduate",
++    semesterCount: 4,
+     description: "Move beyond the fundamentals through advanced theory, computation, and research-led study.",
+     semesters: [
+       ["PHY501", "Advanced Quantum Mechanics", "Symmetries, approximation methods and quantum dynamics."],
+       ["PHY503", "Statistical Field Theory", "Collective phenomena, phase transitions and renormalisation."],
+       ["PHY505", "Research Methods", "Literature, reproducible computation and research communication."]
+     ]
+   }
+ };
+ 
 const app = document.querySelector("#app");
 const nav = document.querySelector("nav");
 const menu = document.querySelector(".menu-button");
