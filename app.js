@@ -5,7 +5,9 @@ const catalog = {
     description: "Build a rigorous foundation in the laws that govern matter, energy, space, and time.",
     coursesBySemester: {
       1: [
-        { code: "PHYS1037", name: "Mathematical Physics1", description: "", dataCard: "data/ug/sem1/mp1/datacard.json", content: "" },
+        { code: "PHYS1037", name: "Mathematical Physics I", description: "Calculus, vector analysis, matrices, and mathematical methods for physics.", dataCard: "data/ug/sem1/mp1/datacard.json" },
+        { code: "PHY101", name: "Classical Mechanics", description: "Motion, forces, energy, and the foundations of classical dynamics.", dataCard: "data/ug/sem1/mechanics/datacard.json", content: "data/ug/sem1/mechanics/index.html" },
+        { code: "PHY105", name: "Experimental Physics", description: "Measurement, uncertainty, and scientific practice in the laboratory.", dataCard: "data/ug/sem1/optics/datacard.json" }
       ],
       2: [],
       3: [],
@@ -65,15 +67,17 @@ function semesterPage(level, semester) {
   const data = catalog[level];
   const courses = data.coursesBySemester[semester] || [];
   const courseCards = courses.length
-    ? courses.map((course, index) => `<article class="course-card" tabindex="0" data-action="course" data-level="${level}" data-semester="${semester}" data-course="${index}"><span class="course-code">${course.code}</span><h2>${course.name}</h2><p>${course.description}</p><span class="explore">Explore course &nbsp; →</span></article>`).join("")
+    ? courses.map(course => `<article class="course-card" tabindex="0" data-action="course" data-level="${level}" data-semester="${semester}" data-course="${course.code}"><span class="course-code">${course.code}</span><h2>${course.name}</h2><p>${course.description}</p><span class="explore">Explore course &nbsp; →</span></article>`).join("")
     : `<div class="empty-state"><h2>Course information coming soon</h2><p>No courses have been added to this semester yet.</p></div>`;
   app.innerHTML = `<section class="page"><div class="breadcrumb"><button data-action="home">Home</button> &nbsp;/&nbsp; <button data-action="level" data-level="${level}">${data.label}</button> &nbsp;/&nbsp; Semester ${semester}</div><p class="eyebrow">${data.label} · Semester ${semester}</p><h1>Your courses</h1><p class="lead">Everything you need for this semester, gathered in one place. Select a course to view its overview and learning modules.</p><div class="course-grid">${courseCards}</div></section>`;
 }
 
-async function coursePage(level, semester, index) {
+async function coursePage(level, semester, courseId) {
   const data = catalog[level];
   const courses = data.coursesBySemester[semester] || [];
-  const course = courses[index];
+  // Course codes make links stable when catalog entries are reordered. Numeric
+  // values remain supported so bookmarks created by older versions still work.
+  const course = courses.find(item => item.code === courseId) || courses[Number(courseId)];
   if (!course) {
     semesterPage(level, semester);
     return;
@@ -112,7 +116,7 @@ function navigate(view, params = {}, push = true) {
   if (view === "about") aboutPage();
   if (view === "level") levelPage(params.level);
   if (view === "semester") semesterPage(params.level, params.semester);
-  if (view === "course") coursePage(params.level, params.semester, Number(params.course));
+  if (view === "course") coursePage(params.level, params.semester, params.course);
   const query = view === "home" ? "" : `?view=${view}&${new URLSearchParams(params)}`;
   if (push) history.pushState({ view, ...params }, "", `./${query}`);
   document.title = `${view === "home" ? "UPES Physics" : "Courses"} · Applied Science Cluster`;

@@ -62,6 +62,18 @@ Every course folder contains a `datacard.json` with the course identity, Lâ€“Tâ€
 
 The course landing page reads this file at runtime, so objectives, outcomes, credit values and syllabus units can be updated without editing HTML or the rendering logic.
 
+The root `index.html` and `app.js` are shared by every course; do not create a
+separate landing-page `index.html` in each course folder. Once a course is added
+to `coursesBySemester`, its card links to the shared renderer using the stable
+course code, for example:
+
+```text
+?view=course&level=undergraduate&semester=1&course=PHYS1037
+```
+
+Only add a course-folder `index.html` when the course has optional standalone
+lesson material to embed beneath its generated data-card landing page.
+
 ## Adding static HTML course material
 
 Course material can live in its own folder, including its own stylesheets and assets. Use this structure:
