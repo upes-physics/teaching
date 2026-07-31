@@ -58,5 +58,10 @@
       "lectureHours": 3,
       "topics": "Definition of Dirac delta function. Representation as limit of a Gaussian function and rectangular function. Properties of Dirac delta function"
     }
-  ]
+  ],
+  "lectureNotes": [],
+  "faculty": {
+    "name": "",
+    "email": ""
+  }
 }

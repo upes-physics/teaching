@@ -64,11 +64,18 @@ Every course folder contains a `datacard.json` with the course identity, Lâ€“Tâ€
       "desc": "Explore how launch angle and speed affect a projectile's path.",
       "link": "simulators/projectile-motion.html"
     }
-  ]
+  ],
+  "lectureNotes": [
+    { "topic": "Newton's Laws", "link": "lecture-notes/newtons-laws.pdf" }
+  ],
+  "faculty": {
+    "name": "Dr Jane Smith",
+    "email": "jane.smith@upes.ac.in"
+  }
 }
 ```
 
-The course landing page reads this file at runtime, so objectives, outcomes, credit values, syllabus units and simulators can be updated without editing HTML or the rendering logic. The `simulators` property is optional; when it is omitted or empty, the landing page displays an update-soon message.
+The course landing page reads this file at runtime, so objectives, outcomes, credit values, syllabus units, simulators, lecture notes and faculty can be updated without editing HTML or the rendering logic. Lecture-note links are resolved relative to `datacard.json`; use an empty `lectureNotes` array when notes are available only through the LMS. `faculty` accepts either one object or an array of objects when a course has multiple instructors. The `simulators` property is optional; when it is omitted or empty, the landing page displays an update-soon message.
 
 Each simulator is a standalone HTML or XML document stored in a `simulators` folder inside its course directory. Its `link` is resolved relative to `datacard.json`, so a typical course layout is:
 

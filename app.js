@@ -103,6 +103,8 @@ async function coursePage(level, semester, courseId) {
 function renderCourseDataCard(levelLabel, semester, course, card, dataCardUrl) {
     const credits = card.credits;
     const simulators = Array.isArray(card.simulators) ? card.simulators : [];
+    const lectureNotes = Array.isArray(card.lectureNotes) ? card.lectureNotes : [];
+    const faculty = Array.isArray(card.faculty) ? card.faculty : card.faculty ? [card.faculty] : [];
     const simulatorCards = simulators.length
 	  ? simulators.map(simulator => {
 	      const link = new URL(simulator.link, dataCardUrl).href;
@@ -110,10 +112,22 @@ function renderCourseDataCard(levelLabel, semester, course, card, dataCardUrl) {
 	  }).join("")
 	  : `<div class="simulator-empty"><p>Simulator information will be updated soon.</p></div>`;
     const simulatorSection = `<section class="simulators"><p class="eyebrow">Interactive learning</p><h2>Simulators</h2><div class="simulator-grid">${simulatorCards}</div></section>`;
+    const lectureNoteItems = lectureNotes.length
+	  ? lectureNotes.map(note => {
+	      const link = new URL(note.link, dataCardUrl).href;
+	      return `<li><a href="${link}" target="_blank" rel="noopener"><span>${note.topic}</span><strong>View PDF ↗</strong></a></li>`;
+	  }).join("")
+	  : `<li class="lecture-notes-empty">Content is available on LMS.</li>`;
+    const lectureNotesSection = `<section class="lecture-notes"><p class="eyebrow">Course resources</p><h2>Lecture Notes</h2><ul>${lectureNoteItems}</ul></section>`;
+    const facultyCards = faculty.filter(member => member.name || member.email).map(member => {
+	const email = member.email ? `<a href="mailto:${member.email}">${member.email}</a>` : "";
+	return `<article><h3>${member.name}</h3>${email}</article>`;
+    }).join("") || `<p class="faculty-empty">Faculty information will be updated soon.</p>`;
+    const facultySection = `<section class="faculty"><p class="eyebrow">Course team</p><h2>Faculty</h2><div class="faculty-grid">${facultyCards}</div></section>`;
     const embeddedContent = course.content && course.content.includes(`/sem${semester}/`)
 	  ? `<section class="embedded-material"><div class="embedded-heading"><div><p class="eyebrow">Course material</p><h2>Lecture content</h2></div><a href="${course.content}" target="_blank" rel="noopener">Open in a new tab ↗</a></div><iframe src="${course.content}" title="${card.courseName} course content" loading="lazy"></iframe></section>`
 	  : "";
-    app.innerHTML = `<section class="page"><div class="breadcrumb"><button data-action="home">Home</button> &nbsp;/&nbsp; <button data-action="level" data-level="${levelLabel.toLowerCase()}">${levelLabel}</button> &nbsp;/&nbsp; <button data-action="semester" data-level="${levelLabel.toLowerCase()}" data-semester="${semester}">Semester ${semester}</button> &nbsp;/&nbsp; ${card.courseCode}</div><p class="eyebrow">${card.courseCode} · Semester ${semester}</p><h1>${card.courseName}</h1><div class="credit-grid"><div><b>${credits.L}</b><small>Lecture</small></div><div><b>${credits.T}</b><small>Tutorial</small></div><div><b>${credits.P}</b><small>Practical</small></div><div><b>${credits.C}</b><small>Total credits</small></div></div><div class="data-card-grid"><section><h2>Course objectives</h2><ol class="content-list">${card.objectives.map(item => `<li>${item}</li>`).join("")}</ol></section><section><h2>Course outcomes</h2><div class="outcome-list">${card.outcomes.map(item => `<div><b>${item.code}</b><p>${item.statement}</p></div>`).join("")}</div></section></div><section class="syllabus"><p class="eyebrow">Course structure</p><h2>Syllabus</h2>${card.syllabus.map((unit, index) => `<article><span>${String(index + 1).padStart(2, "0")}</span><div><h3>Unit ${toRoman(index + 1)} · ${unit.title}</h3><p>${unit.topics}</p></div><strong>${unit.lectureHours} hours</strong></article>`).join("")}</section>${simulatorSection}${embeddedContent}</section>`;
+    app.innerHTML = `<section class="page"><div class="breadcrumb"><button data-action="home">Home</button> &nbsp;/&nbsp; <button data-action="level" data-level="${levelLabel.toLowerCase()}">${levelLabel}</button> &nbsp;/&nbsp; <button data-action="semester" data-level="${levelLabel.toLowerCase()}" data-semester="${semester}">Semester ${semester}</button> &nbsp;/&nbsp; ${card.courseCode}</div><p class="eyebrow">${card.courseCode} · Semester ${semester}</p><h1>${card.courseName}</h1><div class="credit-grid"><div><b>${credits.L}</b><small>Lecture</small></div><div><b>${credits.T}</b><small>Tutorial</small></div><div><b>${credits.P}</b><small>Practical</small></div><div><b>${credits.C}</b><small>Total credits</small></div></div><div class="data-card-grid"><section><h2>Course objectives</h2><ol class="content-list">${card.objectives.map(item => `<li>${item}</li>`).join("")}</ol></section><section><h2>Course outcomes</h2><div class="outcome-list">${card.outcomes.map(item => `<div><b>${item.code}</b><p>${item.statement}</p></div>`).join("")}</div></section></div><section class="syllabus"><p class="eyebrow">Course structure</p><h2>Syllabus</h2>${card.syllabus.map((unit, index) => `<article><span>${String(index + 1).padStart(2, "0")}</span><div><h3>Unit ${toRoman(index + 1)} · ${unit.title}</h3><p>${unit.topics}</p></div><strong>${unit.lectureHours} hours</strong></article>`).join("")}</section>${simulatorSection}${lectureNotesSection}${embeddedContent}${facultySection}</section>`;
 }
 
 function toRoman(number) {

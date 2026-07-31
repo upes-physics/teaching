@@ -69,5 +69,10 @@
       "desc": "Interactive bot to help you learn",
       "link": "https://chatgpt.com/g/g-6a2274a907bc819180d7559b12f3255c-master-obi-wan"
     }
-  ]
+  ],
+  "lectureNotes": [],
+  "faculty": {
+    "name": "",
+    "email": ""
+  }
 }

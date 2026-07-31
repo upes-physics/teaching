@@ -52,5 +52,10 @@
       "lectureHours": 8,
       "topics": "Kinematics of Moving Fluids: Poiseuille’s Equation for Flow of a Liquid through a Capillary Tube. Equation of continuity, Euler’s equation, Bernoulli’s theorem and applications. Navier-Stokes equation."
     }
-  ]
+  ],
+  "lectureNotes": [],
+  "faculty": {
+    "name": "",
+    "email": ""
+  }
 }

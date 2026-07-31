@@ -52,5 +52,10 @@
       "lectureHours": 11,
       "topics": "Introduction, Spontaneous and Stimulated emission of radiation, Relation b/w Einstein’s A and B coefficients, Population inversion & types of pumping, Main components of a Laser, Construction & working of Ruby Laser and its applications, Construction & working of Helium-Neon laser and its applications. Fundamental ideas about optical fiber, Numerical aperture, Acceptance angle and cone, Attenuation and losses, Types of fibers, propagation mechanism and communication in optical fiber."
     }
-  ]
+  ],
+  "lectureNotes": [],
+  "faculty": {
+    "name": "",
+    "email": ""
+  }
 }

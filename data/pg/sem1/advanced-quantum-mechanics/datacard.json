@@ -1,16 +1,50 @@
 {
   "courseCode": "PHY501",
   "courseName": "Advanced Quantum Mechanics",
-  "credits": { "L": 3, "T": 1, "P": 0, "C": 4 },
-  "objectives": ["Extend quantum theory to advanced dynamical and symmetry-based problems.", "Develop controlled approximation techniques for realistic systems."],
+  "credits": {
+    "L": 3,
+    "T": 1,
+    "P": 0,
+    "C": 4
+  },
+  "objectives": [
+    "Extend quantum theory to advanced dynamical and symmetry-based problems.",
+    "Develop controlled approximation techniques for realistic systems."
+  ],
   "outcomes": [
-    { "code": "CO1", "statement": "Use symmetry and angular momentum methods in quantum systems." },
-    { "code": "CO2", "statement": "Apply time-independent and time-dependent perturbation theory." },
-    { "code": "CO3", "statement": "Analyse scattering and identical-particle systems." }
+    {
+      "code": "CO1",
+      "statement": "Use symmetry and angular momentum methods in quantum systems."
+    },
+    {
+      "code": "CO2",
+      "statement": "Apply time-independent and time-dependent perturbation theory."
+    },
+    {
+      "code": "CO3",
+      "statement": "Analyse scattering and identical-particle systems."
+    }
   ],
   "syllabus": [
-    { "title": "Symmetries and Angular Momentum", "lectureHours": 12, "topics": "Unitary transformations, rotations, addition of angular momenta and tensor operators." },
-    { "title": "Approximation Methods", "lectureHours": 14, "topics": "Variational method, WKB approximation and perturbation theory." },
-    { "title": "Scattering and Identical Particles", "lectureHours": 14, "topics": "Scattering amplitudes, partial waves, spin, exchange symmetry and second quantisation." }
-  ]
+    {
+      "title": "Symmetries and Angular Momentum",
+      "lectureHours": 12,
+      "topics": "Unitary transformations, rotations, addition of angular momenta and tensor operators."
+    },
+    {
+      "title": "Approximation Methods",
+      "lectureHours": 14,
+      "topics": "Variational method, WKB approximation and perturbation theory."
+    },
+    {
+      "title": "Scattering and Identical Particles",
+      "lectureHours": 14,
+      "topics": "Scattering amplitudes, partial waves, spin, exchange symmetry and second quantisation."
+    }
+  ],
+  "lectureNotes": [],
+  "faculty": {
+    "name": "",
+    "email": ""
+  }
 }

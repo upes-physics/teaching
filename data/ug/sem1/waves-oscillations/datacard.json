@@ -46,5 +46,10 @@
       "lectureHours": 8,
       "topics": "Longitudinal and transverse waves, plane progressive (travelling) waves, wave equation, particle (group) and wave (phase) velocities, velocity of transverse vibrations of stretched strings, normal modes of stretched strings, energy of vibrating string, energy transport and energy density, velocity of longitudinal waves in a fluid, Newton's formula for velocity of sound. Laplace's correction, Melde’s experiment (concept), Doppler’s effect."
     }
-  ]
+  ],
+  "lectureNotes": [],
+  "faculty": {
+    "name": "",
+    "email": ""
+  }
 }
