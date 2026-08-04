@@ -1,0 +1,40 @@
+{
+  "courseCode": "PHYS2014K",
+  "courseName": "Computational Physics",
+  "simulators": [
+    {
+      "name": "Fortran",
+      "desc": "Standalone tool to help learn Fortran basics",
+      "link": "fortran.html",
+      "uploadFileLink": "fortran.html"
+    },
+    {
+      "name": "Numerical Methods",
+      "desc": "Tools to demonstrate how numerical algorithms progress step by step",
+      "link": "numerical-methods.html",
+      "uploadFileLink": "numerical-methods.html"
+    },
+    {
+      "name": "Numerical Methods: Visualization",
+      "desc": "Interactive visual aids for projectile motion and data analysis with Gnuplot.",
+      "link": "visual-simulators.html",
+      "uploadFileLink": "visual-simulators.html"
+    },
+    {
+      "name": "Gnuplot",
+      "desc": "Help to learn Gnuplot commands used in plotting functions, data files, multiple datasets, and exported figures.",
+      "link": "gnuplot.html",
+      "uploadFileLink": "gnuplot.html"
+    },
+    {
+      "name": "Master Obi-wan",
+      "desc": "Chat bot to help you learn programming tools.",
+      "link": "https://chatgpt.com/g/g-6a2274a907bc819180d7559b12f3255c-master-obi-wan",
+      "uploadFileLink": ""
+    }
+  ],
+  "faculty": {
+    "name": "Suvankar Roy Chowdhury",
+    "email": "suvankar.chowdhury@ddn.upes.ac.in"
+  }
+}
