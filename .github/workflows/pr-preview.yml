@@ -1,5 +1,6 @@
 name: PR checks and preview
 
+# Posts one updated PR summary and Reviewdog inline validator comments.
 on:
   pull_request:
     branches:
