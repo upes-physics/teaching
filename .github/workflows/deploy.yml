@@ -1,31 +1,84 @@
-name: Deploy site to GitHub Pages
+name: Deploy production site
 
 on:
   push:
-    branches: [main, master, work]
+    branches:
+      - main
   workflow_dispatch:
 
-permissions:
-  contents: read
-  pages: write
-  id-token: write
-
+# Production and preview jobs both modify gh-pages.
+# Serialising them avoids simultaneous branch updates.
 concurrency:
-  group: pages
-  cancel-in-progress: true
+  group: pages-branch-write
+  cancel-in-progress: false
 
 jobs:
   deploy:
-    environment:
-      name: github-pages
-      url: ${{ steps.deployment.outputs.page_url }}
+    name: Deploy production
     runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+
     steps:
-      - uses: actions/checkout@v4
-      - uses: actions/configure-pages@v5
-      - uses: actions/upload-pages-artifact@v3
+      - name: Checkout main
+        uses: actions/checkout@v6
+
+      - name: Check JavaScript syntax
+        run: |
+          find . -type f -name '*.js' \
+            -not -path './.git/*' \
+            -print0 |
+          xargs -0 -r -n1 node --check
+
+      - name: Validate JSON files
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+
+          failed = False
+
+          for path in Path(".").rglob("*.json"):
+              if ".git" in path.parts:
+                  continue
+
+              try:
+                  with path.open(encoding="utf-8") as handle:
+                      json.load(handle)
+                  print(f"Valid: {path}")
+              except Exception as exc:
+                  failed = True
+                  print(f"Invalid JSON: {path}: {exc}")
+
+          if failed:
+              raise SystemExit(1)
+          PY
+
+      - name: Create production build
+        run: |
+          rm -rf _site
+          mkdir -p _site
+
+          rsync -a \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='_site/' \
+            --exclude='README.md' \
+            ./ _site/
+
+          touch _site/.nojekyll
+
+      - name: Deploy production to gh-pages
+        uses: JamesIves/github-pages-deploy-action@v4.8.0
         with:
-          path: .
-      - name: Deploy to GitHub Pages
-        id: deployment
-        uses: actions/deploy-pages@v4
+          branch: gh-pages
+          folder: _site
+
+          # Remove obsolete production files, but retain active PR previews.
+          clean: true
+          clean-exclude: |
+            pr-preview/
+
+          # Required because preview jobs also update this branch.
+          force: false
