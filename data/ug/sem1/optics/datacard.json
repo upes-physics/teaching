@@ -1,59 +1,6 @@
 {
   "courseCode": "",
   "courseName": "Optics",
-  "credits": {
-    "L": 3,
-    "T": 0,
-    "P": 2,
-    "C": 4
-  },
-  "objectives": [
-    "To develop basic understanding of optics and wave nature of light.",
-    "To elaborate interference, diffraction, polarization of light, principles of lasers and optical fibres.",
-    "To apply optics concepts to solve related real world physics problems.",
-    "To demonstrate various optics based experimental techniques."
-  ],
-  "outcomes": [
-    {
-      "code": "CO1",
-      "statement": "Outline the basic concepts of light and its properties"
-    },
-    {
-      "code": "CO2",
-      "statement": "Categorize optical phenomena, such as interference, diffraction, polarization, coherent light sources and propagation through optical fibres"
-    },
-    {
-      "code": "CO3",
-      "statement": "Apply theories to solve optics problems and perform optics-based experiments"
-    },
-    {
-      "code": "CO4",
-      "statement": "Analyze optics based theoretical and experimental results."
-    }
-  ],
-  "syllabus": [
-    {
-      "title": "Interference",
-      "lectureHours": 10,
-      "topics": "Foundational concepts on Interference, phase change on reflection: Stokes’ treatment, Lloyd’s mirror, Cosine law, interference in thin films: parallel and wedge-shaped films, Newton’s rings--measurement of wavelength and refractive index, Michelson’s Interferometer."
-    },
-    {
-      "title": "Diffraction",
-      "lectureHours": 12,
-      "topics": "Diffraction, superposition of n simple harmonic waves (equal phase difference), Fraunhofer diffraction, intensity distribution – single slit, double slit- and N-slit (diffraction grating) – intensity distribution, determination of wavelength, absent spectra (missing orders) in grating, dispersive power of a grating, resolving power of a grating, Fresnel’s diffraction, Fresnel’s assumptions, Fresnel’s half-period zones for plane wave, wave theory of zone plate: multiple focii, of a zone plate"
-    },
-    {
-      "title": "Polarization",
-      "lectureHours": 12,
-      "topics": "Polarization of light, Brewster’s law, Malus’s law, Double refraction in Calcite crystal, Nicol’s prism, Huygen’s theory of double refraction, Quarter wave plate, half wave plate, Elliptically and circularly polarized light-Analysis, production and conversion, Babinet’s compensator-analysis of elliptically polarized light, optical activity, specific rotation, Fresnel’s theory of optical rotation, Laurent’s half-shade polarimeter, Biquartz polarimeter"
-    },
-    {
-      "title": "Lasers & Fiber Optics",
-      "lectureHours": 11,
-      "topics": "Introduction, Spontaneous and Stimulated emission of radiation, Relation b/w Einstein’s A and B coefficients, Population inversion & types of pumping, Main components of a Laser, Construction & working of Ruby Laser and its applications, Construction & working of Helium-Neon laser and its applications. Fundamental ideas about optical fiber, Numerical aperture, Acceptance angle and cone, Attenuation and losses, Types of fibers, propagation mechanism and communication in optical fiber."
-    }
-  ],
-  "lectureNotes": [],
   "faculty": {
     "name": "",
     "email": ""

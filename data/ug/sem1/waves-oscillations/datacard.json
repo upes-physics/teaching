@@ -1,53 +1,6 @@
 {
   "courseCode": "",
   "courseName": "Waves and Oscillations",
-  "credits": {
-    "L": 2,
-    "T": 0,
-    "P": 0,
-    "C": 2
-  },
-  "objectives": [
-    "To understand and explain the fundamental principles of oscillations and wave motion.",
-    "To apply mathematical formulations to analyze superposition, resonance, and energy transfer in waves.",
-    "To analyze physical systems involving standing waves, wave propagation, and Doppler effect."
-  ],
-  "outcomes": [
-    {
-      "code": "CO1",
-      "statement": "Outline the basic knowledge on principles of waves and oscillations."
-    },
-    {
-      "code": "CO2",
-      "statement": "Interpret various types of oscillations and waves in different media."
-    },
-    {
-      "code": "CO3",
-      "statement": "Apply concepts for deriving various parameters related to simple harmonic motions, oscillations, and wave motion."
-    },
-    {
-      "code": "CO4",
-      "statement": "Analyze wave concepts to explain, standing waves, energy transport, Lissajous figures and Doppler effect in physical systems."
-    }
-  ],
-  "syllabus": [
-    {
-      "title": "Simple Harmonic Motion & Superposition",
-      "lectureHours": 12,
-      "topics": "Differential equation of simple harmonic oscillator, its solution and characteristics, energy in simple harmonic motion, motion of simple and compound pendulum (Bar and Kater’s pendulum), loaded spring, linearity and superposition principle, superposition of N collinear harmonic oscillations with (1) equal phase differences and (2) equal frequency differences, Beats, Superposition of two perpendicular harmonic oscillations: Graphical and Analytical Methods. Lissajous Figures with equal and unequal frequencies"
-    },
-    {
-      "title": "Damped, Forced and Coupled Oscillations",
-      "lectureHours": 10,
-      "topics": "Damped Oscillations: Equation of motion, dead beat motion, critically damped system, lightly damped system: relaxation time, logarithmic decrement, quality factor, Forced Oscillations: Equation of motion, complete solution, steady state solution, resonance, sharpness of resonance, power dissipation, quality factor, Coupled oscillators, normal coordinates and normal modes, energy relation and energy transfer, N coupled oscillators."
-    },
-    {
-      "title": "Wave Motion & Velocity of Waves",
-      "lectureHours": 8,
-      "topics": "Longitudinal and transverse waves, plane progressive (travelling) waves, wave equation, particle (group) and wave (phase) velocities, velocity of transverse vibrations of stretched strings, normal modes of stretched strings, energy of vibrating string, energy transport and energy density, velocity of longitudinal waves in a fluid, Newton's formula for velocity of sound. Laplace's correction, Melde’s experiment (concept), Doppler’s effect."
-    }
-  ],
-  "lectureNotes": [],
   "faculty": {
     "name": "",
     "email": ""

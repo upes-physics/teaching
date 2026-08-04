@@ -1,65 +1,6 @@
 {
   "courseCode": "PHYS1037",
   "courseName": "Mathematical Physics I",
-  "credits": {
-    "L": 3,
-    "T": 1,
-    "P": 0,
-    "C": 4
-  },
-  "objectives": [
-    "To explain the fundamentals of calculus, including first and second-order differential equations and differentiation of functions of more than one variable, for a proper understanding of physics.",
-    "To explain the elementary concepts of vector calculus and to apply the same to various physical systems.",
-    "To develop working knowledge in the Cartesian, spherical, and cylindrical coordinate systems in mathematical physics.",
-    "To introduce the basic idea of Matrices to find the eigenvalues and eigenfunctions.",
-    "To introduce the basic idea of the Dirac delta function, including its properties."
-  ],
-  "outcomes": [
-    {
-      "code": "CO1",
-      "statement": "Understand the fundamental concepts of calculus, vector algebra, matrices, and the Dirac delta function relevant to mathematical physics"
-    },
-    {
-      "code": "CO2",
-      "statement": "Explain the principles of differential calculus, vector calculus, and matrix methods used in formulating physical problems"
-    },
-    {
-      "code": "CO3",
-      "statement": "Apply techniques of first- and second-order differential equations, vector calculus, and matrix algebra to solve standard problems in physics."
-    },
-    {
-      "code": "CO4",
-      "statement": "Analyze physical systems by using vector identities, coordinate transformations, and differential equation models in Cartesian, cylindrical, and spherical coordinate systems."
-    }
-  ],
-  "syllabus": [
-    {
-      "title": "Calculus of function of one variable",
-      "lectureHours": 14,
-      "topics": "Recapitulation: Limits, continuity, average and instantaneous quantities, differentiation. Plotting functions, intuitive ideas of continuous, differentiable functions; Taylor and binomial series; First order Differential equations and Integrating Factor. Second order linear differential equation: homogeneous equations with constant coefficients, Wronskian and general solution. Statement of existence and Uniqueness Theorem for Initial Value Problems, Particular Integral."
-    },
-    {
-      "title": "Calculus of Functions of more than one variable",
-      "lectureHours": 6,
-      "topics": "Calculus of functions of more than one variable: Partial derivatives, exact and inexact differentials. Integrating factor with simple illustration, Constrained Maximization using Lagrange Multipliers."
-    },
-    {
-      "title": "Vectors Calculus",
-      "lectureHours": 16,
-      "topics": "Recapitulation: Properties of vectors under rotations. Scalar product and its invariance under rotations. Vector product, Scalar triple product and their interpretation in terms of area and volume respectively. Scalar and Vector fields. Vector Differential Calculus: Directional derivatives and normal derivative. Gradient of a scalar field and its geometrical interpretation. Divergence and curl of a vector field. Del and Laplacian operators. Vector identities, Gradient, divergence, curl and Laplacian in spherical and cylindrical coordinates. Vector Integral Calculus: Ordinary Integrals of Vectors, Multiple integrals, Jacobian. Notion of infinitesimal line, surface and volume elements. Line, surface and volume integrals of Vector fields. Flux of a vector field. Gauss’ divergence theorem, Green’s and Stokes Theorems and their applications (no rigorous proofs)."
-    },
-    {
-      "title": "Matrices",
-      "lectureHours": 6,
-      "topics": "Eigen values and eigen vectors orthogonal, Cayley-Hamilton Theorem, unitary and Hermitian, diagonalization of matrices and application to physics problems"
-    },
-    {
-      "title": "Dirac Delta Function and Its Properties",
-      "lectureHours": 3,
-      "topics": "Definition of Dirac delta function. Representation as limit of a Gaussian function and rectangular function. Properties of Dirac delta function"
-    }
-  ],
-  "lectureNotes": [],
   "faculty": {
     "name": "",
     "email": ""
