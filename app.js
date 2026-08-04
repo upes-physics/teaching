@@ -14,7 +14,7 @@ const catalog = {
 	    2: [],
 	    3: [ 
 	        {code: "PHYS2014K", name: "Computational Physics", description: "", dataCard: "data/ug/sem3/PHYS2014K/datacard.json"},
-		   ]
+		   ],
 	    4: [],
 	    5: [],
 	    6: [],
