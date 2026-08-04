@@ -25,37 +25,124 @@ jobs:
 
     permissions:
       contents: read
+      issues: write
+      pull-requests: write
 
     steps:
       - name: Checkout proposed merged version
         uses: actions/checkout@v6
 
+      - name: Prepare CI report files
+        run: |
+          mkdir -p .ci
+          : > .ci/reviewdog.txt
+
       - name: Require dev to main PR
+        id: branch
+        continue-on-error: true
         env:
           HEAD_BRANCH: ${{ github.head_ref }}
         run: |
           if [ "$HEAD_BRANCH" != "dev" ]; then
-            echo "Production pull requests must originate from the dev branch."
+            message="Production pull requests must originate from the dev branch; found '$HEAD_BRANCH'."
+            echo "$message" | tee .ci/branch.log
+            echo "::error title=Invalid source branch::$message"
             exit 1
           fi
+
+          echo "Source branch is dev." | tee .ci/branch.log
 
       - name: Set up Node
         uses: actions/setup-node@v6
         with:
           node-version: 24
 
+      # This exact SHA is reviewdog/action-setup v1.4.0.
+      # The immutable pin avoids trusting a movable action tag.
+      - name: Set up Reviewdog
+        id: reviewdog_setup
+        continue-on-error: true
+        uses: reviewdog/action-setup@d8edfce3dd5e1ec6978745e801f9c50b5ef80252
+        with:
+          reviewdog_version: v0.21.0
+
       - name: Check JavaScript syntax
+        id: javascript
+        continue-on-error: true
+        shell: bash
         run: |
-          find . -type f -name '*.js' \
-            -not -path './.git/*' \
-            -print0 |
-          xargs -0 -r -n1 node --check
+          set +e
+          status=0
+          : > .ci/javascript.log
+
+          while IFS= read -r -d '' file; do
+            output="$(node --check "$file" 2>&1)"
+            code=$?
+
+            if [ "$code" -ne 0 ]; then
+              status=1
+              {
+                echo "### ${file#./}"
+                echo "$output"
+                echo
+              } >> .ci/javascript.log
+
+              line="$(printf '%s\n' "$output" | sed -nE 's#^.*:([0-9]+)$#\1#p' | head -n 1)"
+              message="$(printf '%s\n' "$output" | grep -m 1 'SyntaxError:' | tr '\n' ' ')"
+              message="${message:-JavaScript syntax validation failed}"
+
+              printf '%s:%s:1: %s\n' \
+                "${file#./}" "${line:-1}" "$message" \
+                >> .ci/reviewdog.txt
+
+              echo "::error file=${file#./},line=${line:-1},title=JavaScript syntax::$message"
+            fi
+          done < <(
+            find . -type f -name '*.js' \
+              -not -path './.git/*' \
+              -not -path './.ci/*' \
+              -print0
+          )
+
+          if [ "$status" -eq 0 ]; then
+            echo "All JavaScript files passed node --check." | tee .ci/javascript.log
+          else
+            cat .ci/javascript.log
+          fi
+
+          exit "$status"
 
       - name: Validate HTML
+        id: html
+        continue-on-error: true
+        shell: bash
         run: |
-          npx --yes htmlhint@1 "**/*.html"
+          set +e
+
+          npx --yes htmlhint@1 \
+            --format unix \
+            --nocolor \
+            "**/*.html" \
+            > .ci/html.log 2>&1
+          status=$?
+
+          cat .ci/html.log
+
+          if [ "$status" -ne 0 ]; then
+            # HTMLHint's unix formatter uses file:line:column:message,
+            # which is also the common Reviewdog error format used below.
+            sed "s#${GITHUB_WORKSPACE}/##g" .ci/html.log \
+              >> .ci/reviewdog.txt
+
+            echo "::error title=HTML validation::HTMLHint found invalid markup. See the PR summary and inline Reviewdog comments."
+          fi
+
+          exit "$status"
 
       - name: Validate JSON and referenced course files
+        id: json
+        continue-on-error: true
+        shell: bash
         run: |
           python3 - <<'PY'
           import json
@@ -65,42 +152,81 @@ jobs:
 
           errors = []
 
-          # Validate every JSON file.
+          def add_error(path, message, line=1, column=1):
+              path_text = str(path)
+              errors.append(f"{path_text}:{line}:{column}: {message}")
+              safe_message = (
+                  str(message)
+                  .replace("%", "%25")
+                  .replace("\r", "%0D")
+                  .replace("\n", "%0A")
+              )
+              print(
+                  f"::error file={path_text},line={line},col={column},"
+                  f"title=Site validation::{safe_message}"
+              )
+
           for path in Path(".").rglob("*.json"):
-              if ".git" in path.parts:
+              if ".git" in path.parts or ".ci" in path.parts:
                   continue
 
               try:
                   with path.open(encoding="utf-8") as handle:
                       json.load(handle)
+              except json.JSONDecodeError as exc:
+                  add_error(
+                      path,
+                      f"Invalid JSON: {exc.msg}",
+                      exc.lineno,
+                      exc.colno,
+                  )
               except Exception as exc:
-                  errors.append(f"{path}: invalid JSON: {exc}")
+                  add_error(path, f"Could not read JSON: {exc}")
 
-          # Check that every dataCard path in app.js exists.
-          app_js = Path("app.js").read_text(encoding="utf-8")
+          app_js_path = Path("app.js")
+
+          try:
+              app_js = app_js_path.read_text(encoding="utf-8")
+          except Exception as exc:
+              add_error(app_js_path, f"Could not read app.js: {exc}")
+              app_js = ""
 
           for relative_path in re.findall(
               r'dataCard\s*:\s*"([^"]+)"',
-              app_js
+              app_js,
           ):
               if not Path(relative_path).is_file():
-                  errors.append(
-                      f"app.js references missing data card: {relative_path}"
+                  add_error(
+                      app_js_path,
+                      f"Referenced data card does not exist: {relative_path}",
                   )
 
-          # Check simulator files referenced by datacard.json.
           for card_path in Path("data").rglob("datacard.json"):
               try:
                   card = json.loads(card_path.read_text(encoding="utf-8"))
               except Exception:
                   continue
 
-              for simulator in card.get("simulators", []):
-                  link = simulator.get("link", "").strip()
+              simulators = card.get("simulators", [])
+
+              if not isinstance(simulators, list):
+                  add_error(card_path, "'simulators' must be an array")
+                  continue
+
+              for index, simulator in enumerate(simulators, start=1):
+                  if not isinstance(simulator, dict):
+                      add_error(
+                          card_path,
+                          f"Simulator entry {index} must be an object",
+                      )
+                      continue
+
+                  link = str(simulator.get("link", "")).strip()
 
                   if not link:
-                      errors.append(
-                          f"{card_path}: simulator has no link"
+                      add_error(
+                          card_path,
+                          f"Simulator entry {index} has no link",
                       )
                       continue
 
@@ -113,30 +239,276 @@ jobs:
                   target = card_path.parent / parsed.path
 
                   if not target.is_file():
-                      errors.append(
-                          f"{card_path}: missing simulator file: {link}"
+                      add_error(
+                          card_path,
+                          f"Referenced simulator file does not exist: {link}",
                       )
 
+          log_text = "\n".join(errors)
+
+          Path(".ci/json.log").write_text(
+              log_text + ("\n" if log_text else ""),
+              encoding="utf-8",
+          )
+
           if errors:
-              print("\n".join(f"ERROR: {error}" for error in errors))
+              with Path(".ci/reviewdog.txt").open(
+                  "a",
+                  encoding="utf-8",
+              ) as handle:
+                  handle.write(log_text + "\n")
+
+              print("\nValidation errors:")
+              for error in errors:
+                  print(f"- {error}")
               raise SystemExit(1)
 
-          print("All JSON and course-file checks passed.")
+          message = "All JSON and referenced course files passed validation."
+          Path(".ci/json.log").write_text(message + "\n", encoding="utf-8")
+          print(message)
           PY
 
-      - name: Create temporary site build
+      - name: Publish inline validator comments with Reviewdog
+        if: >-
+          always() &&
+          steps.reviewdog_setup.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        env:
+          REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          rm -rf _site
-          mkdir -p _site
+          if [ -s .ci/reviewdog.txt ]; then
+            reviewdog \
+              -name="Static validators" \
+              -efm="%f:%l:%c: %m" \
+              -reporter=github-pr-review \
+              -filter-mode=file \
+              -level=error \
+              < .ci/reviewdog.txt
+          fi
 
-          rsync -a \
-            --exclude='.git/' \
-            --exclude='.github/' \
-            --exclude='_site/' \
-            --exclude='README.md' \
-            ./ _site/
+      - name: Create temporary site build
+        id: build
+        continue-on-error: true
+        if: >-
+          steps.branch.outcome == 'success' &&
+          steps.javascript.outcome == 'success' &&
+          steps.html.outcome == 'success' &&
+          steps.json.outcome == 'success'
+        shell: bash
+        run: |
+          {
+            rm -rf _site
+            mkdir -p _site
 
-          touch _site/.nojekyll
+            rsync -a \
+              --exclude='.git/' \
+              --exclude='.github/' \
+              --exclude='.ci/' \
+              --exclude='_site/' \
+              --exclude='README.md' \
+              ./ _site/
+
+            touch _site/.nojekyll
+            echo "Temporary site build completed successfully."
+          } > .ci/build.log 2>&1
+
+          cat .ci/build.log
+
+      - name: Publish automated PR check report
+        if: always()
+        continue-on-error: true
+        uses: actions/github-script@v9
+        env:
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BRANCH_STATUS: ${{ steps.branch.outcome }}
+          JAVASCRIPT_STATUS: ${{ steps.javascript.outcome }}
+          HTML_STATUS: ${{ steps.html.outcome }}
+          JSON_STATUS: ${{ steps.json.outcome }}
+          BUILD_STATUS: ${{ steps.build.outcome }}
+          REVIEWDOG_STATUS: ${{ steps.reviewdog_setup.outcome }}
+        with:
+          script: |
+            const fs = require('fs');
+
+            const marker = '<!-- upes-physics-ci-report -->';
+            const statuses = {
+              'Source branch': process.env.BRANCH_STATUS || 'skipped',
+              'JavaScript syntax': process.env.JAVASCRIPT_STATUS || 'skipped',
+              'HTML validation': process.env.HTML_STATUS || 'skipped',
+              'JSON and file references': process.env.JSON_STATUS || 'skipped',
+              'Temporary build': process.env.BUILD_STATUS || 'skipped',
+            };
+
+            const logFiles = {
+              'Source branch': '.ci/branch.log',
+              'JavaScript syntax': '.ci/javascript.log',
+              'HTML validation': '.ci/html.log',
+              'JSON and file references': '.ci/json.log',
+              'Temporary build': '.ci/build.log',
+            };
+
+            const readLog = (path) => {
+              if (!fs.existsSync(path)) return '';
+              return fs.readFileSync(path, 'utf8').trim();
+            };
+
+            const icon = (status) => {
+              if (status === 'success') return '✅';
+              if (status === 'failure') return '❌';
+              return '⏭️';
+            };
+
+            const failedChecks = Object.entries(statuses)
+              .filter(([, status]) => status === 'failure');
+
+            const allLogs = Object.values(logFiles)
+              .map(readLog)
+              .join('\n');
+
+            const suggestions = [];
+
+            if (/must originate from the dev branch/i.test(allLogs)) {
+              suggestions.push(
+                'Open the production pull request from `dev` into `main`.'
+              );
+            }
+
+            if (/SyntaxError:\s*Unexpected number/i.test(allLogs)) {
+              suggestions.push(
+                'Inspect the line immediately before the reported number; a missing comma between object properties or array entries is a common cause.'
+              );
+            } else if (/SyntaxError:/i.test(allLogs)) {
+              suggestions.push(
+                'Inspect the reported JavaScript line and the line before it for an unmatched quote, bracket, parenthesis, or comma.'
+              );
+            }
+
+            if (/Tag must be paired|tag-pair/i.test(allLogs)) {
+              suggestions.push(
+                'Add the missing closing HTML tag shown by HTMLHint and close nested elements in reverse order.'
+              );
+            }
+
+            if (/Invalid JSON|Expecting property name|Expecting ',' delimiter|Unterminated string/i.test(allLogs)) {
+              suggestions.push(
+                'Correct the JSON at the reported line and column; check commas, double quotes, and matching braces or brackets.'
+              );
+            }
+
+            if (/Referenced data card does not exist/i.test(allLogs)) {
+              suggestions.push(
+                'Correct the `dataCard` path in `app.js` or add the referenced `datacard.json` at that exact path.'
+              );
+            }
+
+            if (/Referenced simulator file does not exist/i.test(allLogs)) {
+              suggestions.push(
+                'Correct the simulator `link` in `datacard.json` or add the missing simulator file beside that data card.'
+              );
+            }
+
+            if (failedChecks.length && suggestions.length === 0) {
+              suggestions.push(
+                'Fix the first reported file and line, then push another commit to `dev`; this report will update automatically.'
+              );
+            }
+
+            const table = Object.entries(statuses)
+              .map(([name, status]) => `| ${name} | ${icon(status)} ${status} |`)
+              .join('\n');
+
+            const details = failedChecks.map(([name]) => {
+              const log = readLog(logFiles[name]);
+              const truncated = log.length > 7000
+                ? `${log.slice(0, 7000)}\n\n... log truncated; open the workflow run for complete output.`
+                : log;
+
+              return [
+                '<details>',
+                `<summary><strong>${name}</strong> error output</summary>`,
+                '',
+                '```text',
+                truncated || 'No detailed log was produced.',
+                '```',
+                '</details>',
+              ].join('\n');
+            }).join('\n\n');
+
+            const failed = failedChecks.length > 0;
+            const runUrl =
+              `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}` +
+              `/actions/runs/${context.runId}`;
+            const shortSha = (process.env.HEAD_SHA || context.sha).slice(0, 7);
+            const reviewdogNote =
+              process.env.REVIEWDOG_STATUS === 'success'
+                ? 'Reviewdog posts validator findings on affected changed lines.'
+                : 'Reviewdog setup did not complete, but the required validators still ran.';
+
+            const body = [
+              marker,
+              `## ${failed ? '❌' : '✅'} Automated PR checks`,
+              '',
+              `Checked commit \`${shortSha}\`.`,
+              '',
+              '| Check | Result |',
+              '|---|---|',
+              table,
+              '',
+              failed
+                ? `### Suggested fixes\n${suggestions.map(item => `- ${item}`).join('\n')}`
+                : 'All required checks passed. The preview deployment can continue.',
+              failed && details ? `\n### Error details\n${details}` : '',
+              '',
+              reviewdogNote,
+              '',
+              `[Open the complete workflow run](${runUrl})`,
+              '',
+              'This comment is updated on every push to the pull request.',
+            ].filter(Boolean).join('\n');
+
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                per_page: 100,
+              }
+            );
+
+            const existing = comments.find(comment =>
+              comment.user?.type === 'Bot' &&
+              comment.body?.includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: context.issue.number,
+                body,
+              });
+            }
+
+      - name: Fail when a required check fails
+        if: >-
+          always() &&
+          (
+            steps.branch.outcome != 'success' ||
+            steps.javascript.outcome != 'success' ||
+            steps.html.outcome != 'success' ||
+            steps.json.outcome != 'success' ||
+            steps.build.outcome != 'success'
+          )
+        run: exit 1
 
   preview:
     name: Deploy PR preview
@@ -145,7 +517,7 @@ jobs:
 
     # Deploy only after successful checks.
     # On PR closure, run even though the checks job was skipped.
-    if: >
+    if: >-
       always() &&
       github.event.pull_request.head.repo.full_name == github.repository &&
       github.head_ref == 'dev' &&
@@ -176,6 +548,7 @@ jobs:
           rsync -a \
             --exclude='.git/' \
             --exclude='.github/' \
+            --exclude='.ci/' \
             --exclude='_site/' \
             --exclude='README.md' \
             ./ _site/
