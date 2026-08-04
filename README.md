@@ -33,40 +33,23 @@ coursesBySemester: {
 }
 ```
 
-`dataCard` is required and points to the JSON file used to construct the course landing page. `content` is optional and embeds a separate static HTML lesson beneath the generated landing page. Keep an empty array for a semester that does not have course information yet. The semester cards automatically show the number of configured courses.
+`dataCard` is required and points to the JSON file used to construct the course landing page. Keep an empty array for a semester that does not have course information yet. The semester cards automatically show the number of configured courses.
 
 ### Course data-card format
 
-Every course folder contains a `datacard.json` with the course identity, L–T–P–C credit breakdown, objectives, outcomes and syllabus:
+Every course folder contains a `datacard.json` with only the course identity,
+simulators, and faculty information:
 
 ```json
 {
   "courseCode": "PHY101",
   "courseName": "Classical Mechanics",
-  "credits": { "L": 3, "T": 1, "P": 0, "C": 4 },
-  "objectives": [
-    "Develop a mathematical understanding of motion and forces."
-  ],
-  "outcomes": [
-    { "code": "CO1", "statement": "Apply Newton's laws to physical systems." },
-    { "code": "CO2", "statement": "Use conservation laws to solve problems." }
-  ],
-  "syllabus": [
-    {
-      "title": "Kinematics and Newton's Laws",
-      "lectureHours": 10,
-      "topics": "Reference frames, vectors, motion and equations of motion."
-    }
-  ],
   "simulators": [
     {
       "name": "Projectile Motion",
       "desc": "Explore how launch angle and speed affect a projectile's path.",
-      "link": "simulators/projectile-motion.html"
+      "link": "projectile-motion.html"
     }
-  ],
-  "lectureNotes": [
-    { "topic": "Newton's Laws", "link": "lecture-notes/newtons-laws.pdf" }
   ],
   "faculty": {
     "name": "Dr Jane Smith",
@@ -75,15 +58,20 @@ Every course folder contains a `datacard.json` with the course identity, L–T�
 }
 ```
 
-The course landing page reads this file at runtime, so objectives, outcomes, credit values, syllabus units, simulators, lecture notes and faculty can be updated without editing HTML or the rendering logic. Lecture-note links are resolved relative to `datacard.json`; use an empty `lectureNotes` array when notes are available only through the LMS. `faculty` accepts either one object or an array of objects when a course has multiple instructors. The `simulators` property is optional; when it is omitted or empty, the landing page displays an update-soon message.
+The course landing page reads this file at runtime and displays the course code,
+name, simulators, and faculty. `faculty` accepts either one object or an array of
+objects when a course has multiple instructors. The `simulators` property is
+optional; when it is omitted or empty, the landing page displays an update-soon
+message.
 
-Each simulator is a standalone HTML or XML document stored in a `simulators` folder inside its course directory. Its `link` is resolved relative to `datacard.json`, so a typical course layout is:
+Simulator documents can sit directly beside `datacard.json` in the course's
+top-level data directory. Their links are resolved relative to `datacard.json`,
+so a typical course layout is:
 
 ```text
 classical-mechanics/
 ├── datacard.json
-└── simulators/
-    └── projectile-motion.html
+└── projectile-motion.html
 ```
 
 The root `index.html` and `app.js` are shared by every course; do not create a
@@ -95,39 +83,6 @@ share a provisional or cross-listed code. For example:
 ```text
 ?view=course&level=undergraduate&semester=1&course=classical-mechanics
 ```
-
-Only add a course-folder `index.html` when the course has optional standalone
-lesson material to embed beneath its generated data-card landing page.
-
-## Adding static HTML course material
-
-Course material can live in its own folder, including its own stylesheets and assets. Use this structure:
-
-```text
-data/
-├── ug/
-│   └── sem1/
-│       └── classical-mechanics/
-│           ├── datacard.json
-│           ├── index.html
-│           └── course.css
-└── pg/
-    └── sem1/
-        └── advanced-quantum-mechanics/
-            ├── datacard.json
-            ├── index.html
-            └── course.css
-```
-
-Link optional HTML from the matching course object in `app.js` using its `content` property:
-
-```js
-content: "data/ug/sem1/classical-mechanics/index.html"
-```
-
-The course page embeds that file in an `iframe` and also provides an **Open in a new tab** link. Because an iframe is a separate document, a stylesheet referenced inside the course HTML—such as `<link rel="stylesheet" href="course.css">`—only styles that course and cannot override the main website. Paths are relative to the course HTML file, so images can similarly be placed beside it and referenced with `src="diagram.png"`.
-
-The repository includes `data/ug/sem1/classical-mechanics/` as a working example. Keep folder and file names lowercase and avoid spaces so their GitHub Pages URLs remain predictable.
 
 ## Deployment
 

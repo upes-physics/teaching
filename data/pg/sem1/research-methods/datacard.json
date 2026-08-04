@@ -1,52 +1,6 @@
 {
   "courseCode": "PHY505",
   "courseName": "Research Methods",
-  "credits": {
-    "L": 2,
-    "T": 0,
-    "P": 2,
-    "C": 3
-  },
-  "objectives": [
-    "Plan rigorous and ethical physics research.",
-    "Develop reproducible analysis and effective scientific communication."
-  ],
-  "outcomes": [
-    {
-      "code": "CO1",
-      "statement": "Formulate a focused research question from the literature."
-    },
-    {
-      "code": "CO2",
-      "statement": "Design a reproducible research and data-management workflow."
-    },
-    {
-      "code": "CO3",
-      "statement": "Evaluate evidence, uncertainty and research ethics."
-    },
-    {
-      "code": "CO4",
-      "statement": "Communicate results in written and oral formats."
-    }
-  ],
-  "syllabus": [
-    {
-      "title": "Research Design",
-      "lectureHours": 10,
-      "topics": "Questions, hypotheses, literature review, project planning and research ethics."
-    },
-    {
-      "title": "Reproducible Analysis",
-      "lectureHours": 12,
-      "topics": "Data management, version control, computational notebooks and uncertainty."
-    },
-    {
-      "title": "Scientific Communication",
-      "lectureHours": 10,
-      "topics": "Papers, proposals, visualisation, presentations and peer review."
-    }
-  ],
-  "lectureNotes": [],
   "faculty": {
     "name": "",
     "email": ""

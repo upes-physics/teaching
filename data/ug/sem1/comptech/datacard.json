@@ -1,68 +1,21 @@
 {
   "courseCode": "CSEG1023",
   "courseName": "Computational Techniques",
-  "credits": {
-    "L": 2,
-    "T": 0,
-    "P": 0,
-    "C": 2
-  },
-  "objectives": [
-    "To demonstrate the fundamentals of Linux OS and to write computer codes using vim editor.",
-    "To explain the elementary concepts of Python and LATEX.",
-    "To acquire knowledge of plotting graphs and data analysis using Gnuplot software."
-  ],
-  "outcomes": [
-    {
-      "code": "CO1",
-      "statement": "Understand the fundamentals of Linux OS and computer programs."
-    },
-    {
-      "code": "CO2",
-      "statement": "Interpret computing data and other physical parameters with the aid of Python programming."
-    },
-    {
-      "code": "CO3",
-      "statement": "Demonstrate use of GNUPLOT to visualize data and LATEX to produce high quality scientific documents."
-    }
-  ],
-  "syllabus": [
-    {
-      "title": "Introduction to LINUX and Scientific computing",
-      "lectureHours": 7,
-      "topics": "Basics of LINUX Operating system, Linux Commands, vi and vim editors. Computer architecture and organization, number systems and arithmetic, floating point representation, underflow & overflow, algorithms, errors in scientific computations."
-    },
-    {
-      "title": "Programming with Python",
-      "lectureHours": 11,
-      "topics": "Introduction, Python literals, Operators, Variables, decision making, loops, logic operators, lists, sorting list, functions, scopes in Python, Tuples and dictionaries, modules and packages, errors and exceptions, Characters and strings, Basic concepts of object programming, Processing files. Numpy and Pandas."
-    },
-    {
-      "title": "Scientific word processing.",
-      "lectureHours": 6,
-      "topics": "Introduction to LaTeX; preparing a basic LaTeX file, document classes, compiling LaTeX File, LaTeX tags for creating different environments, LaTeX commands and environments, formula and equation representations, preparing figures and tables, preparing bibliography and citation."
-    },
-    {
-      "title": "Data Analysis & Visualization",
-      "lectureHours": 6,
-      "topics": "Introduction to Gnuplot, basic Gnuplot commands for simple plots, plotting data from a file, saving and exporting, multiple data sets per file; understanding data with Gnuplot, data analysis with Gnuplot."
-    }
-  ],
   "simulators": [
     {
       "name": "Python",
       "desc": "Static browser tools for teaching Python basics, scientific programming, and data handling.",
-      "link": "simulators/python.html"
+      "link": "python.html"
     },
     {
       "name": "Latex",
       "desc": "Scientific Word Processing with LaTeX",
-      "link": "simulators/latex.html"
+      "link": "latex.html"
     },
     {
       "name": "Gnuplot",
       "desc": "Data Analysis and Visualization with Gnuplot",
-      "link": "simulators/gnuplot.html"
+      "link": "gnuplot.html"
     },
     {
       "name": "Speak to Master Obi-wan",
@@ -70,7 +23,6 @@
       "link": "https://chatgpt.com/g/g-6a2274a907bc819180d7559b12f3255c-master-obi-wan"
     }
   ],
-  "lectureNotes": [],
   "faculty": {
     "name": "Suvankar Roy Chowdhury",
     "email": "suvankar.chowdhury@ddn.upes.ac.in"

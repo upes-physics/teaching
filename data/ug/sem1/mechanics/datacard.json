@@ -1,59 +1,6 @@
 {
   "courseCode": "MECH1012",
   "courseName": "Mechanics",
-  "credits": {
-    "L": 3,
-    "T": 0,
-    "P": 2,
-    "C": 4
-  },
-  "objectives": [
-    "To impart the knowledge of the basic concepts of mechanics and hence the behavior of mechanical systems theoretically and experimentally.",
-    "To explain the dynamics of physical systems under the influence of central force.",
-    "To illustrate the elementary knowledge of mechanics to solve the problems, related with, dynamics, motion under central force.",
-    "To examine various physical phenomena given various mechanical concepts dealing with fundamentals of dynamics, collisions, rotational dynamics, central force."
-  ],
-  "outcomes": [
-    {
-      "code": "CO1",
-      "statement": "State the fundamental concepts of mechanics and the dynamics of mechanical systems."
-    },
-    {
-      "code": "CO2",
-      "statement": "Explain the physical phenomena involved in the principles of the operation of different mechanical systems and the accuracy of experimental results."
-    },
-    {
-      "code": "CO3",
-      "statement": "Apply various physical parameters related to dynamics, collisions, rotational dynamics, central force, and fluid dynamics"
-    },
-    {
-      "code": "CO4",
-      "statement": "Analyze theoretical and experimental outcomes to assess mechanical principles in engineering applications."
-    }
-  ],
-  "syllabus": [
-    {
-      "title": "Fundamentals of Mechanics",
-      "lectureHours": 12,
-      "topics": "Review of Newton’s Laws of Motion. Dynamics of a system of particles. Centre of Mass. Principle of conservation of momentum. Impulse. Momentum of a variable-mass system: motion of a rocket. Work and Kinetic Energy Theorem. Conservative and nonconservative forces. Potential Energy. Energy diagram. Stable and unstable equilibrium. Elastic potential energy. Force as the gradient of potential energy. Work &Potential energy. Law of conservation of Energy. Elastic and inelastic collisions between particles. Centre of Mass and Laboratory frames."
-    },
-    {
-      "title": "Gravitation, Central Force Field and Motion",
-      "lectureHours": 10,
-      "topics": "Law of gravitation. Gravitational potential energy. Inertial and gravitational mass. Potential and field due to spherical shell and solid sphere. Two-body problem and its reduction to one-body problem and its solution. The energy equation and energy diagram. Kepler’s Laws. Satellite in circular orbit and applications. Geosynchronous orbits. Weightlessness."
-    },
-    {
-      "title": "Rotational Dynamics",
-      "lectureHours": 15,
-      "topics": "Angular momentum of a particle and system of particles. Torque. Principle of conservation of angular momentum. Rotation about a fixed axis. Moment of Inertia. Calculation of moment of inertia for rectangular, cylindrical and spherical bodies. Rigid body dynamics, Moment of Inertia tensor. Parallel and perpendicular axis theorem. Kinetic energy of rotation. Motion involving both translation and rotation. Non-inertial frames and fictitious forces. Uniformly rotating frame. Laws of Physics in rotating coordinate systems. Centrifugal force. Coriolis force and its applications. Components of Velocity and Acceleration in Cylindrical and Spherical Coordinate Systems"
-    },
-    {
-      "title": "Introduction to Fluid Dynamics",
-      "lectureHours": 8,
-      "topics": "Kinematics of Moving Fluids: Poiseuille’s Equation for Flow of a Liquid through a Capillary Tube. Equation of continuity, Euler’s equation, Bernoulli’s theorem and applications. Navier-Stokes equation."
-    }
-  ],
-  "lectureNotes": [],
   "faculty": {
     "name": "",
     "email": ""
