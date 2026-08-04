@@ -1,0 +1,40 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta name="description" content="A welcoming home for undergraduate and postgraduate physics course materials." />
+    <title>UPES Physics · Applied Science Cluster</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com" />
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+    <link href="https://fonts.googleapis.com/css2?family=DM+Sans:wght@400;500;600;700&amp;family=Newsreader:opsz,wght@6..72,400;6..72,500&amp;display=swap" rel="stylesheet" />
+    <link rel="stylesheet" href="styles.css" />
+    <script src="app.js" defer></script>
+  </head>
+  <body>
+    <header class="site-header">
+      <a class="brand" href="./" data-link="home" aria-label="UPES Physics, Applied Science Cluster home">
+        <span class="logo-container">
+          <img class="university-logo" src="upes-logo.png" alt="UPES university logo" />
+          <span class="logo-fallback" aria-hidden="true">UPES</span>
+        </span>
+        <span class="brand-name"><b>UPES Physics</b><small>Applied Science Cluster</small></span>
+      </a>
+      <nav aria-label="Primary navigation">
+        <button class="nav-link" data-link="about">About</button>
+        <button class="nav-link" data-link="undergraduate">Undergraduate</button>
+        <button class="nav-link" data-link="postgraduate">Postgraduate</button>
+      </nav>
+      <button class="menu-button" aria-label="Open navigation" aria-expanded="false">Menu</button>
+    </header>
+
+    <main id="app" tabindex="-1"></main>
+
+    <footer>
+      <a class="brand footer-brand" href="./" data-link="home"><span class="brand-name"><b>UPES Physics</b><small>Applied Science Cluster</small></span></a>
+      <p>Making the universe a little more understandable.</p>
+      <p>Maintained by Suvankar Roy Chowdhury(suvankar.chowdhury@ddn.upes.ac.in)</p>
+      <p>© <span id="year"></span> Department of Physics</p>
+    </footer>
+  </body>
+</html>
