@@ -466,7 +466,7 @@ jobs:
               `[Open the complete workflow run](${runUrl})`,
               '',
               'This comment is updated on every push to the pull request.',
-            ].filter(Boolean).join('\n');
+            ].join('\n');
 
             const comments = await github.paginate(
               github.rest.issues.listComments,
