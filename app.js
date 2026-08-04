@@ -12,7 +12,8 @@ const catalog = {
 		{ code: "CSEG1023", name: "Computational Techniques", description: "", dataCard: "data/ug/sem1/comptech/datacard.json" },
 	    ],
 	    2: [],
-	    3: [],
+	    3: [ 
+	        {code: "PHYS2014K", name: "Computational Physics", description: "", dataCard: "data/ug/sem3/PHYS2014K/datacard.json"]},
 	    4: [],
 	    5: [],
 	    6: [],
