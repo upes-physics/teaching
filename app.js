@@ -6,7 +6,7 @@ const catalog = {
 	coursesBySemester: {
 	    1: [
 		{ code: "PHYS1037", name: "Mathematical Physics I", description: "Calculus, vector analysis, matrices, and mathematical methods for physics.", dataCard: "data/ug/sem1/mp1/datacard.json" },
-		{ code: "MECH1012", name: "Mechanics", description: "", dataCard: "data/ug/sem1/mechanics/datacard.json" },
+		{ code: "MECH1001", name: "Mechanics", description: "", dataCard: "data/ug/sem1/mechanics/datacard.json" },
 		{ id: "optics", code: "PHYSXXXX", name: "Optics", description: "", dataCard: "data/ug/sem1/optics/datacard.json" },
 		{ id: "waves-oscillations", code: "PHYSXXXX", name: "Waves and Oscillations", description: "", dataCard: "data/ug/sem1/waves-oscillations/datacard.json" },
 		{ code: "CSEG1023", name: "Computational Techniques", description: "", dataCard: "data/ug/sem1/comptech/datacard.json" },
@@ -18,7 +18,9 @@ const catalog = {
 	    4: [],
 	    5: [],
 	    6: [],
-	    7: [],
+	    7: [
+		{ code: "PHYS8204", name: "Fundamentals of Astronomy", description: "", dataCard: "data/ug/sem7/PHYS8204/datacard.json" },
+	    ],
 	    8: []
 	}
     },
@@ -27,13 +29,11 @@ const catalog = {
 	semesterCount: 4,
 	description: "Move beyond the fundamentals through advanced theory, computation, and research-led study.",
 	coursesBySemester: {
-	    1: [
-		{ code: "PHY501", name: "Advanced Quantum Mechanics", description: "Symmetries, approximation methods and quantum dynamics.", dataCard: "data/pg/sem1/advanced-quantum-mechanics/datacard.json" },
-		{ code: "PHY503", name: "Statistical Field Theory", description: "Collective phenomena, phase transitions and renormalisation.", dataCard: "data/pg/sem1/statistical-field-theory/datacard.json" },
-		{ code: "PHY505", name: "Research Methods", description: "Literature, reproducible computation and research communication.", dataCard: "data/pg/sem1/research-methods/datacard.json" }
-	    ],
+	    1: [],
 	    2: [],
-	    3: [],
+	    3: [
+		{ code: "", name: "Fundamentals of Astronomy", description: "", dataCard: "data/pg/sem3/PHYS4023P/datacard.json" },
+	    ],
 	    4: []
 	}
     }
