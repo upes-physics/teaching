@@ -1,8 +1,16 @@
 {
-  "courseCode": "MECH1012",
+  "courseCode": "MEC1001",
   "courseName": "Mechanics",
   "faculty": {
-    "name": "",
-    "email": ""
-  }
+    "name": "Dr. Prince Sharma",
+    "email": "prince.sharma@ddn.upes.ac.in"
+  },
+  "simulators": [
+    {
+      "name": "Mechanics Visual Lab",
+      "desc": "AI-assisted interactive mechanics laboratory and visualization platform for 1st-year BSc Physics students.",
+      "link": "https://princerajsharma31.pythonanywhere.com/",
+      "uploadFileLink": ""
+    }
+  ]
 }
