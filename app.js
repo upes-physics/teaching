@@ -32,7 +32,7 @@ const catalog = {
 	    1: [],
 	    2: [],
 	    3: [
-		{ code: "", name: "Fundamentals of Astronomy", description: "", dataCard: "data/ug/sem7/PHYS4023P/datacard.json" },
+		{ code: "", name: "Fundamentals of Astronomy", description: "", dataCard: "data/pg/sem3/PHYS4023P/datacard.json" },
 	    ],
 	    4: []
 	}
