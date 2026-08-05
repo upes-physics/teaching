@@ -562,5 +562,5 @@ jobs:
           source-dir: _site
           preview-branch: gh-pages
           umbrella-dir: pr-preview
-          wait-for-pages-deployment: true
+          wait-for-pages-deployment: ${{ github.event.action != 'closed' }}
           qr-code: false
