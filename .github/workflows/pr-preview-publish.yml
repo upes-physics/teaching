@@ -1,0 +1,193 @@
+name: Publish PR report and preview
+
+on:
+  workflow_run:
+    workflows:
+      - PR checks and preview
+    types:
+      - completed
+
+concurrency:
+  group: pages-branch-write
+  cancel-in-progress: false
+
+jobs:
+  publish:
+    name: Publish PR results
+    if: >-
+      github.event.workflow_run.event == 'pull_request' &&
+      github.event.workflow_run.pull_requests[0] != null
+    runs-on: ubuntu-latest
+
+    permissions:
+      actions: read
+      contents: write
+      issues: write
+      pull-requests: write
+      deployments: read
+
+    steps:
+      - name: Confirm this is the current open PR revision
+        id: current
+        uses: actions/github-script@v9
+        env:
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+          RUN_HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+        with:
+          script: |
+            const prNumber = Number(process.env.PR_NUMBER);
+            const { data: pr } = await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+            });
+
+            const isCurrent =
+              pr.state === 'open' &&
+              pr.base.ref === 'main' &&
+              pr.head.sha === process.env.RUN_HEAD_SHA;
+
+            core.setOutput('is_current', String(isCurrent));
+
+            if (!isCurrent) {
+              core.notice(
+                `Skipping stale or closed PR run. Current head: ${pr.head.sha}; run head: ${process.env.RUN_HEAD_SHA}.`
+              );
+            }
+
+      - name: Download PR report
+        if: steps.current.outputs.is_current == 'true'
+        uses: actions/download-artifact@v8
+        with:
+          name: pr-report
+          path: downloaded-report
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Publish automated PR report
+        if: steps.current.outputs.is_current == 'true'
+        uses: actions/github-script@v9
+        env:
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+          RUN_URL: ${{ github.event.workflow_run.html_url }}
+        with:
+          script: |
+            const fs = require('fs');
+            const marker = '<!-- upes-physics-ci-report -->';
+            const prNumber = Number(process.env.PR_NUMBER);
+            const reportPath = 'downloaded-report/report.md';
+
+            let body = fs.readFileSync(reportPath, 'utf8').trim();
+            body += `\n\n[Open the complete workflow run](${process.env.RUN_URL})`;
+
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                per_page: 100,
+              }
+            );
+
+            const existing = comments.find(comment =>
+              comment.user?.type === 'Bot' &&
+              comment.body?.includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body,
+              });
+            }
+
+      - name: Download preview site
+        if: >-
+          steps.current.outputs.is_current == 'true' &&
+          github.event.workflow_run.conclusion == 'success'
+        uses: actions/download-artifact@v8
+        with:
+          name: pr-preview-site
+          path: preview-site
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          repository: ${{ github.repository }}
+          run-id: ${{ github.event.workflow_run.id }}
+
+      - name: Deploy preview to gh-pages
+        if: >-
+          steps.current.outputs.is_current == 'true' &&
+          github.event.workflow_run.conclusion == 'success'
+        uses: JamesIves/github-pages-deploy-action@v4.8.0
+        with:
+          branch: gh-pages
+          folder: preview-site
+          target-folder: pr-preview/pr-${{ github.event.workflow_run.pull_requests[0].number }}
+          clean: true
+          force: false
+          commit-message: Deploy preview for PR ${{ github.event.workflow_run.pull_requests[0].number }}
+
+      - name: Publish preview link
+        if: >-
+          steps.current.outputs.is_current == 'true' &&
+          github.event.workflow_run.conclusion == 'success'
+        uses: actions/github-script@v9
+        env:
+          PR_NUMBER: ${{ github.event.workflow_run.pull_requests[0].number }}
+        with:
+          script: |
+            const marker = '<!-- upes-physics-preview-link -->';
+            const prNumber = Number(process.env.PR_NUMBER);
+            const url =
+              `https://${context.repo.owner}.github.io/${context.repo.repo}` +
+              `/pr-preview/pr-${prNumber}/`;
+
+            const body = [
+              marker,
+              '## 🚀 PR preview',
+              '',
+              `[Open the preview site](${url})`,
+              '',
+              'The preview is rebuilt after every successful check run and removed when the pull request is closed.',
+            ].join('\n');
+
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              {
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                per_page: 100,
+              }
+            );
+
+            const existing = comments.find(comment =>
+              comment.user?.type === 'Bot' &&
+              comment.body?.includes(marker)
+            );
+
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                comment_id: existing.id,
+                body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner,
+                repo: context.repo.repo,
+                issue_number: prNumber,
+                body,
+              });
+            }
