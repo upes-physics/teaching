@@ -1,6 +1,5 @@
 name: PR checks and preview
 
-# Posts one updated PR summary and Reviewdog inline validator comments.
 on:
   pull_request:
     branches:
@@ -9,19 +8,14 @@ on:
       - opened
       - reopened
       - synchronize
-      - closed
 
 concurrency:
-  group: pages-branch-write
-  cancel-in-progress: false
+  group: pr-check-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
 
 jobs:
   checks:
     name: Static checks
-
-    # No source checks are needed when only removing a closed PR preview.
-    if: github.event.action != 'closed'
-
     runs-on: ubuntu-latest
 
     permissions:
@@ -32,34 +26,43 @@ jobs:
     steps:
       - name: Checkout proposed merged version
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
 
       - name: Prepare CI report files
         run: |
           mkdir -p .ci
           : > .ci/reviewdog.txt
 
-      - name: Require dev to main PR
-        id: branch
+      - name: Require latest main
+        id: freshness
         continue-on-error: true
+        shell: bash
         env:
-          HEAD_BRANCH: ${{ github.head_ref }}
+          PR_NUMBER: ${{ github.event.pull_request.number }}
         run: |
-          if [ "$HEAD_BRANCH" != "dev" ]; then
-            message="Production pull requests must originate from the dev branch; found '$HEAD_BRANCH'."
-            echo "$message" | tee .ci/branch.log
-            echo "::error title=Invalid source branch::$message"
+          set -euo pipefail
+
+          git fetch --no-tags origin \
+            "+refs/heads/main:refs/remotes/origin/main" \
+            "+refs/pull/${PR_NUMBER}/head:refs/remotes/origin/pr-head"
+
+          if ! git merge-base --is-ancestor \
+            refs/remotes/origin/main \
+            refs/remotes/origin/pr-head; then
+            message="This pull request is not based on the latest main branch. Merge or rebase the latest main into the PR branch, then push again."
+            echo "$message" | tee .ci/freshness.log
+            echo "::error title=PR branch is behind main::$message"
             exit 1
           fi
 
-          echo "Source branch is dev." | tee .ci/branch.log
+          echo "PR branch contains the latest main commit." | tee .ci/freshness.log
 
       - name: Set up Node
         uses: actions/setup-node@v6
         with:
           node-version: 24
 
-      # This exact SHA is reviewdog/action-setup v1.4.0.
-      # The immutable pin avoids trusting a movable action tag.
       - name: Set up Reviewdog
         id: reviewdog_setup
         continue-on-error: true
@@ -130,12 +133,9 @@ jobs:
           cat .ci/html.log
 
           if [ "$status" -ne 0 ]; then
-            # HTMLHint's unix formatter uses file:line:column:message,
-            # which is also the common Reviewdog error format used below.
             sed "s#${GITHUB_WORKSPACE}/##g" .ci/html.log \
               >> .ci/reviewdog.txt
-
-            echo "::error title=HTML validation::HTMLHint found invalid markup. See the PR summary and inline Reviewdog comments."
+            echo "::error title=HTML validation::HTMLHint found invalid markup."
           fi
 
           exit "$status"
@@ -175,12 +175,7 @@ jobs:
                   with path.open(encoding="utf-8") as handle:
                       json.load(handle)
               except json.JSONDecodeError as exc:
-                  add_error(
-                      path,
-                      f"Invalid JSON: {exc.msg}",
-                      exc.lineno,
-                      exc.colno,
-                  )
+                  add_error(path, f"Invalid JSON: {exc.msg}", exc.lineno, exc.colno)
               except Exception as exc:
                   add_error(path, f"Could not read JSON: {exc}")
 
@@ -233,7 +228,6 @@ jobs:
 
                   parsed = urlsplit(link)
 
-                  # External URLs do not correspond to repository files.
                   if parsed.scheme or parsed.netloc:
                       continue
 
@@ -253,10 +247,7 @@ jobs:
           )
 
           if errors:
-              with Path(".ci/reviewdog.txt").open(
-                  "a",
-                  encoding="utf-8",
-              ) as handle:
+              with Path(".ci/reviewdog.txt").open("a", encoding="utf-8") as handle:
                   handle.write(log_text + "\n")
 
               print("\nValidation errors:")
@@ -269,30 +260,39 @@ jobs:
           print(message)
           PY
 
-      - name: Publish inline validator comments with Reviewdog
+      - name: Publish Reviewdog diagnostics
         if: >-
           always() &&
           steps.reviewdog_setup.outcome == 'success'
         continue-on-error: true
         shell: bash
         env:
+          IS_FORK: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
           REVIEWDOG_GITHUB_API_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          if [ -s .ci/reviewdog.txt ]; then
-            reviewdog \
-              -name="Static validators" \
-              -efm="%f:%l:%c: %m" \
-              -reporter=github-pr-review \
-              -filter-mode=file \
-              -level=error \
-              < .ci/reviewdog.txt
+          if [ ! -s .ci/reviewdog.txt ]; then
+            exit 0
           fi
+
+          if [ "$IS_FORK" = "true" ]; then
+            reporter="github-pr-annotations"
+          else
+            reporter="github-pr-review"
+          fi
+
+          reviewdog \
+            -name="Static validators" \
+            -efm="%f:%l:%c: %m" \
+            -reporter="$reporter" \
+            -filter-mode=file \
+            -level=error \
+            < .ci/reviewdog.txt
 
       - name: Create temporary site build
         id: build
         continue-on-error: true
         if: >-
-          steps.branch.outcome == 'success' &&
+          steps.freshness.outcome == 'success' &&
           steps.javascript.outcome == 'success' &&
           steps.html.outcome == 'success' &&
           steps.json.outcome == 'success'
@@ -316,25 +316,23 @@ jobs:
 
           cat .ci/build.log
 
-      - name: Publish automated PR check report
+      - name: Create automated PR report
         if: always()
-        continue-on-error: true
         uses: actions/github-script@v9
         env:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
-          BRANCH_STATUS: ${{ steps.branch.outcome }}
+          FRESHNESS_STATUS: ${{ steps.freshness.outcome }}
           JAVASCRIPT_STATUS: ${{ steps.javascript.outcome }}
           HTML_STATUS: ${{ steps.html.outcome }}
           JSON_STATUS: ${{ steps.json.outcome }}
           BUILD_STATUS: ${{ steps.build.outcome }}
-          REVIEWDOG_STATUS: ${{ steps.reviewdog_setup.outcome }}
+          IS_FORK: ${{ github.event.pull_request.head.repo.full_name != github.repository }}
         with:
           script: |
             const fs = require('fs');
 
-            const marker = '<!-- upes-physics-ci-report -->';
             const statuses = {
-              'Source branch': process.env.BRANCH_STATUS || 'skipped',
+              'Latest main included': process.env.FRESHNESS_STATUS || 'skipped',
               'JavaScript syntax': process.env.JAVASCRIPT_STATUS || 'skipped',
               'HTML validation': process.env.HTML_STATUS || 'skipped',
               'JSON and file references': process.env.JSON_STATUS || 'skipped',
@@ -342,17 +340,15 @@ jobs:
             };
 
             const logFiles = {
-              'Source branch': '.ci/branch.log',
+              'Latest main included': '.ci/freshness.log',
               'JavaScript syntax': '.ci/javascript.log',
               'HTML validation': '.ci/html.log',
               'JSON and file references': '.ci/json.log',
               'Temporary build': '.ci/build.log',
             };
 
-            const readLog = (path) => {
-              if (!fs.existsSync(path)) return '';
-              return fs.readFileSync(path, 'utf8').trim();
-            };
+            const readLog = (path) =>
+              fs.existsSync(path) ? fs.readFileSync(path, 'utf8').trim() : '';
 
             const icon = (status) => {
               if (status === 'success') return '✅';
@@ -360,69 +356,57 @@ jobs:
               return '⏭️';
             };
 
-            const failedChecks = Object.entries(statuses)
+            const failures = Object.entries(statuses)
               .filter(([, status]) => status === 'failure');
-
-            const allLogs = Object.values(logFiles)
-              .map(readLog)
-              .join('\n');
-
-            const suggestions = [];
-
-            if (/must originate from the dev branch/i.test(allLogs)) {
-              suggestions.push(
-                'Open the production pull request from `dev` into `main`.'
-              );
-            }
-
-            if (/SyntaxError:\s*Unexpected number/i.test(allLogs)) {
-              suggestions.push(
-                'Inspect the line immediately before the reported number; a missing comma between object properties or array entries is a common cause.'
-              );
-            } else if (/SyntaxError:/i.test(allLogs)) {
-              suggestions.push(
-                'Inspect the reported JavaScript line and the line before it for an unmatched quote, bracket, parenthesis, or comma.'
-              );
-            }
-
-            if (/Tag must be paired|tag-pair/i.test(allLogs)) {
-              suggestions.push(
-                'Add the missing closing HTML tag shown by HTMLHint and close nested elements in reverse order.'
-              );
-            }
-
-            if (/Invalid JSON|Expecting property name|Expecting ',' delimiter|Unterminated string/i.test(allLogs)) {
-              suggestions.push(
-                'Correct the JSON at the reported line and column; check commas, double quotes, and matching braces or brackets.'
-              );
-            }
-
-            if (/Referenced data card does not exist/i.test(allLogs)) {
-              suggestions.push(
-                'Correct the `dataCard` path in `app.js` or add the referenced `datacard.json` at that exact path.'
-              );
-            }
-
-            if (/Referenced simulator file does not exist/i.test(allLogs)) {
-              suggestions.push(
-                'Correct the simulator `link` in `datacard.json` or add the missing simulator file beside that data card.'
-              );
-            }
-
-            if (failedChecks.length && suggestions.length === 0) {
-              suggestions.push(
-                'Fix the first reported file and line, then push another commit to `dev`; this report will update automatically.'
-              );
-            }
 
             const table = Object.entries(statuses)
               .map(([name, status]) => `| ${name} | ${icon(status)} ${status} |`)
               .join('\n');
 
-            const details = failedChecks.map(([name]) => {
+            const suggestions = [];
+
+            if (statuses['Latest main included'] === 'failure') {
+              suggestions.push(
+                'Merge or rebase the latest `main` branch into the pull-request branch, then push again.'
+              );
+            }
+
+            const allLogs = Object.values(logFiles).map(readLog).join('\n');
+
+            if (/SyntaxError:/i.test(allLogs)) {
+              suggestions.push(
+                'Inspect the reported JavaScript line and the preceding line for a missing comma, quote, bracket, or parenthesis.'
+              );
+            }
+
+            if (/Tag must be paired|tag-pair/i.test(allLogs)) {
+              suggestions.push(
+                'Add the missing closing HTML tag and close nested elements in reverse order.'
+              );
+            }
+
+            if (/Invalid JSON/i.test(allLogs)) {
+              suggestions.push(
+                'Correct the JSON at the reported line and column; check commas, quotes, braces, and brackets.'
+              );
+            }
+
+            if (/Referenced data card does not exist|Referenced simulator file does not exist/i.test(allLogs)) {
+              suggestions.push(
+                'Correct the referenced path or add the missing file at that exact repository location.'
+              );
+            }
+
+            if (failures.length && suggestions.length === 0) {
+              suggestions.push(
+                'Fix the first reported file and line, then push another commit; the checks will rerun automatically.'
+              );
+            }
+
+            const details = failures.map(([name]) => {
               const log = readLog(logFiles[name]);
-              const truncated = log.length > 7000
-                ? `${log.slice(0, 7000)}\n\n... log truncated; open the workflow run for complete output.`
+              const clipped = log.length > 7000
+                ? `${log.slice(0, 7000)}\n\n... log truncated.`
                 : log;
 
               return [
@@ -430,24 +414,20 @@ jobs:
                 `<summary><strong>${name}</strong> error output</summary>`,
                 '',
                 '```text',
-                truncated || 'No detailed log was produced.',
+                clipped || 'No detailed log was produced.',
                 '```',
                 '</details>',
               ].join('\n');
             }).join('\n\n');
 
-            const failed = failedChecks.length > 0;
-            const runUrl =
-              `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}` +
-              `/actions/runs/${context.runId}`;
+            const failed = failures.length > 0;
             const shortSha = (process.env.HEAD_SHA || context.sha).slice(0, 7);
-            const reviewdogNote =
-              process.env.REVIEWDOG_STATUS === 'success'
-                ? 'Reviewdog posts validator findings on affected changed lines.'
-                : 'Reviewdog setup did not complete, but the required validators still ran.';
+            const sourceNote = process.env.IS_FORK === 'true'
+              ? 'This pull request originates from a fork. It was tested with a read-only token.'
+              : 'This pull request originates from this repository.';
 
             const body = [
-              marker,
+              '<!-- upes-physics-ci-report -->',
               `## ${failed ? '❌' : '✅'} Automated PR checks`,
               '',
               `Checked commit \`${shortSha}\`.`,
@@ -458,109 +438,43 @@ jobs:
               '',
               failed
                 ? `### Suggested fixes\n${suggestions.map(item => `- ${item}`).join('\n')}`
-                : 'All required checks passed. The preview deployment can continue.',
+                : 'All required checks passed. A preview can now be published.',
               failed && details ? `\n### Error details\n${details}` : '',
               '',
-              reviewdogNote,
+              sourceNote,
               '',
-              `[Open the complete workflow run](${runUrl})`,
-              '',
-              'This comment is updated on every push to the pull request.',
+              'This comment is updated after every workflow run.',
             ].join('\n');
 
-            const comments = await github.paginate(
-              github.rest.issues.listComments,
-              {
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                per_page: 100,
-              }
-            );
+            fs.writeFileSync('.ci/report.md', body);
 
-            const existing = comments.find(comment =>
-              comment.user?.type === 'Bot' &&
-              comment.body?.includes(marker)
-            );
+      - name: Upload PR report
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: pr-report
+          path: .ci/report.md
+          if-no-files-found: error
+          retention-days: 7
 
-            if (existing) {
-              await github.rest.issues.updateComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                comment_id: existing.id,
-                body,
-              });
-            } else {
-              await github.rest.issues.createComment({
-                owner: context.repo.owner,
-                repo: context.repo.repo,
-                issue_number: context.issue.number,
-                body,
-              });
-            }
+      - name: Upload preview site
+        if: steps.build.outcome == 'success'
+        uses: actions/upload-artifact@v7
+        with:
+          name: pr-preview-site
+          path: _site/
+          if-no-files-found: error
+          include-hidden-files: true
+          retention-days: 7
 
       - name: Fail when a required check fails
         if: >-
           always() &&
           (
-            steps.branch.outcome != 'success' ||
+            steps.freshness.outcome != 'success' ||
             steps.javascript.outcome != 'success' ||
             steps.html.outcome != 'success' ||
             steps.json.outcome != 'success' ||
             steps.build.outcome != 'success'
           )
         run: exit 1
-
-  preview:
-    name: Deploy PR preview
-    needs:
-      - checks
-
-    # Deploy only after successful checks.
-    # On PR closure, run even though the checks job was skipped.
-    if: >-
-      always() &&
-      github.event.pull_request.head.repo.full_name == github.repository &&
-      github.head_ref == 'dev' &&
-      (
-        github.event.action == 'closed' ||
-        needs.checks.result == 'success'
-      )
-
-    runs-on: ubuntu-latest
-
-    permissions:
-      contents: write
-      pull-requests: write
-      issues: write
-      deployments: read
-
-    steps:
-      - name: Checkout
-        uses: actions/checkout@v6
-
-      # The checks job has its own runner, so recreate the build here.
-      - name: Create preview build
-        if: github.event.action != 'closed'
-        run: |
-          rm -rf _site
-          mkdir -p _site
-
-          rsync -a \
-            --exclude='.git/' \
-            --exclude='.github/' \
-            --exclude='.ci/' \
-            --exclude='_site/' \
-            --exclude='README.md' \
-            ./ _site/
-
-          touch _site/.nojekyll
-
-      - name: Deploy or remove preview
-        uses: rossjrw/pr-preview-action@v1.8.1
-        with:
-          source-dir: _site
-          preview-branch: gh-pages
-          umbrella-dir: pr-preview
-          wait-for-pages-deployment: ${{ github.event.action != 'closed' }}
-          qr-code: false
