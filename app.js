@@ -21,7 +21,10 @@ const catalog = {
 	    7: [
 		{ code: "PHYS8204", name: "Fundamentals of Astronomy", description: "", dataCard: "data/ug/sem7/PHYS8204/datacard.json" },
 	    ],
-	    8: []
+	    8: [],
+	    "SEC" : [
+		{ code: "HSFS2026K", name: "Radiation Safety", description: "", dataCard: "data/ug/sec/HSFS2026K/datacard.json" },
+	    ]
 	}
     },
     postgraduate: {
