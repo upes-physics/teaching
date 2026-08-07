@@ -2,12 +2,11 @@ name: PR checks and preview
 
 on:
   pull_request:
-    branches:
-      - main
     types:
       - opened
       - reopened
       - synchronize
+      - edited
 
 concurrency:
   group: pr-check-${{ github.event.pull_request.number }}
@@ -180,17 +179,13 @@ jobs:
                   add_error(path, f"Could not read JSON: {exc}")
 
           app_js_path = Path("app.js")
-
           try:
               app_js = app_js_path.read_text(encoding="utf-8")
           except Exception as exc:
               add_error(app_js_path, f"Could not read app.js: {exc}")
               app_js = ""
 
-          for relative_path in re.findall(
-              r'dataCard\s*:\s*"([^"]+)"',
-              app_js,
-          ):
+          for relative_path in re.findall(r'dataCard\s*:\s*"([^"]+)"', app_js):
               if not Path(relative_path).is_file():
                   add_error(
                       app_js_path,
@@ -204,35 +199,25 @@ jobs:
                   continue
 
               simulators = card.get("simulators", [])
-
               if not isinstance(simulators, list):
                   add_error(card_path, "'simulators' must be an array")
                   continue
 
               for index, simulator in enumerate(simulators, start=1):
                   if not isinstance(simulator, dict):
-                      add_error(
-                          card_path,
-                          f"Simulator entry {index} must be an object",
-                      )
+                      add_error(card_path, f"Simulator entry {index} must be an object")
                       continue
 
                   link = str(simulator.get("link", "")).strip()
-
                   if not link:
-                      add_error(
-                          card_path,
-                          f"Simulator entry {index} has no link",
-                      )
+                      add_error(card_path, f"Simulator entry {index} has no link")
                       continue
 
                   parsed = urlsplit(link)
-
                   if parsed.scheme or parsed.netloc:
                       continue
 
                   target = card_path.parent / parsed.path
-
                   if not target.is_file():
                       add_error(
                           card_path,
@@ -240,16 +225,13 @@ jobs:
                       )
 
           log_text = "\n".join(errors)
-
           Path(".ci/json.log").write_text(
-              log_text + ("\n" if log_text else ""),
-              encoding="utf-8",
+              log_text + ("\n" if log_text else ""), encoding="utf-8"
           )
 
           if errors:
               with Path(".ci/reviewdog.txt").open("a", encoding="utf-8") as handle:
                   handle.write(log_text + "\n")
-
               print("\nValidation errors:")
               for error in errors:
                   print(f"- {error}")
@@ -321,6 +303,7 @@ jobs:
         uses: actions/github-script@v9
         env:
           HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
           FRESHNESS_STATUS: ${{ steps.freshness.outcome }}
           JAVASCRIPT_STATUS: ${{ steps.javascript.outcome }}
           HTML_STATUS: ${{ steps.html.outcome }}
@@ -347,24 +330,19 @@ jobs:
               'Temporary build': '.ci/build.log',
             };
 
-            const readLog = (path) =>
+            const readLog = path =>
               fs.existsSync(path) ? fs.readFileSync(path, 'utf8').trim() : '';
-
-            const icon = (status) => {
-              if (status === 'success') return '✅';
-              if (status === 'failure') return '❌';
-              return '⏭️';
-            };
+            const icon = status => status === 'success'
+              ? '✅'
+              : status === 'failure' ? '❌' : '⏭️';
 
             const failures = Object.entries(statuses)
               .filter(([, status]) => status === 'failure');
-
             const table = Object.entries(statuses)
               .map(([name, status]) => `| ${name} | ${icon(status)} ${status} |`)
               .join('\n');
 
             const suggestions = [];
-
             if (statuses['Latest main included'] === 'failure') {
               suggestions.push(
                 'Merge or rebase the latest `main` branch into the pull-request branch, then push again.'
@@ -372,31 +350,26 @@ jobs:
             }
 
             const allLogs = Object.values(logFiles).map(readLog).join('\n');
-
             if (/SyntaxError:/i.test(allLogs)) {
               suggestions.push(
                 'Inspect the reported JavaScript line and the preceding line for a missing comma, quote, bracket, or parenthesis.'
               );
             }
-
             if (/Tag must be paired|tag-pair/i.test(allLogs)) {
               suggestions.push(
                 'Add the missing closing HTML tag and close nested elements in reverse order.'
               );
             }
-
             if (/Invalid JSON/i.test(allLogs)) {
               suggestions.push(
                 'Correct the JSON at the reported line and column; check commas, quotes, braces, and brackets.'
               );
             }
-
             if (/Referenced data card does not exist|Referenced simulator file does not exist/i.test(allLogs)) {
               suggestions.push(
                 'Correct the referenced path or add the missing file at that exact repository location.'
               );
             }
-
             if (failures.length && suggestions.length === 0) {
               suggestions.push(
                 'Fix the first reported file and line, then push another commit; the checks will rerun automatically.'
@@ -408,7 +381,6 @@ jobs:
               const clipped = log.length > 7000
                 ? `${log.slice(0, 7000)}\n\n... log truncated.`
                 : log;
-
               return [
                 '<details>',
                 `<summary><strong>${name}</strong> error output</summary>`,
@@ -425,6 +397,9 @@ jobs:
             const sourceNote = process.env.IS_FORK === 'true'
               ? 'This pull request originates from a fork. It was tested with a read-only token.'
               : 'This pull request originates from this repository.';
+            const stackNote = process.env.BASE_REF === 'main'
+              ? 'Test base: `main`.'
+              : `Stacked test base: \`${process.env.BASE_REF}\`. The checked-out merge contains both pull requests.`;
 
             const body = [
               '<!-- upes-physics-ci-report -->',
@@ -441,6 +416,7 @@ jobs:
                 : 'All required checks passed. A preview can now be published.',
               failed && details ? `\n### Error details\n${details}` : '',
               '',
+              stackNote,
               sourceNote,
               '',
               'This comment is updated after every workflow run.',
