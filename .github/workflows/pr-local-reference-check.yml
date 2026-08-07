@@ -1,0 +1,135 @@
+name: PR local reference checks
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - synchronize
+      - edited
+
+concurrency:
+  group: pr-local-reference-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+jobs:
+  local-references:
+    name: Local iframe references
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+
+    steps:
+      - name: Checkout proposed merged version
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Find changed HTML files
+        id: changed
+        shell: bash
+        env:
+          BASE_SHA: ${{ github.event.pull_request.base.sha }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          set -euo pipefail
+
+          git fetch --no-tags origin \
+            "+${BASE_SHA}:refs/remotes/origin/pr-base" \
+            "+${HEAD_SHA}:refs/remotes/origin/pr-head"
+
+          git diff --name-only --diff-filter=ACMR \
+            refs/remotes/origin/pr-base...refs/remotes/origin/pr-head \
+            -- '*.html' > .changed-html.txt
+
+          echo "Changed HTML files:"
+          cat .changed-html.txt || true
+
+      - name: Validate local iframe targets
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from html.parser import HTMLParser
+          from pathlib import Path
+          from urllib.parse import urlsplit
+
+          errors = []
+
+          class IframeParser(HTMLParser):
+              def __init__(self):
+                  super().__init__(convert_charrefs=True)
+                  self.sources = []
+
+              def handle_starttag(self, tag, attrs):
+                  if tag.lower() != "iframe":
+                      return
+                  values = dict(attrs)
+                  src = (values.get("src") or "").strip()
+                  if src:
+                      self.sources.append((src, self.getpos()[0]))
+
+          changed_file = Path(".changed-html.txt")
+          html_files = [
+              Path(line.strip())
+              for line in changed_file.read_text(encoding="utf-8").splitlines()
+              if line.strip()
+          ] if changed_file.exists() else []
+
+          for html_path in html_files:
+              if not html_path.is_file():
+                  continue
+
+              parser = IframeParser()
+              try:
+                  parser.feed(html_path.read_text(encoding="utf-8"))
+              except Exception as exc:
+                  message = f"Could not inspect iframe references: {exc}"
+                  errors.append((html_path, 1, message))
+                  print(
+                      f"::error file={html_path},line=1,title=Local iframe reference::{message}"
+                  )
+                  continue
+
+              for src, line in parser.sources:
+                  # Remote/embedded/browser-only sources are intentionally outside
+                  # the scope of this local repository file check.
+                  if src.startswith(("//", "#")):
+                      continue
+
+                  parsed = urlsplit(src)
+                  if parsed.scheme or parsed.netloc:
+                      continue
+
+                  local_path = parsed.path.strip()
+                  if not local_path:
+                      continue
+
+                  if local_path.startswith("/"):
+                      target = Path(local_path.lstrip("/"))
+                  else:
+                      target = html_path.parent / local_path
+
+                  target = Path(target)
+                  if not target.is_file():
+                      message = (
+                          f"Local iframe target does not exist: {src} "
+                          f"(resolved as {target})"
+                      )
+                      errors.append((html_path, line, message))
+                      print(
+                          f"::error file={html_path},line={line},"
+                          f"title=Missing local iframe target::{message}"
+                      )
+
+          if errors:
+              print("\nMissing local iframe targets:")
+              for path, line, message in errors:
+                  print(f"- {path}:{line}: {message}")
+              raise SystemExit(1)
+
+          if html_files:
+              print("All local iframe targets in changed HTML files exist.")
+          else:
+              print("No changed HTML files to inspect.")
+          PY
