@@ -1,12 +1,9 @@
 name: One-time PHYS8094 HTML repair
 
 on:
-  push:
-    branches:
-      - main
-    paths:
-      - .github/workflows/fix-pr35-html.yml
-  workflow_dispatch:
+  issue_comment:
+    types:
+      - created
 
 permissions:
   contents: write
@@ -14,6 +11,11 @@ permissions:
 jobs:
   repair:
     name: Repair PR 35 HTML
+    if: >-
+      github.event.issue.pull_request != null &&
+      github.event.issue.number == 35 &&
+      github.event.comment.body == 'repair PHYS8094' &&
+      github.actor == 'sroychow'
     runs-on: ubuntu-latest
 
     steps:
