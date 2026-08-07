@@ -399,7 +399,7 @@ function classifyReaction(bn, E, Zp, Zt, Ap, At, projKind){
   const R = nuclearRadius(Ap, At);
   const Vc = coulombBarrier(Zp, Zt, R);
 
-  let label="", cls="good", text="";
+  let label="", cls, text="";
 
   if(bn > 0.88){
     label="Elastic scattering (distant / Coulomb-dominated)";

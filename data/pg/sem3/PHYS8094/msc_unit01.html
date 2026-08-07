@@ -47,13 +47,13 @@ MathJax = {
 </head>
 <body>
 <header>
-  <div class='container'>
-    <div class='brand'>
+  <div class="container">
+    <div class="brand">
       <div>
         <strong>Nuclear &amp; Particle Physics</strong>
-        <div class='small'>Unit-wise HTML pages (B.Sc. + M.Sc.)</div>
+        <div class="small">Unit-wise HTML pages (B.Sc. + M.Sc.)</div>
       </div>
-      <span class='badge'>interactive unit</span>
+      <span class="badge">interactive unit</span>
     </div>
     <nav>
       <a class="" href="../../index.html">Home</a>
@@ -65,17 +65,17 @@ MathJax = {
 </header>
 
 <main>
-  <div class='container'>
+  <div class="container">
 
-    <div class='hero'>
+    <div class="hero">
       <h1>Unit 1: Nuclear Forces &amp; Alpha Tunneling</h1>
-      <div class='kv'>
+      <div class="kv">
         <div><strong>Track</strong></div><div>MSc</div>
         <div><strong>Contact hours</strong></div><div>10 Lecture Hours</div>
       </div>
     </div>
 
-    <div class='section'>
+    <div class="section">
       <h2>Core topics</h2>
       <ul>
         <li>Nature and properties of nuclear force (short-range, saturation, repulsive core, charge-independence)</li>
@@ -83,12 +83,12 @@ MathJax = {
         <li>Alpha decay as quantum tunneling through the Coulomb barrier</li>
         <li>Exponential tunneling probability and the Geiger–Nuttall trend (qualitative)</li>
       </ul>
-      <div class='note'>
+      <div class="note">
         <b>Teaching note:</b> The interactive plots below are a <i>conceptual visualization</i>. Numerical values are scaled for intuition (not precision nuclear-data prediction).
       </div>
     </div>
 
-    <div class='section'>
+    <div class="section">
       <h2>Nuclear forces: key properties (quick revision)</h2>
       <p>
         Inside the nucleus, nucleons are bound mainly by the <b>strong nuclear force</b>, which is very strong but acts only over a short range.
@@ -102,7 +102,7 @@ MathJax = {
         <li><b>Charge-independence (approx.):</b> strong force is nearly the same for pp, nn, and np after removing Coulomb.</li>
       </ul>
     </div>
-   <div class='section'>
+   <div class="section">
   <h2>Nuclear Force vs Distance (Physical Picture)</h2>
 
   <p>
@@ -226,10 +226,9 @@ MathJax = {
 
 </div>
 
-</div>
-    <div class='section'>
+    <div class="section">
       <h2>Interactive: Alpha tunneling explorer</h2>
-     <div class='section'>
+     <div class="section">
   <h3>Tunneling Probability (Gamow Factor)</h3>
 
   <p>
@@ -257,34 +256,34 @@ MathJax = {
     <b>Key insight:</b> Tunneling probability depends <b>exponentially</b> on barrier → small change in $Q$ or $Z$ drastically changes half-life.
   </p>
 </div>
-      <div class='grid'>
-        <div class='card'>
+      <div class="grid">
+        <div class="card">
           <h3>Potential barrier + animated tunneling</h3>
-          <canvas id='barrier' width='920' height='440' aria-label='Potential barrier plot'></canvas>
-          <div class='pillrow'>
-            <div class='pill'>Barrier height at contact <b id='vh'>–</b> MeV</div>
-            <div class='pill'>Q-value <b id='qv'>–</b> MeV</div>
-            <div class='pill'>Tunneling probability (scaled) <b id='pout'>–</b></div>
-            <div class='pill'>Estimated log<sub>10</sub>(T<sub>1/2</sub>/s) <b id='tout'>–</b></div>
+          <canvas id="barrier" width="920" height="440" aria-label="Potential barrier plot"></canvas>
+          <div class="pillrow">
+            <div class="pill">Barrier height at contact <b id="vh">–</b> MeV</div>
+            <div class="pill">Q-value <b id="qv">–</b> MeV</div>
+            <div class="pill">Tunneling probability (scaled) <b id="pout">–</b></div>
+            <div class="pill">Estimated log<sub>10</sub>(T<sub>1/2</sub>/s) <b id="tout">–</b></div>
           </div>
         </div>
 
-        <div class='card controls'>
+        <div class="card controls">
           <h3>Controls</h3>
 
-          <label for='zSlider'>Parent atomic number Z (controls Coulomb barrier)</label>
-          <input id='zSlider' type='range' min='20' max='100' value='84' step='1'/>
-          <div class='pill'>Z = <b id='zVal'>84</b> &nbsp; (daughter charge Z<sub>d</sub> = Z−2 = <b id='zdVal'>82</b>)</div>
+          <label for="zSlider">Parent atomic number Z (controls Coulomb barrier)</label>
+          <input id="zSlider" type="range" min="20" max="100" value="84" step="1"/>
+          <div class="pill">Z = <b id="zVal">84</b> &nbsp; (daughter charge Z<sub>d</sub> = Z−2 = <b id="zdVal">82</b>)</div>
 
-          <label for='qSlider'>Q-value (MeV) (controls tunneling strongly)</label>
-          <input id='qSlider' type='range' min='3.0' max='10.0' value='6.0' step='0.1'/>
-          <div class='pill'>Q = <b id='qVal'>6.0</b> MeV</div>
+          <label for="qSlider">Q-value (MeV) (controls tunneling strongly)</label>
+          <input id="qSlider" type="range" min="3.0" max="10.0" value="6.0" step="0.1"/>
+          <div class="pill">Q = <b id="qVal">6.0</b> MeV</div>
 
-          <label for='attemptSlider'>Assault frequency (visual speed)</label>
-          <input id='attemptSlider' type='range' min='0.5' max='3.0' value='1.4' step='0.1'/>
-          <div class='pill'>Animation speed = <b id='spdVal'>1.4</b>x</div>
+          <label for="attemptSlider">Assault frequency (visual speed)</label>
+          <input id="attemptSlider" type="range" min="0.5" max="3.0" value="1.4" step="0.1"/>
+          <div class="pill">Animation speed = <b id="spdVal">1.4</b>x</div>
 
-          <div style='margin-top:12px; font-size:13px; color:rgba(255,255,255,.85)'>
+          <div style="margin-top:12px; font-size:13px; color:rgba(255,255,255,.85)">
             <b>What to observe:</b>
             <ul>
               <li>Increasing <b>Z</b> raises the Coulomb barrier (harder to tunnel).</li>
@@ -293,30 +292,30 @@ MathJax = {
             </ul>
           </div>
 
-          <a class='btn' href='#gn'>Jump to Geiger–Nuttall plot</a>
+          <a class="btn" href="#gn">Jump to Geiger–Nuttall plot</a>
         </div>
       </div>
 
-      <div class='note' style='margin-top:12px'>
+      <div class="note" style="margin-top:12px">
         <b>Model used (for visualization):</b> Coulomb barrier outside nuclear radius is approximated as
-        <span style='white-space:nowrap'>V(r) ≈ 1.44·(2·Z<sub>d</sub>)/r</span> (MeV, with r in fm). A simple exponential “Gamow-like” scaling is used for probability and a straight-line Geiger–Nuttall form for the plot.
+        <span style="white-space:nowrap">V(r) ≈ 1.44·(2·Z<sub>d</sub>)/r</span> (MeV, with r in fm). A simple exponential “Gamow-like” scaling is used for probability and a straight-line Geiger–Nuttall form for the plot.
       </div>
     </div>
 
-    <div class='section' id='gn'>
+    <div class="section" id="gn">
       <h2>Geiger–Nuttall trend (interactive plot)</h2>
       <p>
         Empirically, alpha half-life correlates approximately linearly with a Coulomb/tunneling parameter.
         Here we show a <b>qualitative</b> Geiger–Nuttall-style plot and update the moving point as you change Z and Q.
       </p>
-      <canvas id='gnPlot' width='920' height='420' aria-label='Geiger Nuttall plot'></canvas>
-      <div class='pillrow'>
-        <div class='pill'>x = Z<sub>d</sub>/√Q = <b id='xGN'>–</b></div>
-        <div class='pill'>y = log<sub>10</sub>(T<sub>1/2</sub>/s) = <b id='yGN'>–</b></div>
+      <canvas id="gnPlot" width="920" height="420" aria-label="Geiger Nuttall plot"></canvas>
+      <div class="pillrow">
+        <div class="pill">x = Z<sub>d</sub>/√Q = <b id="xGN">–</b></div>
+        <div class="pill">y = log<sub>10</sub>(T<sub>1/2</sub>/s) = <b id="yGN">–</b></div>
       </div>
     </div>
 
-    <div class='section'>
+    <div class="section">
       <h2>Existing simulator (from your course site)</h2>
       <p>
         Use this full simulator for deeper exploration (barrier parameters, Q-value and Z dependence). The interactive visualization above is meant for fast intuition and classroom explanation.
@@ -324,12 +323,12 @@ MathJax = {
       <iframe src="../../simulators/final_alpha_28April.html" width="100%" height="650px"></iframe>
     </div>
 
-    <div class='pager' style='display:flex;justify-content:space-between;gap:12px;margin-top:14px;'>
-      <a class='btn' href='../index.html'>Back: Unit list</a>
-      <a class='btn' href='msc_unit02.html'>Next: Unit 2</a>
+    <div class="pager" style="display:flex;justify-content:space-between;gap:12px;margin-top:14px;">
+      <a class="btn" href="../index.html">Back: Unit list</a>
+      <a class="btn" href="msc_unit02.html">Next: Unit 2</a>
     </div>
 
-    <div class='footer'>
+    <div class="footer">
       Built for teaching notes. Replace placeholders freely. Interactive blocks are self-contained.
     </div>
 
