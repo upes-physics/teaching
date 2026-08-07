@@ -1,4 +1,4 @@
-name: PR commands
+name: Stacked PR command
 
 on:
   issue_comment:
@@ -6,8 +6,8 @@ on:
       - created
 
 jobs:
-  commands:
-    name: Handle PR comment commands
+  stack:
+    name: Handle stacked PR command
     if: github.event.issue.pull_request != null
     runs-on: ubuntu-latest
 
@@ -17,19 +17,18 @@ jobs:
       pull-requests: write
 
     steps:
-      - name: Handle PR command
+      - name: Handle test-with command
         uses: actions/github-script@v9
         with:
           script: |
             const body = context.payload.comment.body.trim();
-            const labelMatch = body.match(/^label\s+(.+?)\s*$/i);
             const stackMatch = body.match(
               /^test\s+with\s+(?:#\s*)?(?:pr\s*)?#?\s*(\d+)(?:\s+and\s+main)?\s*$/i
             );
             const resetMatch = /^test\s+with\s+main\s*$/i.test(body);
 
-            if (!labelMatch && !stackMatch && !resetMatch) {
-              core.info('Comment is not a recognized PR command.');
+            if (!stackMatch && !resetMatch) {
+              core.info('Comment is not a stacked-PR command.');
               return;
             }
 
@@ -37,128 +36,8 @@ jobs:
             const repo = context.repo.repo;
             const currentNumber = context.issue.number;
             const actor = context.actor;
-
-            const current = (await github.rest.pulls.get({
-              owner, repo, pull_number: currentNumber,
-            })).data;
-
-            if (current.state !== 'open') {
-              core.notice(`PR #${currentNumber} is not open.`);
-              return;
-            }
-
-            let permission = 'none';
-            try {
-              permission = (await github.rest.repos.getCollaboratorPermissionLevel({
-                owner, repo, username: actor,
-              })).data.permission;
-            } catch (error) {
-              core.info(`No collaborator permission record for ${actor}.`);
-            }
-
-            if (labelMatch) {
-              let requestedName = labelMatch[1].trim();
-              if (
-                (requestedName.startsWith('"') && requestedName.endsWith('"')) ||
-                (requestedName.startsWith("'") && requestedName.endsWith("'"))
-              ) {
-                requestedName = requestedName.slice(1, -1).trim();
-              }
-
-              const isMaintainer = ['triage', 'write', 'maintain', 'admin'].includes(permission);
-              const isRequestedReviewer = (current.requested_reviewers || [])
-                .some(reviewer => reviewer.login === actor);
-
-              let hasReviewed = false;
-              try {
-                const reviews = await github.paginate(
-                  github.rest.pulls.listReviews,
-                  { owner, repo, pull_number: currentNumber, per_page: 100 }
-                );
-                hasReviewed = reviews.some(review => review.user?.login === actor);
-              } catch (error) {
-                core.warning(`Could not inspect submitted reviews: ${error.message}`);
-              }
-
-              if (!isMaintainer && !isRequestedReviewer && !hasReviewed) {
-                await github.rest.issues.createComment({
-                  owner,
-                  repo,
-                  issue_number: currentNumber,
-                  body: `⛔ @${actor}, the \`label <label name>\` command is restricted to repository maintainers and reviewers of this pull request.`,
-                });
-                return;
-              }
-
-              const repoLabels = await github.paginate(
-                github.rest.issues.listLabelsForRepo,
-                { owner, repo, per_page: 100 }
-              );
-              let label = repoLabels.find(candidate =>
-                candidate.name.toLowerCase() === requestedName.toLowerCase()
-              );
-
-              if (!label) {
-                const configResponse = await github.rest.repos.getContent({
-                  owner,
-                  repo,
-                  path: '.github/label-rules.json',
-                  ref: context.payload.repository.default_branch,
-                });
-                const config = JSON.parse(
-                  Buffer.from(configResponse.data.content, 'base64').toString('utf8')
-                );
-                const rules = Array.isArray(config.labels) ? config.labels : [];
-                const rule = rules.find(candidate =>
-                  candidate?.name?.toLowerCase() === requestedName.toLowerCase()
-                );
-
-                if (!rule) {
-                  await github.rest.issues.createComment({
-                    owner,
-                    repo,
-                    issue_number: currentNumber,
-                    body: [
-                      `⛔ Label \`${requestedName}\` does not exist.`,
-                      '',
-                      'Create it in the repository first, or add it to `.github/label-rules.json`.',
-                    ].join('\n'),
-                  });
-                  return;
-                }
-
-                label = (await github.rest.issues.createLabel({
-                  owner,
-                  repo,
-                  name: rule.name,
-                  color: String(rule.color || 'D4C5F9').replace('#', ''),
-                  description: rule.description || '',
-                })).data;
-              }
-
-              await github.rest.issues.addLabels({
-                owner, repo, issue_number: currentNumber, labels: [label.name],
-              });
-              await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number: currentNumber,
-                body: `🏷️ @${actor} added label \`${label.name}\` to PR #${currentNumber}.`,
-              });
-              return;
-            }
-
-            if (!['admin', 'maintain', 'write'].includes(permission)) {
-              await github.rest.issues.createComment({
-                owner,
-                repo,
-                issue_number: currentNumber,
-                body: `⛔ @${actor}, stacked-PR commands are restricted to repository maintainers with write access.`,
-              });
-              return;
-            }
-
             const marker = '<!-- upes-physics-stack-status -->';
+
             async function publishStatus(message) {
               const comments = await github.paginate(
                 github.rest.issues.listComments,
@@ -179,6 +58,31 @@ jobs:
               }
             }
 
+            let permission = 'none';
+            try {
+              permission = (await github.rest.repos.getCollaboratorPermissionLevel({
+                owner, repo, username: actor,
+              })).data.permission;
+            } catch (error) {
+              core.warning(`Could not resolve permission for ${actor}: ${error.message}`);
+            }
+
+            if (!['admin', 'maintain', 'write'].includes(permission)) {
+              await publishStatus(
+                `⛔ @${actor}, stacked-PR commands are restricted to repository maintainers with write access.`
+              );
+              return;
+            }
+
+            const current = (await github.rest.pulls.get({
+              owner, repo, pull_number: currentNumber,
+            })).data;
+
+            if (current.state !== 'open') {
+              core.notice(`PR #${currentNumber} is not open.`);
+              return;
+            }
+
             if (resetMatch) {
               if (current.base.ref !== 'main') {
                 await github.rest.pulls.update({
@@ -190,14 +94,14 @@ jobs:
                 '',
                 `PR #${currentNumber} is now tested directly against \`main\`.`,
                 '',
-                'Any virtual fork-stack preview is no longer the active test configuration.',
+                'Any virtual fork combined-test preview is no longer the active requested test.',
               ].join('\n'));
               return;
             }
 
             const targetNumber = Number(stackMatch[1]);
             if (targetNumber === currentNumber) {
-              await publishStatus('⛔ A pull request cannot be stacked on itself.');
+              await publishStatus('⛔ A pull request cannot be tested with itself.');
               return;
             }
 
@@ -225,7 +129,7 @@ jobs:
               target.head.ref === current.head.ref &&
               target.head.repo?.full_name === current.head.repo?.full_name
             ) {
-              await publishStatus('⛔ Both PRs use the same head branch and cannot be stacked.');
+              await publishStatus('⛔ Both PRs use the same head branch and cannot be combined.');
               return;
             }
 
@@ -245,14 +149,23 @@ jobs:
             const targetIsFork = target.head.repo?.full_name !== `${owner}/${repo}`;
 
             if (targetIsFork) {
+              if (target.base.ref !== 'main') {
+                await publishStatus([
+                  `⛔ Fork PR #${targetNumber} is based on \`${target.base.ref}\`, not \`main\`.`,
+                  '',
+                  'Fork combined tests currently require the target PR to be opened against `main`.',
+                ].join('\n'));
+                return;
+              }
+
               await publishStatus([
                 '## 🧪 Combined fork PR test requested',
                 '',
                 `Testing PR #${currentNumber} together with fork PR #${targetNumber}.`,
                 `Fork source: \`${target.head.repo.full_name}:${target.head.ref}\``,
                 '',
-                `The virtual checkout will be \`latest main + PR #${targetNumber} + PR #${currentNumber}\`.`,
-                'No repository branch is created for the fork PR.',
+                `Virtual checkout: \`latest main + PR #${targetNumber} + PR #${currentNumber}\`.`,
+                'The actual base of this PR remains unchanged.',
               ].join('\n'));
 
               try {
@@ -310,8 +223,8 @@ jobs:
               `PR #${currentNumber} will now be tested together with PR #${targetNumber}.`,
               `GitHub base branch changed to \`${desiredBase}\`.`,
               '',
-              `The validation checkout represents \`latest main + PR #${targetNumber} + PR #${currentNumber}\`.`,
+              `Validation checkout: \`latest main + PR #${targetNumber} + PR #${currentNumber}\`.`,
               '',
               'The checks and PR preview will rerun automatically.',
-              'Use `test with main` on this PR to return it to the normal base.',
+              'Use `test with main` to return this PR to the normal base.',
             ].join('\n'));
