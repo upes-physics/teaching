@@ -1,26 +1,14 @@
 name: Build fork stacked PR base
 
 on:
-  workflow_dispatch:
-    inputs:
-      current_pr:
-        description: PR to test
-        required: true
-        type: string
-      target_pr:
-        description: Fork PR to combine with
-        required: true
-        type: string
   pull_request_target:
     types:
-      - labeled
+      - edited
 
 jobs:
   build:
     name: Build integration base
-    if: >-
-      github.event_name == 'workflow_dispatch' ||
-      github.event.label.name == 'stack-test-request'
+    if: contains(github.event.pull_request.body || '', '<!-- upes-physics-stack-target:')
     runs-on: ubuntu-latest
 
     permissions:
@@ -31,35 +19,17 @@ jobs:
     steps:
       - name: Build and apply fork integration base
         uses: actions/github-script@v9
-        env:
-          INPUT_CURRENT_PR: ${{ inputs.current_pr }}
-          INPUT_TARGET_PR: ${{ inputs.target_pr }}
         with:
           script: |
             const owner = context.repo.owner;
             const repo = context.repo.repo;
+            const current = context.payload.pull_request;
+            const currentNumber = current.number;
             const marker = '<!-- upes-physics-stack-status -->';
-            const targetMarkerPattern = /<!-- upes-physics-stack-target:(\d+) -->/;
-
-            let currentNumber;
-            let targetNumber;
-
-            if (context.eventName === 'pull_request_target') {
-              currentNumber = context.payload.pull_request.number;
-              const comments = await github.paginate(
-                github.rest.issues.listComments,
-                { owner, repo, issue_number: currentNumber, per_page: 100 }
-              );
-              const requestComment = [...comments].reverse().find(comment =>
-                comment.user?.type === 'Bot' &&
-                targetMarkerPattern.test(comment.body || '')
-              );
-              const match = requestComment?.body?.match(targetMarkerPattern);
-              targetNumber = match ? Number(match[1]) : NaN;
-            } else {
-              currentNumber = Number(process.env.INPUT_CURRENT_PR);
-              targetNumber = Number(process.env.INPUT_TARGET_PR);
-            }
+            const targetMatch = (current.body || '').match(
+              /<!-- upes-physics-stack-target:(\d+) -->/
+            );
+            const targetNumber = targetMatch ? Number(targetMatch[1]) : NaN;
 
             async function publishStatus(message) {
               const comments = await github.paginate(
@@ -81,39 +51,17 @@ jobs:
               }
             }
 
-            async function removeRequestLabel() {
-              try {
-                await github.rest.issues.removeLabel({
-                  owner,
-                  repo,
-                  issue_number: currentNumber,
-                  name: 'stack-test-request',
-                });
-              } catch (error) {
-                if (error.status !== 404) {
-                  core.warning(`Could not remove request label: ${error.message}`);
-                }
-              }
-            }
-
-            if (!Number.isInteger(currentNumber) || !Number.isInteger(targetNumber)) {
-              if (Number.isInteger(currentNumber)) {
-                await publishStatus('⛔ Could not determine the fork PR requested for this stacked test.');
-                await removeRequestLabel();
-              }
+            if (!Number.isInteger(targetNumber)) {
+              await publishStatus('⛔ Could not determine the fork PR requested for this stacked test.');
               return;
             }
 
-            const current = (await github.rest.pulls.get({
-              owner, repo, pull_number: currentNumber,
-            })).data;
             const target = (await github.rest.pulls.get({
               owner, repo, pull_number: targetNumber,
             })).data;
 
             if (current.state !== 'open' || target.state !== 'open') {
               await publishStatus('⛔ Both pull requests must still be open to build a stacked test.');
-              await removeRequestLabel();
               return;
             }
 
@@ -123,7 +71,6 @@ jobs:
                 '',
                 'Run the normal `test with PR <number>` command again.',
               ].join('\n'));
-              await removeRequestLabel();
               return;
             }
 
@@ -133,7 +80,6 @@ jobs:
                 '',
                 'Fork-based stacked tests require the target PR to be opened against `main`.',
               ].join('\n'));
-              await removeRequestLabel();
               return;
             }
 
@@ -143,7 +89,6 @@ jobs:
                 '',
                 'Resolve conflicts in the target PR, then run the command again.',
               ].join('\n'));
-              await removeRequestLabel();
               return;
             }
 
@@ -191,7 +136,6 @@ jobs:
                 '',
                 `GitHub reported: ${error.message}`,
               ].join('\n'));
-              await removeRequestLabel();
               return;
             }
 
@@ -218,7 +162,6 @@ jobs:
               }
             }
 
-            await removeRequestLabel();
             await publishStatus([
               '## 🧪 Stacked PR test enabled',
               '',
