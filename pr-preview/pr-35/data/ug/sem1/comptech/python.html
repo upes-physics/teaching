@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Python Simulators | Computational Techniques</title><link rel="stylesheet" href="css/style.css"></head>
+<body>
+<header class="site-header">
+<div class="container"><h1>Unit 2: Programming with Python</h1><p>Static browser simulators for teaching Python basics, scientific programming, and data handling.</p></div>
+</header>
+<main class="container">
+<section class="hero-card"><h2>Syllabus Focus</h2><p>Introduction, Python literals, operators, variables, decision making, loops, logic operators, lists, sorting list, functions, scopes, tuples and dictionaries, modules and packages, errors and exceptions, characters and strings, basic object programming, processing files, NumPy and Pandas.</p></section>
+<section class="sim-grid">
+<article class="sim-card"><h2>1. Variables and Expressions</h2><p>Change <code>a</code> and <code>b</code> to see assignment and expression evaluation.</p><div class="control-row"><label>Value of a</label><input type="number" id="varA" value="5"></div><div class="control-row"><label>Value of b</label><input type="number" id="varB" value="3"></div><button onclick="simulateVariables()">Run</button><pre class="code-box">a = 5
+b = 3
+c = a + b
+print(c)</pre><div id="variablesOutput" class="output-box"></div></article>
+<article class="sim-card"><h2>2. If-Else Condition</h2><p>Check whether a number is even or odd.</p><div class="control-row"><label>Enter x</label><input type="number" id="conditionNumber" value="12"></div><button onclick="simulateCondition()">Check</button><pre class="code-box">if x % 2 == 0:
+    print("Even")
+else:
+    print("Odd")</pre><div id="conditionOutput" class="output-box"></div></article>
+<article class="sim-card"><h2>3. For Loop</h2><p>Visualize each iteration of a loop.</p><div class="control-row"><label>Number of repetitions</label><input type="number" id="loopCount" value="5" min="1" max="20"></div><button onclick="simulateLoop()">Run Loop</button><pre class="code-box">for i in range(5):
+    print(i)</pre><div id="loopOutput" class="output-box"></div></article>
+<article class="sim-card"><h2>4. Function</h2><p>Understand input, processing, and return value.</p><div class="control-row"><label>Enter x</label><input type="number" id="functionInput" value="4"></div><button onclick="simulateFunction()">Evaluate</button><pre class="code-box">def square(x):
+    return x * x</pre><div id="functionOutput" class="output-box"></div></article>
+<article class="sim-card"><h2>5. List Operations</h2><p>Enter comma-separated numbers and calculate sum, maximum, average, and sorted list.</p><div class="control-row"><label>List values</label><input type="text" id="listInput" value="2, 4, 6, 8, 10"></div><button onclick="simulateList()">Analyze</button><pre class="code-box">numbers = [2, 4, 6, 8, 10]
+sum(numbers)
+max(numbers)
+sorted(numbers)</pre><div id="listOutput" class="output-box"></div></article>
+<article class="sim-card"><h2>6. Plotting Logic</h2><p>Select a function and observe the plotted curve.</p><div class="control-row"><label>Choose function</label><select id="plotFunction"><option value="linear">y = x</option><option value="square">y = x²</option><option value="sine">y = sin(x)</option><option value="cosine">y = cos(x)</option></select></div><button onclick="simulatePlot()">Plot</button><pre class="code-box">x = np.linspace(-10, 10, 100)
+y = f(x)
+plt.plot(x, y)</pre><canvas id="plotCanvas" width="520" height="300"></canvas><div id="plotOutput" class="note-box"></div></article>
+<article class="sim-card"><h2>7. Dictionary Lookup</h2><p>Use a dictionary to map student names to marks.</p><div class="control-row"><label>Student name</label><select id="dictStudent"><option>Amit</option><option>Riya</option><option>Farhan</option><option>Meera</option></select></div><button onclick="simulateDictionary()">Lookup</button><pre class="code-box">marks = {"Amit": 82, "Riya": 91, "Farhan": 76, "Meera": 88}
+print(marks[name])</pre><div id="dictionaryOutput" class="output-box"></div></article>
+<article class="sim-card"><h2>8. File Processing</h2><p>Paste lines of data and simulate reading a text file line by line.</p><div class="control-row"><label>File content</label><textarea id="fileText">12.5
+14.0
+13.5
+15.0</textarea></div><button onclick="simulateFileProcessing()">Process File</button><pre class="code-box">with open("data.txt") as f:
+    values = [float(line) for line in f]
+print(sum(values)/len(values))</pre><div id="fileOutput" class="output-box"></div></article>
+<article class="sim-card"><h2>9. NumPy-style Array</h2><p>Generate equally spaced points similar to <code>np.linspace</code>.</p><div class="two-col"><div class="control-row"><label>Start</label><input id="npStart" type="number" value="0"></div><div class="control-row"><label>Stop</label><input id="npStop" type="number" value="10"></div><div class="control-row"><label>Number of points</label><input id="npN" type="number" value="6" min="2"></div></div><button onclick="simulateLinspace()">Generate</button><pre class="code-box">x = np.linspace(start, stop, n)</pre><div id="linspaceOutput" class="output-box"></div></article>
+<article class="sim-card"><h2>10. Pandas-style Table</h2><p>Enter marks and generate a simple dataframe-like summary.</p><div class="control-row"><label>CSV data</label><textarea id="csvText">Name,Marks
+Amit,82
+Riya,91
+Farhan,76
+Meera,88</textarea></div><button onclick="simulatePandas()">Summarize</button><pre class="code-box">df = pd.read_csv("marks.csv")
+df["Marks"].mean()</pre><div id="pandasOutput" class="output-box"></div></article>
+</section>
+</main><footer>Unit 2: Python Programming</footer><script src="simulator.js"></script></body></html>
