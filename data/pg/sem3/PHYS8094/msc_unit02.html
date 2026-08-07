@@ -127,9 +127,6 @@
         </div>
       </details>
 
-      <details>
-        </div>
-      </details>
     </div>
   </div>
 
@@ -349,7 +346,6 @@ function pairingDelta(A,Z,ap,kp,enabled=true){
 }
 
 function semfTerms(A,Z,coeff,pairEnabled=true){
-  const N = A - Z;
   const av=coeff.av, as=coeff.as, ac=coeff.ac, aa=coeff.aa, ap=coeff.ap, kp=coeff.kp;
 
   const vol = av * A;
@@ -455,7 +451,6 @@ function plotTermsVsA(coeff){
 
   let xMin = 0;let xMax = 300;function X(x){   return padL + (x - xMin)/(xMax - xMin) * (canvas.width - padL - padR);}
   let yMin = -10;let yMax = 20;function Y(y){   return padT + (yMax - y) / (yMax - yMin) * (canvas.height - padT - padB);}
-  let prev = {};
 
   function drawCurve(arr, color){
       ctx.strokeStyle=color;
