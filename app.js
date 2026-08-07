@@ -20,6 +20,7 @@ const catalog = {
 	    6: [],
 	    7: [
 		{ code: "PHYS8204", name: "Fundamentals of Astronomy", description: "", dataCard: "data/ug/sem7/PHYS8204/datacard.json" },
+		{ code: "PHYS4022", name: "Fundamental of Astrophysics", description: "", dataCard: "data/ug/sem7/PHYS4022/datacard.json" },
 	    ],
 	    8: [],
 	    "SEC" : [
