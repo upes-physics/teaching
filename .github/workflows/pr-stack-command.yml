@@ -270,18 +270,6 @@ jobs:
               return;
             }
 
-            const currentComparison = (await github.rest.repos.compareCommits({
-              owner, repo, base: 'main', head: current.head.sha,
-            })).data;
-            if (!['ahead', 'identical'].includes(currentComparison.status)) {
-              await publishStatus([
-                `⛔ PR #${currentNumber} does not contain the latest \`main\`.`,
-                '',
-                'Update this PR with the latest `main`, then run the stacked test command again.',
-              ].join('\n'));
-              return;
-            }
-
             const targetIsFork = target.head.repo?.full_name !== `${owner}/${repo}`;
             let desiredBase;
             let modeText;
@@ -342,27 +330,25 @@ jobs:
                   });
                 }
 
-                try {
-                  await github.rest.repos.merge({
-                    owner,
-                    repo,
-                    base: desiredBase,
-                    head: 'main',
-                    commit_message: `Refresh ${desiredBase} with latest main`,
-                  });
-                } catch (error) {
-                  if (error.status !== 204) throw error;
-                }
+                await github.rest.repos.merge({
+                  owner,
+                  repo,
+                  base: desiredBase,
+                  head: 'main',
+                  commit_message: `Refresh ${desiredBase} with latest main`,
+                });
               } catch (error) {
-                await deleteTemporaryBase(desiredBase);
-                await publishStatus([
-                  `## ⛔ Could not build fork integration base`,
-                  '',
-                  `PR #${targetNumber} could not be combined cleanly with the latest \`main\`.`,
-                  '',
-                  `GitHub reported: ${error.message}`,
-                ].join('\n'));
-                return;
+                if (error.status !== 204) {
+                  await deleteTemporaryBase(desiredBase);
+                  await publishStatus([
+                    `## ⛔ Could not build fork integration base`,
+                    '',
+                    `PR #${targetNumber} could not be combined cleanly with the latest \`main\`.`,
+                    '',
+                    `GitHub reported: ${error.message}`,
+                  ].join('\n'));
+                  return;
+                }
               }
 
               modeText = [
