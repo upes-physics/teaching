@@ -39,6 +39,7 @@ jobs:
         shell: bash
         env:
           PR_NUMBER: ${{ github.event.pull_request.number }}
+          BASE_REF: ${{ github.event.pull_request.base.ref }}
         run: |
           set -euo pipefail
 
@@ -46,16 +47,32 @@ jobs:
             "+refs/heads/main:refs/remotes/origin/main" \
             "+refs/pull/${PR_NUMBER}/head:refs/remotes/origin/pr-head"
 
-          if ! git merge-base --is-ancestor \
-            refs/remotes/origin/main \
-            refs/remotes/origin/pr-head; then
-            message="This pull request is not based on the latest main branch. Merge or rebase the latest main into the PR branch, then push again."
-            echo "$message" | tee .ci/freshness.log
-            echo "::error title=PR branch is behind main::$message"
-            exit 1
-          fi
+          if [ "$BASE_REF" = "main" ]; then
+            if ! git merge-base --is-ancestor \
+              refs/remotes/origin/main \
+              refs/remotes/origin/pr-head; then
+              message="This pull request is not based on the latest main branch. Merge or rebase the latest main into the PR branch, then push again."
+              echo "$message" | tee .ci/freshness.log
+              echo "::error title=PR branch is behind main::$message"
+              exit 1
+            fi
 
-          echo "PR branch contains the latest main commit." | tee .ci/freshness.log
+            echo "PR branch contains the latest main commit." | tee .ci/freshness.log
+          else
+            git fetch --no-tags origin \
+              "+refs/heads/${BASE_REF}:refs/remotes/origin/test-base"
+
+            if ! git merge-base --is-ancestor \
+              refs/remotes/origin/main \
+              refs/remotes/origin/test-base; then
+              message="This stacked test base does not contain the latest main branch. Refresh the stacked test command and try again."
+              echo "$message" | tee .ci/freshness.log
+              echo "::error title=Stacked test base is behind main::$message"
+              exit 1
+            fi
+
+            echo "Stacked test base ${BASE_REF} contains the latest main commit." | tee .ci/freshness.log
+          fi
 
       - name: Set up Node
         uses: actions/setup-node@v6
@@ -345,7 +362,9 @@ jobs:
             const suggestions = [];
             if (statuses['Latest main included'] === 'failure') {
               suggestions.push(
-                'Merge or rebase the latest `main` branch into the pull-request branch, then push again.'
+                process.env.BASE_REF === 'main'
+                  ? 'Merge or rebase the latest `main` branch into the pull-request branch, then push again.'
+                  : 'Refresh the stacked PR test so its test base contains the latest `main` branch.'
               );
             }
 
