@@ -58,6 +58,15 @@ jobs:
               );
             }
 
+      # The deploy action runs Git commands and therefore needs a checked-out
+      # repository, even though the preview files come from a workflow artifact.
+      - name: Checkout deployment repository
+        if: steps.current.outputs.is_current == 'true'
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
       - name: Download PR report
         if: steps.current.outputs.is_current == 'true'
         uses: actions/download-artifact@v8
