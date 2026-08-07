@@ -156,6 +156,7 @@ jobs:
         uses: actions/github-script@v9
         env:
           PR_NUMBER: ${{ steps.current.outputs.pr_number }}
+          BUILT_AT: ${{ github.event.workflow_run.updated_at }}
         with:
           script: |
             const marker = '<!-- upes-physics-preview-link -->';
@@ -163,14 +164,24 @@ jobs:
             const url =
               `https://${context.repo.owner}.github.io/${context.repo.repo}` +
               `/pr-preview/pr-${prNumber}/`;
+            const branchUrl =
+              `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}` +
+              `/tree/gh-pages`;
+            const deploymentsUrl =
+              `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}` +
+              `/deployments`;
+
+            const builtAt = new Date(process.env.BUILT_AT);
+            const builtAtText = Number.isNaN(builtAt.getTime())
+              ? 'the latest successful check run'
+              : `${builtAt.toISOString().slice(0, 16).replace('T', ' ')} UTC`;
 
             const body = [
+              `[PR Preview](${url})`,
+              ':---:',
+              `| <p></p> :rocket: View preview at <br> ${url} <br><br>`,
+              `| <h6>Built to branch [\`gh-pages\`](${branchUrl}) at ${builtAtText}. <br> Preview will be ready when the [GitHub Pages deployment](${deploymentsUrl}) is complete. <br> It is rebuilt after every successful check run and removed when the pull request is closed. <br><br> </h6>`,
               marker,
-              '## 🚀 PR preview',
-              '',
-              `[Open the preview site](${url})`,
-              '',
-              'The preview is rebuilt after every successful check run and removed when the pull request is closed.',
             ].join('\n');
 
             const comments = await github.paginate(
