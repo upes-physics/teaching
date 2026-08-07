@@ -1,0 +1,489 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Radiation Monitoring Virtual Interface</title>
+    <style>
+        :root {
+            --bg-color: #1a1a24;
+            --panel-color: #242432;
+            --text-color: #e2e8f0;
+            --accent-blue: #3b82f6;
+            --accent-green: #10b981;
+            --accent-red: #ef4444;
+            --accent-purple: #a855f7;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        h1 {
+            margin-bottom: 5px;
+            font-weight: 600;
+            color: #ffffff;
+        }
+
+        .subtitle {
+            font-size: 0.95rem;
+            color: #94a3b8;
+            margin-bottom: 25px;
+            text-align: center;
+        }
+
+        .container {
+            display: grid;
+            grid-template-columns: 1fr 350px;
+            gap: 20px;
+            max-width: 1200px;
+            width: 100%;
+        }
+
+        .main-panel {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        canvas {
+            background-color: #0f172a;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3);
+            width: 100%;
+            height: auto;
+        }
+
+        .sidebar {
+            background-color: var(--panel-color);
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.3);
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .control-group {
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        label {
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+            color: #94a3b8;
+            display: flex;
+            justify-content: space-between;
+        }
+
+        label span {
+            color: var(--accent-blue);
+        }
+
+        select {
+            background-color: #1e293b;
+            color: #ffffff;
+            border: 1px solid #475569;
+            padding: 10px;
+            border-radius: 6px;
+            font-size: 0.95rem;
+            outline: none;
+            cursor: pointer;
+        }
+
+        select:focus {
+            border-color: var(--accent-blue);
+        }
+
+        input[type="range"] {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            background: #475569;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: var(--accent-blue);
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 15px;
+            background-color: var(--panel-color);
+            padding: 15px;
+            border-radius: 8px;
+        }
+
+        .stat-card {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            background: #2d2d3f;
+            border-radius: 6px;
+            text-align: center;
+        }
+
+        .stat-label {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            text-transform: uppercase;
+            margin-bottom: 5px;
+        }
+
+        .stat-value {
+            font-size: 1.2rem;
+            font-weight: bold;
+        }
+
+        #val-transmitted { color: var(--accent-green); }
+        #val-reflected { color: #f59e0b; }
+        #val-absorbed { color: var(--accent-red); }
+
+        .btn {
+            background-color: var(--accent-blue);
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: background 0.2s;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+
+        .btn:hover {
+            background-color: #2563eb;
+        }
+
+        .alarm-banner {
+            grid-column: span 3;
+            background-color: rgba(239, 68, 68, 0.2);
+            border: 1px solid var(--accent-red);
+            color: #fca5a5;
+            padding: 10px;
+            border-radius: 6px;
+            text-align: center;
+            font-weight: bold;
+            font-size: 0.9rem;
+            display: none;
+            animation: pulse 1.5s infinite;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 0.6; }
+            50% { opacity: 1; }
+            100% { opacity: 0.6; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Radiation Monitoring Virtual Interface</h1>
+    <div class="subtitle">Multi-Species Stochastic Monte Carlo Particle Transport Simulation Engine</div>
+
+    <div class="container">
+        <div class="main-panel">
+            <canvas id="simulationCanvas" width="800" height="400"></canvas>
+            
+            <div class="dashboard">
+                <div class="stat-card">
+                    <span class="stat-label">Transmitted Flux</span>
+                    <span id="val-transmitted" class="stat-value">0.0%</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Reflected Flux</span>
+                    <span id="val-reflected" class="stat-value">0.0%</span>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-label">Absorbed Flux</span>
+                    <span id="val-absorbed" class="stat-value">0.0%</span>
+                </div>
+                <div id="alarmBanner" class="alarm-banner">⚠️ CRITICAL EXPOSURE ALARM: HIGH FLUX LEAKAGE</div>
+            </div>
+        </div>
+
+        <div class="sidebar">
+            <div class="control-group">
+                <label for="select-type">Radiation Species Profile</label>
+                <select id="select-type">
+                    <option value="gamma">Gamma Ray (γ) - Low Interaction / Penetrating</option>
+                    <option value="neutron" selected>Neutron (n) - High Isotropic Scattering</option>
+                    <option value="alpha">Alpha Particle (α) - High Cross-Section / Rapidly Blocked</option>
+                </select>
+            </div>
+
+            <hr style="border: 0; border-top: 1px solid #475569; margin: 5px 0;">
+
+            <div class="control-group">
+                <label for="input-intensity">Source Intensity <span id="lbl-intensity">100 particles/s</span></label>
+                <input type="range" id="input-intensity" min="10" max="500" value="100">
+            </div>
+
+            <div class="control-group">
+                <label for="input-sigma">Macroscopic Cross Section (Σt) <span id="lbl-sigma">1.0 cm⁻¹</span></label>
+                <input type="range" id="input-sigma" min="0.1" max="5.0" step="0.1" value="1.0">
+            </div>
+
+            <div class="control-group">
+                <label for="input-c">Scattering Ratio (c) <span id="lbl-c">0.50</span></label>
+                <input type="range" id="input-c" min="0.0" max="1.0" step="0.05" value="0.50">
+            </div>
+
+            <div class="control-group">
+                <label for="input-thickness">Slab Thickness (X) <span id="lbl-thickness">10 cm</span></label>
+                <input type="range" id="input-thickness" min="2" max="20" step="1" value="10">
+            </div>
+
+            <button id="btn-clear" class="btn" style="background-color: #475569;">Reset Tally Statistics</button>
+        </div>
+    </div>
+
+    <script>
+        const canvas = document.getElementById('simulationCanvas');
+        const ctx = canvas.getContext('2d');
+
+        const radTypeSelect = document.getElementById('select-type');
+
+        const controls = {
+            intensity: { input: document.getElementById('input-intensity'), lbl: document.getElementById('lbl-intensity'), val: 100, unit: ' particles/s' },
+            sigma: { input: document.getElementById('input-sigma'), lbl: document.getElementById('lbl-sigma'), val: 1.0, unit: ' cm⁻¹' },
+            c: { input: document.getElementById('input-c'), lbl: document.getElementById('lbl-c'), val: 0.50, unit: '' },
+            thickness: { input: document.getElementById('input-thickness'), lbl: document.getElementById('lbl-thickness'), val: 10, unit: ' cm' }
+        };
+
+        let tallies = { totalInjected: 0, transmitted: 0, reflected: 0, absorbed: 0 };
+        let activeParticles = [];
+
+        const displays = {
+            transmitted: document.getElementById('val-transmitted'),
+            reflected: document.getElementById('val-reflected'),
+            absorbed: document.getElementById('val-absorbed'),
+            alarm: document.getElementById('alarmBanner')
+        };
+
+        // Preset parameters mapping to distinct radiation physics definitions
+        const speciesPresets = {
+            gamma:   { sigma: 0.4, c: 0.30 },
+            neutron: { sigma: 1.2, c: 0.75 },
+            alpha:   { sigma: 4.5, c: 0.00 }
+        };
+
+        function applySpeciesPreset() {
+            const species = radTypeSelect.value;
+            if (speciesPresets[species]) {
+                controls.sigma.input.value = speciesPresets[species].sigma;
+                controls.c.input.value = speciesPresets[species].c;
+                resetTallies();
+                updateParameters(false);
+            }
+        }
+
+        function updateParameters(syncPresets = true) {
+            controls.intensity.val = parseInt(controls.intensity.input.value);
+            controls.intensity.lbl.innerText = controls.intensity.val + controls.intensity.unit;
+
+            controls.sigma.val = parseFloat(controls.sigma.input.value);
+            controls.sigma.lbl.innerText = controls.sigma.val.toFixed(1) + controls.sigma.unit;
+
+            controls.c.val = parseFloat(controls.c.input.value);
+            controls.c.lbl.innerText = controls.c.val.toFixed(2) + controls.c.unit;
+
+            controls.thickness.val = parseInt(controls.thickness.input.value);
+            controls.thickness.lbl.innerText = controls.thickness.val + controls.thickness.unit;
+        }
+
+        function resetTallies() {
+            tallies = { totalInjected: 0, transmitted: 0, reflected: 0, absorbed: 0 };
+            activeParticles = [];
+        }
+
+        // Event bindings
+        radTypeSelect.addEventListener('change', applySpeciesPreset);
+        Object.values(controls).forEach(ctrl => ctrl.input.addEventListener('input', () => updateParameters()));
+        document.getElementById('btn-clear').addEventListener('click', resetTallies);
+
+        // Run default profile setup
+        applySpeciesPreset();
+
+        const paddingLeft = 100;
+        const canvasWidthForSlab = 500;
+        const slabY = 100;
+        const slabHeight = 200;
+
+        class PrimaryParticle {
+            constructor(type) {
+                this.x = 0; 
+                this.dir = 1; 
+                this.dead = false;
+                this.history = []; 
+                this.type = type;
+                
+                tallies.totalInjected++;
+            }
+
+            update() {
+                if (this.dead) return;
+
+                this.history.push({x: this.x, dir: this.dir});
+
+                // Mean Free Path calculations: s = -ln(xi) / Sigma_t
+                const xi_1 = Math.random() || 0.0001; 
+                const interactionDistance = -Math.log(xi_1) / controls.sigma.val;
+
+                this.x += this.dir * interactionDistance;
+
+                if (this.x >= controls.thickness.val) {
+                    tallies.transmitted++;
+                    this.dead = true;
+                    return;
+                } else if (this.x <= 0) {
+                    tallies.reflected++;
+                    this.dead = true;
+                    return;
+                }
+
+                // Interaction verification framework
+                const xi_2 = Math.random();
+                if (xi_2 > controls.c.val) {
+                    tallies.absorbed++;
+                    this.dead = true;
+                } else {
+                    this.dir = Math.random() > 0.5 ? 1 : -1;
+                }
+            }
+        }
+
+        let timeSinceLastSpawn = 0;
+
+        function animate(timestamp) {
+            const spawnInterval = 1000 / controls.intensity.val;
+            timeSinceLastSpawn += 16.67; 
+
+            while (timeSinceLastSpawn >= spawnInterval) {
+                activeParticles.push(new PrimaryParticle(radTypeSelect.value));
+                timeSinceLastSpawn -= spawnInterval;
+            }
+
+            activeParticles.forEach(p => p.update());
+            activeParticles = activeParticles.filter(p => !p.dead);
+
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const currentSlabWidthPixels = (controls.thickness.val / 20) * canvasWidthForSlab;
+            const rightBoundaryX = paddingLeft + currentSlabWidthPixels;
+
+            // Shielding block matrix rendering
+            ctx.fillStyle = 'rgba(71, 85, 105, 0.4)';
+            ctx.fillRect(paddingLeft, slabY, currentSlabWidthPixels, slabHeight);
+            ctx.strokeStyle = '#64748b';
+            ctx.lineWidth = 2;
+            ctx.strokeRect(paddingLeft, slabY, currentSlabWidthPixels, slabHeight);
+
+            // Source emitter geometry
+            ctx.fillStyle = '#3b82f6';
+            ctx.beginPath();
+            ctx.arc(paddingLeft - 40, canvas.height / 2, 8, 0, Math.PI * 2);
+            ctx.fill();
+
+            // Detector tally matrix area
+            ctx.fillStyle = 'rgba(16, 185, 129, 0.15)';
+            ctx.fillRect(rightBoundaryX + 15, slabY - 20, 40, slabHeight + 40);
+            ctx.strokeStyle = '#10b981';
+            ctx.strokeRect(rightBoundaryX + 15, slabY - 20, 40, slabHeight + 40);
+
+            ctx.fillStyle = '#94a3b8';
+            ctx.font = '11px sans-serif';
+            ctx.fillText("SOURCE POINT", paddingLeft - 78, slabY - 10);
+            ctx.fillText("SHIELDING MATRIX SLAB", paddingLeft + 5, slabY - 10);
+            ctx.fillText("DETECTOR TALLY", rightBoundaryX + 5, slabY - 30);
+
+            // Dynamically assign beam colors based on the actively selected species profile
+            let traceColor = 'rgba(239, 68, 68, 0.7)'; // Red for general/neutron
+            let nodeColor = '#ef4444';
+            
+            if (radTypeSelect.value === 'gamma') {
+                traceColor = 'rgba(168, 85, 247, 0.7)'; // Purple for Gamma
+                nodeColor = '#a855f7';
+            } else if (radTypeSelect.value === 'alpha') {
+                traceColor = 'rgba(59, 130, 246, 0.7)'; // Blue for Alpha
+                nodeColor = '#3b82f6';
+            }
+
+            // Draw trajectories onto the viewport
+            activeParticles.forEach(p => {
+                ctx.beginPath();
+                ctx.lineWidth = p.type === 'alpha' ? 3.0 : 1.5; // Visual weight adjustments
+                ctx.strokeStyle = traceColor;
+                
+                let currentPixelX = paddingLeft - 40; 
+                let currentPixelY = canvas.height / 2;
+
+                p.history.forEach((hist, idx) => {
+                    if (idx === 0) {
+                        ctx.moveTo(currentPixelX, currentPixelY);
+                    }
+                    currentPixelX = paddingLeft + (hist.x / controls.thickness.val) * currentSlabWidthPixels;
+                    currentPixelY = (canvas.height / 2) + (Math.sin(idx * 4.5 + p.history.length * 0.01) * (slabHeight / 3.5));
+                    ctx.lineTo(currentPixelX, currentPixelY);
+                });
+
+                ctx.stroke();
+
+                ctx.fillStyle = nodeColor;
+                ctx.beginPath();
+                ctx.arc(currentPixelX, currentPixelY, p.type === 'alpha' ? 4 : 2.5, 0, Math.PI * 2);
+                ctx.fill();
+            });
+
+            // Re-tally metrics outputs
+            if (tallies.totalInjected > 0) {
+                const pctTransmitted = (tallies.transmitted / tallies.totalInjected) * 100;
+                const pctReflected = (tallies.reflected / tallies.totalInjected) * 100;
+                const pctAbsorbed = (tallies.absorbed / tallies.totalInjected) * 100;
+
+                displays.transmitted.innerText = pctTransmitted.toFixed(1) + '%';
+                displays.reflected.innerText = pctReflected.toFixed(1) + '%';
+                displays.absorbed.innerText = pctAbsorbed.toFixed(1) + '%';
+
+                // Monitor alarm thresholds
+                if (pctTransmitted > 25.0) {
+                    displays.alarm.style.display = 'block';
+                } else {
+                    displays.alarm.style.display = 'none';
+                }
+            }
+
+            requestAnimationFrame(animate);
+        }
+
+        requestAnimationFrame(animate);
+    </script>
+</body>
+</html>
