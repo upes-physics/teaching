@@ -12,7 +12,8 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: write
+      actions: write
+      contents: read
       issues: write
       pull-requests: write
 
@@ -179,34 +180,18 @@ jobs:
               }
             }
 
-            async function deleteTemporaryBase(ref) {
-              if (!ref?.startsWith(`pr-stack/pr-${currentNumber}-with-`)) return;
-              try {
-                await github.rest.git.deleteRef({ owner, repo, ref: `heads/${ref}` });
-              } catch (error) {
-                core.info(`Temporary base ${ref} will be cleaned up later: ${error.message}`);
-              }
-            }
-
             if (resetMatch) {
-              if (current.base.ref === 'main') {
-                await publishStatus(
-                  `ℹ️ PR #${currentNumber} is already tested directly against \`main\`.`
-                );
-                return;
+              if (current.base.ref !== 'main') {
+                await github.rest.pulls.update({
+                  owner, repo, pull_number: currentNumber, base: 'main',
+                });
               }
-
-              const previousBase = current.base.ref;
-              await github.rest.pulls.update({
-                owner, repo, pull_number: currentNumber, base: 'main',
-              });
-              await deleteTemporaryBase(previousBase);
               await publishStatus([
                 '## 🧪 PR test base updated',
                 '',
                 `PR #${currentNumber} is now tested directly against \`main\`.`,
                 '',
-                'The normal validation and preview workflows will rerun automatically.',
+                'Any virtual fork-stack preview is no longer the active test configuration.',
               ].join('\n'));
               return;
             }
@@ -232,7 +217,7 @@ jobs:
 
             if (target.state !== 'open') {
               await publishStatus(
-                `⛔ PR #${targetNumber} is not open. Only open PRs can be used as a stacked test base.`
+                `⛔ PR #${targetNumber} is not open. Only open PRs can be used for combined testing.`
               );
               return;
             }
@@ -253,9 +238,7 @@ jobs:
                 '## ⛔ Stacked PR test rejected',
                 '',
                 `PR #${targetNumber} is based on \`${current.head.ref}\`, which is the head branch of PR #${currentNumber}.`,
-                `Stacking PR #${currentNumber} on PR #${targetNumber} would create a circular dependency.`,
-                '',
-                'Choose another open PR whose base does not depend on this PR.',
+                `Combining PR #${currentNumber} with PR #${targetNumber} would create a circular dependency.`,
               ].join('\n'));
               return;
             }
@@ -263,56 +246,34 @@ jobs:
             const targetIsFork = target.head.repo?.full_name !== `${owner}/${repo}`;
 
             if (targetIsFork) {
-              if (target.base.ref !== 'main') {
-                await publishStatus([
-                  `⛔ Fork PR #${targetNumber} is based on \`${target.base.ref}\`, not \`main\`.`,
-                  '',
-                  'Fork-based stacked tests currently require the target PR to be opened against `main`.',
-                ].join('\n'));
-                return;
-              }
-
-              const requestLabel = 'stack-test-request';
-              try {
-                await github.rest.issues.getLabel({ owner, repo, name: requestLabel });
-              } catch (error) {
-                if (error.status !== 404) throw error;
-                await github.rest.issues.createLabel({
-                  owner,
-                  repo,
-                  name: requestLabel,
-                  color: 'D4C5F9',
-                  description: 'Internal request to build a fork stacked-PR test base',
-                });
-              }
-
               await publishStatus([
-                `<!-- upes-physics-stack-target:${targetNumber} -->`,
-                '## 🧪 Fork stacked PR test requested',
+                '## 🧪 Combined fork PR test requested',
                 '',
-                `Preparing PR #${currentNumber} together with fork PR #${targetNumber}.`,
+                `Testing PR #${currentNumber} together with fork PR #${targetNumber}.`,
                 `Fork source: \`${target.head.repo.full_name}:${target.head.ref}\``,
                 '',
-                'A trusted workflow is building an internal integration base from latest `main` + the fork PR.',
-                'The PR checks and preview will start automatically after the test base is ready.',
+                `The virtual checkout will be \`latest main + PR #${targetNumber} + PR #${currentNumber}\`.`,
+                'No repository branch is created for the fork PR.',
               ].join('\n'));
 
-              if ((current.labels || []).some(label => label.name === requestLabel)) {
-                try {
-                  await github.rest.issues.removeLabel({
-                    owner, repo, issue_number: currentNumber, name: requestLabel,
-                  });
-                } catch (error) {
-                  if (error.status !== 404) throw error;
-                }
+              try {
+                await github.rest.actions.createWorkflowDispatch({
+                  owner,
+                  repo,
+                  workflow_id: 'pr-stack-fork-build.yml',
+                  ref: 'main',
+                  inputs: {
+                    current_pr: String(currentNumber),
+                    target_pr: String(targetNumber),
+                  },
+                });
+              } catch (error) {
+                await publishStatus([
+                  '## ⛔ Could not start combined fork PR test',
+                  '',
+                  `GitHub reported: ${error.message}`,
+                ].join('\n'));
               }
-
-              await github.rest.issues.addLabels({
-                owner,
-                repo,
-                issue_number: currentNumber,
-                labels: [requestLabel],
-              });
               return;
             }
 
@@ -341,11 +302,9 @@ jobs:
               return;
             }
 
-            const previousBase = current.base.ref;
             await github.rest.pulls.update({
               owner, repo, pull_number: currentNumber, base: desiredBase,
             });
-            await deleteTemporaryBase(previousBase);
 
             await publishStatus([
               '## 🧪 Stacked PR test enabled',
