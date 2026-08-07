@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Particle Decay Simulator</title>
+  <style>
+    body { font-family: Arial; padding: 20px; background:#0f172a; color:#e2e8f0; }
+    select, button { margin:10px 0; padding:8px; }
+    .result { margin-top:20px; font-size:18px; }
+    .valid { color: #22c55e; }
+    .invalid { color: #ef4444; }
+    .weak { color: #facc15; }
+    .panel { margin-top:20px; padding:10px; background:#1e293b; border-radius:8px; }
+    .log { margin-top:20px; }
+    .entry { padding:6px; border-bottom:1px solid #334155; }
+  </style>
+</head>
+<body>
+
+<h1>Particle Decay Simulator (Advanced)</h1>
+<p>Supports 2/3-body decays. Save multiple experiments and export all.</p>
+
+<label>Initial Particle:</label><br>
+<select id="initial"></select>
+
+<h3>Decay Products:</h3>
+<select id="p1"></select>
+<select id="p2"></select>
+<select id="p3"></select>
+
+<br>
+<button onclick="checkDecay()">Check Decay</button>
+<button onclick="saveExperiment()">Save Experiment</button>
+<button onclick="exportAllCSV()">Export CSV (Best for students)</button>
+<button onclick="exportReport()">Export Notes (Readable)</button>
+
+<div class="panel" id="values"></div>
+<div class="panel" id="quarks"></div>
+<div class="panel" id="transition"></div>
+<div class="result" id="result"></div>
+
+<div class="panel log">
+  <b>Saved Experiments:</b>
+  <div id="log"></div>
+</div>
+
+<script>
+const particles = {
+  none: { name:"—", q:0, L:0, B:0, S:0, quark:"" },
+
+  electron: { name:"e⁻", q:-1, L:1, B:0, S:0, quark:"-" },
+  positron: { name:"e⁺", q:+1, L:-1, B:0, S:0, quark:"-" },
+  muon: { name:"μ⁻", q:-1, L:1, B:0, S:0, quark:"-" },
+  neutrino: { name:"ν", q:0, L:1, B:0, S:0, quark:"-" },
+
+  photon: { name:"γ", q:0, L:0, B:0, S:0, quark:"-" },
+
+  pionPlus: { name:"π⁺", q:+1, L:0, B:0, S:0, quark:"u d̄" },
+  pionMinus: { name:"π⁻", q:-1, L:0, B:0, S:0, quark:"d ū" },
+  pion0: { name:"π⁰", q:0, L:0, B:0, S:0, quark:"uū / dd̄" },
+
+  kaonPlus: { name:"K⁺", q:+1, L:0, B:0, S:+1, quark:"u s̄" },
+  kaonMinus: { name:"K⁻", q:-1, L:0, B:0, S:-1, quark:"s ū" },
+  kaon0: { name:"K⁰", q:0, L:0, B:0, S:+1, quark:"d s̄" },
+
+  proton: { name:"p", q:+1, L:0, B:1, S:0, quark:"uud" },
+  neutron: { name:"n", q:0, L:0, B:1, S:0, quark:"udd" },
+
+  lambda0: { name:"Λ⁰", q:0, L:0, B:1, S:-1, quark:"uds" }
+};
+
+const knownDecays = [
+  { initial:"lambda0", products:["proton","pionMinus"] },
+  { initial:"kaonPlus", products:["muon","neutrino"] },
+  { initial:"pionPlus", products:["muon","neutrino"] },
+  { initial:"muon", products:["electron","neutrino","neutrino"] }
+];
+
+let lastResult = null;
+let experimentLog = [];
+
+function populate() {
+  ["initial","p1","p2","p3"].forEach(id => {
+    const sel = document.getElementById(id);
+    sel.innerHTML = "";
+    for (let key in particles) {
+      const opt = document.createElement("option");
+      opt.value = key;
+      opt.textContent = particles[key].name;
+      sel.appendChild(opt);
+    }
+  });
+
+  document.getElementById('p3').value = 'none';
+}
+populate();
+
+function checkDecay() {
+  const rawKeys = [
+    document.getElementById('p1').value,
+    document.getElementById('p2').value,
+    document.getElementById('p3').value
+  ];
+
+  const keys = rawKeys.filter(k => k !== 'none');
+
+  const iKey = document.getElementById('initial').value;
+  const i = particles[iKey];
+  const prods = keys.map(k => particles[k]);
+
+  const Qi=i.q, Li=i.L, Bi=i.B, Si=i.S;
+
+  const Qf = prods.reduce((s,p)=>s+p.q,0);
+  const Lf = prods.reduce((s,p)=>s+p.L,0);
+  const Bf = prods.reduce((s,p)=>s+p.B,0);
+  const Sf = prods.reduce((s,p)=>s+p.S,0);
+
+  document.getElementById("values").innerHTML =
+    `<b>Initial:</b> Q=${Qi}, L=${Li}, B=${Bi}, S=${Si}<br>
+     <b>Final:</b> Q=${Qf}, L=${Lf}, B=${Bf}, S=${Sf}`;
+
+  document.getElementById("quarks").innerHTML =
+    `<b>Quark Content:</b><br>
+     ${i.name}: ${i.quark}<br>` +
+     prods.map(p=>`${p.name}: ${p.quark}`).join("<br>");
+
+  let transition = "No major quark change";
+  if (Si !== Sf) {
+    transition = (Si < Sf) ? "s → u (Weak via W boson)" : "u → s (Weak via W boson)";
+  }
+
+  document.getElementById("transition").innerHTML =
+    `<b>Quark Transition:</b><br>${transition}`;
+
+  const chargeOK = Qi===Qf;
+  const leptonOK = Li===Lf;
+  const baryonOK = Bi===Bf;
+  const strangeOK = Si===Sf;
+
+  const coreOK = chargeOK && leptonOK && baryonOK;
+
+  const isKnown = knownDecays.some(d =>
+    d.initial===iKey &&
+    d.products.length === keys.length &&
+    d.products.every(p => keys.includes(p))
+  );
+
+  let verdict;
+  if (!coreOK) verdict = "Forbidden";
+  else if (isKnown) verdict = "Observed (PDG)";
+  else if (!strangeOK) verdict = "Weak";
+  else verdict = "Allowed";
+
+  const res = document.getElementById('result');
+  res.innerHTML = `<span class="${verdict==='Forbidden'?'invalid':verdict==='Weak'?'weak':'valid'}">${verdict}</span>`;
+
+  lastResult = {
+    initial: i.name,
+    products: prods.map(p=>p.name),
+    Qi, Li, Bi, Si,
+    Qf, Lf, Bf, Sf,
+    transition,
+    verdict
+  };
+}
+
+function saveExperiment() {
+  if (!lastResult) {
+    alert("Run a decay first!");
+    return;
+  }
+
+  experimentLog.push(lastResult);
+  renderLog();
+}
+
+function renderLog() {
+  const logDiv = document.getElementById("log");
+  logDiv.innerHTML = "";
+
+  experimentLog.forEach((exp, i) => {
+    const div = document.createElement("div");
+    div.className = "entry";
+    div.innerHTML = `${i+1}. ${exp.initial} → ${exp.products.join(" + ")} (${exp.verdict})`;
+    logDiv.appendChild(div);
+  });
+}
+
+// CSV EXPORT (BEST FOR STUDENTS)
+function exportAllCSV() {
+  if (experimentLog.length === 0) {
+    alert("No experiments saved!");
+    return;
+  }
+
+  let csv = "Initial,Products,Qi,Li,Bi,Si,Qf,Lf,Bf,Sf,Transition,Verdict\n";
+
+  experimentLog.forEach(exp => {
+    csv += `${exp.initial},"${exp.products.join(" + ")}",${exp.Qi},${exp.Li},${exp.Bi},${exp.Si},${exp.Qf},${exp.Lf},${exp.Bf},${exp.Sf},"${exp.transition}",${exp.verdict}\n`;
+  });
+
+  downloadFile(csv, "particle_decay_data.csv", "text/csv");
+}
+
+// NOTE STYLE EXPORT
+function exportReport() {
+  if (experimentLog.length === 0) {
+    alert("No experiments saved!");
+    return;
+  }
+
+  let report = "PARTICLE DECAY NOTES\n========================\n\n";
+
+  experimentLog.forEach((exp, i) => {
+    report += `#${i+1} ${exp.initial} → ${exp.products.join(" + ")}\n`;
+    report += `Result: ${exp.verdict}\n`;
+    report += `Q,L,B,S: (${exp.Qi},${exp.Li},${exp.Bi},${exp.Si}) → (${exp.Qf},${exp.Lf},${exp.Bf},${exp.Sf})\n`;
+    report += `Transition: ${exp.transition}\n\n`;
+  });
+
+  downloadFile(report, "particle_decay_notes.txt", "text/plain");
+}
+
+function downloadFile(content, filename, type) {
+  const blob = new Blob([content], { type });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename;
+  a.click();
+
+  URL.revokeObjectURL(url);
+}
+</script>
+
+</body>
+</html>
