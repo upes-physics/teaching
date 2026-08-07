@@ -1,0 +1,16 @@
+{
+  "labels": [
+    {
+      "name": "UG",
+      "paths": ["data/ug/"],
+      "color": "66CF88",
+      "description": "Undergraduate course content"
+    },
+    {
+      "name": "PG",
+      "paths": ["data/pg/"],
+      "color": "BF9E2D",
+      "description": "Postgraduate course content"
+    }
+  ]
+}
