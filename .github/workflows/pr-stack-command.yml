@@ -12,7 +12,6 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      actions: write
       contents: write
       issues: write
       pull-requests: write
@@ -183,9 +182,7 @@ jobs:
             async function deleteTemporaryBase(ref) {
               if (!ref?.startsWith(`pr-stack/pr-${currentNumber}-with-`)) return;
               try {
-                await github.rest.git.deleteRef({
-                  owner, repo, ref: `heads/${ref}`,
-                });
+                await github.rest.git.deleteRef({ owner, repo, ref: `heads/${ref}` });
               } catch (error) {
                 core.info(`Temporary base ${ref} will be cleaned up later: ${error.message}`);
               }
@@ -275,18 +272,22 @@ jobs:
                 return;
               }
 
-              await github.rest.actions.createWorkflowDispatch({
-                owner,
-                repo,
-                workflow_id: 'pr-stack-fork-build.yml',
-                ref: 'main',
-                inputs: {
-                  current_pr: String(currentNumber),
-                  target_pr: String(targetNumber),
-                },
-              });
+              const requestLabel = 'stack-test-request';
+              try {
+                await github.rest.issues.getLabel({ owner, repo, name: requestLabel });
+              } catch (error) {
+                if (error.status !== 404) throw error;
+                await github.rest.issues.createLabel({
+                  owner,
+                  repo,
+                  name: requestLabel,
+                  color: 'D4C5F9',
+                  description: 'Internal request to build a fork stacked-PR test base',
+                });
+              }
 
               await publishStatus([
+                `<!-- upes-physics-stack-target:${targetNumber} -->`,
                 '## 🧪 Fork stacked PR test requested',
                 '',
                 `Preparing PR #${currentNumber} together with fork PR #${targetNumber}.`,
@@ -295,6 +296,23 @@ jobs:
                 'A trusted workflow is building an internal integration base from latest `main` + the fork PR.',
                 'The PR checks and preview will start automatically after the test base is ready.',
               ].join('\n'));
+
+              if ((current.labels || []).some(label => label.name === requestLabel)) {
+                try {
+                  await github.rest.issues.removeLabel({
+                    owner, repo, issue_number: currentNumber, name: requestLabel,
+                  });
+                } catch (error) {
+                  if (error.status !== 404) throw error;
+                }
+              }
+
+              await github.rest.issues.addLabels({
+                owner,
+                repo,
+                issue_number: currentNumber,
+                labels: [requestLabel],
+              });
               return;
             }
 
