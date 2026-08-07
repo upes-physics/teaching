@@ -22,8 +22,15 @@ jobs:
         with:
           script: |
             const body = context.payload.comment.body.trim();
+            // Accepted examples:
+            //   test with PR 30
+            //   test with PR #30
+            //   test with #30
+            //   test with PR #30 and main
+            // The "and main" suffix is optional because every stacked test
+            // still requires both PR heads to contain the latest main.
             const stackMatch = body.match(
-              /^test\s+with\s+(?:#\s*)?(?:pr\s*)?#?\s*(\d+)\s*$/i
+              /^test\s+with\s+(?:#\s*)?(?:pr\s*)?#?\s*(\d+)(?:\s+and\s+main)?\s*$/i
             );
             const resetMatch = /^test\s+with\s+main\s*$/i.test(body);
 
@@ -176,9 +183,12 @@ jobs:
 
             if (target.base.ref === current.head.ref) {
               await publishStatus([
-                `⛔ This would create a circular stack: PR #${targetNumber} is already based on \`${current.head.ref}\`.`,
+                '## ⛔ Stacked PR test rejected',
                 '',
-                'Choose a different open PR.',
+                `PR #${targetNumber} is based on \`${current.head.ref}\`, which is the head branch of PR #${currentNumber}.`,
+                `Stacking PR #${currentNumber} on PR #${targetNumber} would create a circular dependency.`,
+                '',
+                'Choose another open PR whose base does not depend on this PR.',
               ].join('\n'));
               return;
             }
