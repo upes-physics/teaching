@@ -183,6 +183,36 @@ jobs:
               return;
             }
 
+            const { data: mainComparison } = await github.rest.repos.compareCommits({
+              owner,
+              repo,
+              base: 'main',
+              head: target.head.sha,
+            });
+            if (!['ahead', 'identical'].includes(mainComparison.status)) {
+              await publishStatus([
+                `⛔ PR #${targetNumber} does not contain the latest \`main\`.`,
+                '',
+                'Update that PR with the latest `main`, then run this command again.',
+              ].join('\n'));
+              return;
+            }
+
+            const { data: currentComparison } = await github.rest.repos.compareCommits({
+              owner,
+              repo,
+              base: 'main',
+              head: current.head.sha,
+            });
+            if (!['ahead', 'identical'].includes(currentComparison.status)) {
+              await publishStatus([
+                `⛔ PR #${currentNumber} does not contain the latest \`main\`.`,
+                '',
+                'Update this PR with the latest `main`, then run the stacked test command again.',
+              ].join('\n'));
+              return;
+            }
+
             if (current.base.ref === target.head.ref) {
               await publishStatus([
                 '## 🧪 Stacked PR test',
@@ -208,7 +238,7 @@ jobs:
               `PR #${currentNumber} will now be tested together with PR #${targetNumber}.`,
               `GitHub base branch changed to \`${target.head.ref}\`.`,
               '',
-              `The validation checkout represents \`main + PR #${targetNumber} + PR #${currentNumber}\`, provided both branches contain the latest \`main\`.`,
+              `The validation checkout represents \`main + PR #${targetNumber} + PR #${currentNumber}\`.`,
               '',
               'The checks and PR preview will rerun automatically.',
               'Use `test with main` on this PR to return it to the normal base.',
