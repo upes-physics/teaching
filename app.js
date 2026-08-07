@@ -64,24 +64,39 @@ function pathCard(key, number, title, copy) {
     return `<article class="path-card" data-action="level" data-level="${key}" tabindex="0"><span class="number">${number}</span><span class="arrow">↗</span><h3>${title}</h3><p>${copy}</p></article>`;
 }
 
+function sectionLabel(section) {
+    return /^\d+$/.test(String(section)) ? `Semester ${section}` : String(section);
+}
+
 function levelPage(level) {
     const data = catalog[level];
-    const semesters = Array.from({ length: data.semesterCount }, (_, index) => index + 1);
-    app.innerHTML = `<section class="page intro"><div class="breadcrumb"><button data-action="home">Home</button> &nbsp;/&nbsp; ${data.label}</div><p class="eyebrow">Select a semester</p><h1>${data.label} Physics</h1><p class="lead">${data.description} Choose your current semester to see the available courses.</p><div class="semester-grid">${semesters.map(n => { const count = (data.coursesBySemester[n] || []).length; return `<button class="semester-card" data-action="semester" data-level="${level}" data-semester="${n}"><span>${String(n).padStart(2, "0")}</span><strong>Semester ${n}</strong><small>${count} ${count === 1 ? "course" : "courses"} available</small></button>`; }).join("")}</div></section>`;
+    const semesters = Array.from({ length: data.semesterCount }, (_, index) => String(index + 1));
+    const namedSections = Object.keys(data.coursesBySemester)
+	.filter(section => !/^\d+$/.test(section));
+    const sections = [...semesters, ...namedSections];
+
+    app.innerHTML = `<section class="page intro"><div class="breadcrumb"><button data-action="home">Home</button> &nbsp;/&nbsp; ${data.label}</div><p class="eyebrow">Select a semester or course group</p><h1>${data.label} Physics</h1><p class="lead">${data.description} Choose your current semester or course group to see the available courses.</p><div class="semester-grid">${sections.map(section => {
+	const count = (data.coursesBySemester[section] || []).length;
+	const label = sectionLabel(section);
+	const marker = /^\d+$/.test(section) ? String(section).padStart(2, "0") : section;
+	return `<button class="semester-card" data-action="semester" data-level="${level}" data-semester="${section}"><span>${marker}</span><strong>${label}</strong><small>${count} ${count === 1 ? "course" : "courses"} available</small></button>`;
+    }).join("")}</div></section>`;
 }
 
 function semesterPage(level, semester) {
     const data = catalog[level];
     const courses = data.coursesBySemester[semester] || [];
+    const label = sectionLabel(semester);
     const courseCards = courses.length
 	  ? courses.map(course => `<article class="course-card" tabindex="0" data-action="course" data-level="${level}" data-semester="${semester}" data-course="${course.id || course.code}"><span class="course-code">${course.code}</span><h2>${course.name}</h2><p>${course.description}</p><span class="explore">Explore course &nbsp; →</span></article>`).join("")
-	  : `<div class="empty-state"><h2>Course information coming soon</h2><p>No courses have been added to this semester yet.</p></div>`;
-    app.innerHTML = `<section class="page"><div class="breadcrumb"><button data-action="home">Home</button> &nbsp;/&nbsp; <button data-action="level" data-level="${level}">${data.label}</button> &nbsp;/&nbsp; Semester ${semester}</div><p class="eyebrow">${data.label} · Semester ${semester}</p><h1>Your courses</h1><p class="lead">Everything you need for this semester, gathered in one place. Select a course to view its overview and learning modules.</p><div class="course-grid">${courseCards}</div></section>`;
+	  : `<div class="empty-state"><h2>Course information coming soon</h2><p>No courses have been added to this section yet.</p></div>`;
+    app.innerHTML = `<section class="page"><div class="breadcrumb"><button data-action="home">Home</button> &nbsp;/&nbsp; <button data-action="level" data-level="${level}">${data.label}</button> &nbsp;/&nbsp; ${label}</div><p class="eyebrow">${data.label} · ${label}</p><h1>Your courses</h1><p class="lead">Everything you need for this section, gathered in one place. Select a course to view its overview and learning modules.</p><div class="course-grid">${courseCards}</div></section>`;
 }
 
 async function coursePage(level, semester, courseId) {
     const data = catalog[level];
     const courses = data.coursesBySemester[semester] || [];
+    const label = sectionLabel(semester);
     // Explicit IDs keep routes unique when provisional course codes are shared.
     // Codes and numeric indexes remain supported for existing bookmarks.
     const course = courses.find(item => item.id === courseId)
@@ -91,7 +106,7 @@ async function coursePage(level, semester, courseId) {
 	semesterPage(level, semester);
 	return;
     }
-    app.innerHTML = `<section class="page"><div class="breadcrumb"><button data-action="home">Home</button> &nbsp;/&nbsp; <button data-action="level" data-level="${level}">${data.label}</button> &nbsp;/&nbsp; <button data-action="semester" data-level="${level}" data-semester="${semester}">Semester ${semester}</button></div><div class="loading-state">Loading course information…</div></section>`;
+    app.innerHTML = `<section class="page"><div class="breadcrumb"><button data-action="home">Home</button> &nbsp;/&nbsp; <button data-action="level" data-level="${level}">${data.label}</button> &nbsp;/&nbsp; <button data-action="semester" data-level="${level}" data-semester="${semester}">${label}</button></div><div class="loading-state">Loading course information…</div></section>`;
     
     try {
 	const response = await fetch(course.dataCard);
@@ -108,6 +123,7 @@ async function coursePage(level, semester, courseId) {
 function renderCourseDataCard(levelLabel, semester, course, card, dataCardUrl) {
     const simulators = Array.isArray(card.simulators) ? card.simulators : [];
     const faculty = Array.isArray(card.faculty) ? card.faculty : card.faculty ? [card.faculty] : [];
+    const label = sectionLabel(semester);
     const simulatorCards = simulators.length
 	  ? simulators.map(simulator => {
 	      const link = new URL(simulator.link, dataCardUrl).href;
@@ -120,7 +136,7 @@ function renderCourseDataCard(levelLabel, semester, course, card, dataCardUrl) {
 	return `<article><h3>${member.name}</h3>${email}</article>`;
     }).join("") || `<p class="faculty-empty">Faculty information will be updated soon.</p>`;
     const facultySection = `<section class="faculty"><p class="eyebrow">Course team</p><h2>Faculty</h2><div class="faculty-grid">${facultyCards}</div></section>`;
-    app.innerHTML = `<section class="page"><div class="breadcrumb"><button data-action="home">Home</button> &nbsp;/&nbsp; <button data-action="level" data-level="${levelLabel.toLowerCase()}">${levelLabel}</button> &nbsp;/&nbsp; <button data-action="semester" data-level="${levelLabel.toLowerCase()}" data-semester="${semester}">Semester ${semester}</button> &nbsp;/&nbsp; ${card.courseCode}</div><p class="eyebrow">${card.courseCode} · Semester ${semester}</p><h1>${card.courseName}</h1>${simulatorSection}${facultySection}</section>`;
+    app.innerHTML = `<section class="page"><div class="breadcrumb"><button data-action="home">Home</button> &nbsp;/&nbsp; <button data-action="level" data-level="${levelLabel.toLowerCase()}">${levelLabel}</button> &nbsp;/&nbsp; <button data-action="semester" data-level="${levelLabel.toLowerCase()}" data-semester="${semester}">${label}</button> &nbsp;/&nbsp; ${card.courseCode}</div><p class="eyebrow">${card.courseCode} · ${label}</p><h1>${card.courseName}</h1>${simulatorSection}${facultySection}</section>`;
 }
 
 function aboutPage() {
