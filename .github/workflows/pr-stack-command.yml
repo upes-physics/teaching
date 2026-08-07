@@ -12,6 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
+      actions: write
       contents: write
       issues: write
       pull-requests: write
@@ -38,11 +39,10 @@ jobs:
             const currentNumber = context.issue.number;
             const actor = context.actor;
 
-            const { data: current } = await github.rest.pulls.get({
-              owner,
-              repo,
-              pull_number: currentNumber,
-            });
+            const current = (await github.rest.pulls.get({
+              owner, repo, pull_number: currentNumber,
+            })).data;
+
             if (current.state !== 'open') {
               core.notice(`PR #${currentNumber} is not open.`);
               return;
@@ -51,9 +51,7 @@ jobs:
             let permission = 'none';
             try {
               permission = (await github.rest.repos.getCollaboratorPermissionLevel({
-                owner,
-                repo,
-                username: actor,
+                owner, repo, username: actor,
               })).data.permission;
             } catch (error) {
               core.info(`No collaborator permission record for ${actor}.`);
@@ -68,8 +66,7 @@ jobs:
                 requestedName = requestedName.slice(1, -1).trim();
               }
 
-              const isMaintainer = ['triage', 'write', 'maintain', 'admin']
-                .includes(permission);
+              const isMaintainer = ['triage', 'write', 'maintain', 'admin'].includes(permission);
               const isRequestedReviewer = (current.requested_reviewers || [])
                 .some(reviewer => reviewer.login === actor);
 
@@ -141,10 +138,7 @@ jobs:
               }
 
               await github.rest.issues.addLabels({
-                owner,
-                repo,
-                issue_number: currentNumber,
-                labels: [label.name],
+                owner, repo, issue_number: currentNumber, labels: [label.name],
               });
               await github.rest.issues.createComment({
                 owner,
@@ -175,7 +169,6 @@ jobs:
                 comment.user?.type === 'Bot' && comment.body?.includes(marker)
               );
               const statusBody = `${marker}\n${message}`;
-
               if (existing) {
                 await github.rest.issues.updateComment({
                   owner, repo, comment_id: existing.id, body: statusBody,
@@ -191,14 +184,10 @@ jobs:
               if (!ref?.startsWith(`pr-stack/pr-${currentNumber}-with-`)) return;
               try {
                 await github.rest.git.deleteRef({
-                  owner,
-                  repo,
-                  ref: `heads/${ref}`,
+                  owner, repo, ref: `heads/${ref}`,
                 });
               } catch (error) {
-                if (error.status !== 404) {
-                  core.warning(`Could not delete temporary base ${ref}: ${error.message}`);
-                }
+                core.info(`Temporary base ${ref} will be cleaned up later: ${error.message}`);
               }
             }
 
@@ -251,14 +240,18 @@ jobs:
               return;
             }
 
-            if (target.head.ref === current.head.ref &&
-                target.head.repo?.full_name === current.head.repo?.full_name) {
+            if (
+              target.head.ref === current.head.ref &&
+              target.head.repo?.full_name === current.head.repo?.full_name
+            ) {
               await publishStatus('⛔ Both PRs use the same head branch and cannot be stacked.');
               return;
             }
 
-            if (target.base.ref === current.head.ref &&
-                target.base.repo?.full_name === `${owner}/${repo}`) {
+            if (
+              target.base.ref === current.head.ref &&
+              target.base.repo?.full_name === `${owner}/${repo}`
+            ) {
               await publishStatus([
                 '## ⛔ Stacked PR test rejected',
                 '',
@@ -271,25 +264,8 @@ jobs:
             }
 
             const targetIsFork = target.head.repo?.full_name !== `${owner}/${repo}`;
-            let desiredBase;
-            let modeText;
 
-            if (!targetIsFork) {
-              const mainComparison = (await github.rest.repos.compareCommits({
-                owner, repo, base: 'main', head: target.head.sha,
-              })).data;
-              if (!['ahead', 'identical'].includes(mainComparison.status)) {
-                await publishStatus([
-                  `⛔ PR #${targetNumber} does not contain the latest \`main\`.`,
-                  '',
-                  'Update that PR with the latest `main`, then run this command again.',
-                ].join('\n'));
-                return;
-              }
-
-              desiredBase = target.head.ref;
-              modeText = `GitHub base branch changed to \`${desiredBase}\`.`;
-            } else {
+            if (targetIsFork) {
               if (target.base.ref !== 'main') {
                 await publishStatus([
                   `⛔ Fork PR #${targetNumber} is based on \`${target.base.ref}\`, not \`main\`.`,
@@ -299,64 +275,42 @@ jobs:
                 return;
               }
 
-              if (!target.merge_commit_sha) {
-                await publishStatus([
-                  `⛔ GitHub has not produced a mergeable test commit for fork PR #${targetNumber}.`,
-                  '',
-                  'Resolve conflicts in the target PR, then run the command again.',
-                ].join('\n'));
-                return;
-              }
+              await github.rest.actions.createWorkflowDispatch({
+                owner,
+                repo,
+                workflow_id: 'pr-stack-fork-build.yml',
+                ref: 'main',
+                inputs: {
+                  current_pr: String(currentNumber),
+                  target_pr: String(targetNumber),
+                },
+              });
 
-              desiredBase = `pr-stack/pr-${currentNumber}-with-${targetNumber}`;
-
-              try {
-                try {
-                  await github.rest.git.getRef({ owner, repo, ref: `heads/${desiredBase}` });
-                  await github.rest.git.updateRef({
-                    owner,
-                    repo,
-                    ref: `heads/${desiredBase}`,
-                    sha: target.merge_commit_sha,
-                    force: true,
-                  });
-                } catch (error) {
-                  if (error.status !== 404) throw error;
-                  await github.rest.git.createRef({
-                    owner,
-                    repo,
-                    ref: `refs/heads/${desiredBase}`,
-                    sha: target.merge_commit_sha,
-                  });
-                }
-
-                await github.rest.repos.merge({
-                  owner,
-                  repo,
-                  base: desiredBase,
-                  head: 'main',
-                  commit_message: `Refresh ${desiredBase} with latest main`,
-                });
-              } catch (error) {
-                if (error.status !== 204) {
-                  await deleteTemporaryBase(desiredBase);
-                  await publishStatus([
-                    `## ⛔ Could not build fork integration base`,
-                    '',
-                    `PR #${targetNumber} could not be combined cleanly with the latest \`main\`.`,
-                    '',
-                    `GitHub reported: ${error.message}`,
-                  ].join('\n'));
-                  return;
-                }
-              }
-
-              modeText = [
-                `PR #${targetNumber} comes from fork \`${target.head.repo.full_name}\`.`,
-                `Created internal integration base \`${desiredBase}\` containing latest \`main\` + PR #${targetNumber}.`,
-              ].join('\n');
+              await publishStatus([
+                '## 🧪 Fork stacked PR test requested',
+                '',
+                `Preparing PR #${currentNumber} together with fork PR #${targetNumber}.`,
+                `Fork source: \`${target.head.repo.full_name}:${target.head.ref}\``,
+                '',
+                'A trusted workflow is building an internal integration base from latest `main` + the fork PR.',
+                'The PR checks and preview will start automatically after the test base is ready.',
+              ].join('\n'));
+              return;
             }
 
+            const mainComparison = (await github.rest.repos.compareCommits({
+              owner, repo, base: 'main', head: target.head.sha,
+            })).data;
+            if (!['ahead', 'identical'].includes(mainComparison.status)) {
+              await publishStatus([
+                `⛔ PR #${targetNumber} does not contain the latest \`main\`.`,
+                '',
+                'Update that PR with the latest `main`, then run this command again.',
+              ].join('\n'));
+              return;
+            }
+
+            const desiredBase = target.head.ref;
             if (current.base.ref === desiredBase) {
               await publishStatus([
                 '## 🧪 Stacked PR test',
@@ -373,15 +327,13 @@ jobs:
             await github.rest.pulls.update({
               owner, repo, pull_number: currentNumber, base: desiredBase,
             });
-            if (previousBase !== desiredBase) {
-              await deleteTemporaryBase(previousBase);
-            }
+            await deleteTemporaryBase(previousBase);
 
             await publishStatus([
               '## 🧪 Stacked PR test enabled',
               '',
               `PR #${currentNumber} will now be tested together with PR #${targetNumber}.`,
-              modeText,
+              `GitHub base branch changed to \`${desiredBase}\`.`,
               '',
               `The validation checkout represents \`latest main + PR #${targetNumber} + PR #${currentNumber}\`.`,
               '',
