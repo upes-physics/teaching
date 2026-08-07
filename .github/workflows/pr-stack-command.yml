@@ -1,0 +1,255 @@
+name: Stack PR command
+
+on:
+  issue_comment:
+    types:
+      - created
+
+jobs:
+  stack:
+    name: Handle stacked PR command
+    if: github.event.issue.pull_request != null
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: read
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Handle test-with command
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const body = context.payload.comment.body.trim();
+            // Accepted examples:
+            //   test with PR 30
+            //   test with PR #30
+            //   test with #30
+            //   test with PR #30 and main
+            // The "and main" suffix is optional because every stacked test
+            // still requires both PR heads to contain the latest main.
+            const stackMatch = body.match(
+              /^test\s+with\s+(?:#\s*)?(?:pr\s*)?#?\s*(\d+)(?:\s+and\s+main)?\s*$/i
+            );
+            const resetMatch = /^test\s+with\s+main\s*$/i.test(body);
+
+            if (!stackMatch && !resetMatch) {
+              core.info('Comment is not a stacked-PR command.');
+              return;
+            }
+
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const currentNumber = context.issue.number;
+            const actor = context.actor;
+
+            let permission = 'none';
+            try {
+              const { data } = await github.rest.repos.getCollaboratorPermissionLevel({
+                owner,
+                repo,
+                username: actor,
+              });
+              permission = data.permission;
+            } catch (error) {
+              core.warning(`Could not resolve permission for ${actor}: ${error.message}`);
+            }
+
+            if (!['admin', 'maintain', 'write'].includes(permission)) {
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: currentNumber,
+                body: `⛔ @${actor}, stacked-PR commands are restricted to repository maintainers with write access.`,
+              });
+              return;
+            }
+
+            const { data: current } = await github.rest.pulls.get({
+              owner,
+              repo,
+              pull_number: currentNumber,
+            });
+
+            if (current.state !== 'open') {
+              core.notice(`PR #${currentNumber} is not open.`);
+              return;
+            }
+
+            const marker = '<!-- upes-physics-stack-status -->';
+
+            async function publishStatus(message) {
+              const comments = await github.paginate(
+                github.rest.issues.listComments,
+                {
+                  owner,
+                  repo,
+                  issue_number: currentNumber,
+                  per_page: 100,
+                }
+              );
+
+              const existing = comments.find(comment =>
+                comment.user?.type === 'Bot' &&
+                comment.body?.includes(marker)
+              );
+              const statusBody = `${marker}\n${message}`;
+
+              if (existing) {
+                await github.rest.issues.updateComment({
+                  owner,
+                  repo,
+                  comment_id: existing.id,
+                  body: statusBody,
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner,
+                  repo,
+                  issue_number: currentNumber,
+                  body: statusBody,
+                });
+              }
+            }
+
+            if (resetMatch) {
+              if (current.base.ref === 'main') {
+                await publishStatus(
+                  `ℹ️ PR #${currentNumber} is already tested directly against \`main\`.`
+                );
+                return;
+              }
+
+              await github.rest.pulls.update({
+                owner,
+                repo,
+                pull_number: currentNumber,
+                base: 'main',
+              });
+
+              await publishStatus([
+                '## 🧪 PR test base updated',
+                '',
+                `PR #${currentNumber} is now tested directly against \`main\`.`,
+                '',
+                'The normal validation and preview workflows will rerun automatically.',
+              ].join('\n'));
+              return;
+            }
+
+            const targetNumber = Number(stackMatch[1]);
+            if (targetNumber === currentNumber) {
+              await publishStatus('⛔ A pull request cannot be stacked on itself.');
+              return;
+            }
+
+            let target;
+            try {
+              const response = await github.rest.pulls.get({
+                owner,
+                repo,
+                pull_number: targetNumber,
+              });
+              target = response.data;
+            } catch (error) {
+              if (error.status === 404) {
+                await publishStatus(`⛔ PR #${targetNumber} does not exist.`);
+                return;
+              }
+              throw error;
+            }
+
+            if (target.state !== 'open') {
+              await publishStatus(
+                `⛔ PR #${targetNumber} is not open. Only open PRs can be used as a stacked test base.`
+              );
+              return;
+            }
+
+            if (target.head.repo?.full_name !== `${owner}/${repo}`) {
+              await publishStatus([
+                `⛔ PR #${targetNumber} comes from a fork, so its head branch cannot be used as another PR's GitHub base branch.`,
+                '',
+                'Use a PR whose head branch belongs to this repository.',
+              ].join('\n'));
+              return;
+            }
+
+            if (target.head.ref === current.head.ref) {
+              await publishStatus('⛔ Both PRs use the same head branch and cannot be stacked.');
+              return;
+            }
+
+            if (target.base.ref === current.head.ref) {
+              await publishStatus([
+                '## ⛔ Stacked PR test rejected',
+                '',
+                `PR #${targetNumber} is based on \`${current.head.ref}\`, which is the head branch of PR #${currentNumber}.`,
+                `Stacking PR #${currentNumber} on PR #${targetNumber} would create a circular dependency.`,
+                '',
+                'Choose another open PR whose base does not depend on this PR.',
+              ].join('\n'));
+              return;
+            }
+
+            const { data: mainComparison } = await github.rest.repos.compareCommits({
+              owner,
+              repo,
+              base: 'main',
+              head: target.head.sha,
+            });
+            if (!['ahead', 'identical'].includes(mainComparison.status)) {
+              await publishStatus([
+                `⛔ PR #${targetNumber} does not contain the latest \`main\`.`,
+                '',
+                'Update that PR with the latest `main`, then run this command again.',
+              ].join('\n'));
+              return;
+            }
+
+            const { data: currentComparison } = await github.rest.repos.compareCommits({
+              owner,
+              repo,
+              base: 'main',
+              head: current.head.sha,
+            });
+            if (!['ahead', 'identical'].includes(currentComparison.status)) {
+              await publishStatus([
+                `⛔ PR #${currentNumber} does not contain the latest \`main\`.`,
+                '',
+                'Update this PR with the latest `main`, then run the stacked test command again.',
+              ].join('\n'));
+              return;
+            }
+
+            if (current.base.ref === target.head.ref) {
+              await publishStatus([
+                '## 🧪 Stacked PR test',
+                '',
+                `PR #${currentNumber} is already being tested with PR #${targetNumber}.`,
+                `Base branch: \`${target.head.ref}\``,
+                '',
+                'Use `test with main` to remove the stack.',
+              ].join('\n'));
+              return;
+            }
+
+            await github.rest.pulls.update({
+              owner,
+              repo,
+              pull_number: currentNumber,
+              base: target.head.ref,
+            });
+
+            await publishStatus([
+              '## 🧪 Stacked PR test enabled',
+              '',
+              `PR #${currentNumber} will now be tested together with PR #${targetNumber}.`,
+              `GitHub base branch changed to \`${target.head.ref}\`.`,
+              '',
+              `The validation checkout represents \`main + PR #${targetNumber} + PR #${currentNumber}\`.`,
+              '',
+              'The checks and PR preview will rerun automatically.',
+              'Use `test with main` on this PR to return it to the normal base.',
+            ].join('\n'));

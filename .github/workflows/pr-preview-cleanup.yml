@@ -2,8 +2,6 @@ name: Remove closed PR preview
 
 on:
   pull_request_target:
-    branches:
-      - main
     types:
       - closed
 
@@ -23,6 +21,12 @@ jobs:
       deployments: read
 
     steps:
+      - name: Checkout deployment repository
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
       - name: Create empty deployment directory
         run: mkdir -p empty-preview
 
