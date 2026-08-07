@@ -1,0 +1,179 @@
+name: Build fork stacked PR base
+
+on:
+  workflow_dispatch:
+    inputs:
+      current_pr:
+        description: PR to test
+        required: true
+        type: string
+      target_pr:
+        description: Fork PR to combine with
+        required: true
+        type: string
+
+jobs:
+  build:
+    name: Build integration base
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+
+    steps:
+      - name: Build and apply fork integration base
+        uses: actions/github-script@v9
+        env:
+          CURRENT_PR: ${{ inputs.current_pr }}
+          TARGET_PR: ${{ inputs.target_pr }}
+        with:
+          script: |
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const currentNumber = Number(process.env.CURRENT_PR);
+            const targetNumber = Number(process.env.TARGET_PR);
+            const marker = '<!-- upes-physics-stack-status -->';
+
+            async function publishStatus(message) {
+              const comments = await github.paginate(
+                github.rest.issues.listComments,
+                { owner, repo, issue_number: currentNumber, per_page: 100 }
+              );
+              const existing = comments.find(comment =>
+                comment.user?.type === 'Bot' && comment.body?.includes(marker)
+              );
+              const body = `${marker}\n${message}`;
+              if (existing) {
+                await github.rest.issues.updateComment({
+                  owner, repo, comment_id: existing.id, body,
+                });
+              } else {
+                await github.rest.issues.createComment({
+                  owner, repo, issue_number: currentNumber, body,
+                });
+              }
+            }
+
+            const current = (await github.rest.pulls.get({
+              owner, repo, pull_number: currentNumber,
+            })).data;
+            const target = (await github.rest.pulls.get({
+              owner, repo, pull_number: targetNumber,
+            })).data;
+
+            if (current.state !== 'open' || target.state !== 'open') {
+              await publishStatus('⛔ Both pull requests must still be open to build a stacked test.');
+              return;
+            }
+
+            if (target.head.repo?.full_name === `${owner}/${repo}`) {
+              await publishStatus([
+                '⛔ Fork integration builder received a same-repository target.',
+                '',
+                'Run the normal `test with PR <number>` command again.',
+              ].join('\n'));
+              return;
+            }
+
+            if (target.base.ref !== 'main') {
+              await publishStatus([
+                `⛔ Fork PR #${targetNumber} is based on \`${target.base.ref}\`, not \`main\`.`,
+                '',
+                'Fork-based stacked tests require the target PR to be opened against `main`.',
+              ].join('\n'));
+              return;
+            }
+
+            if (!target.merge_commit_sha) {
+              await publishStatus([
+                `⛔ GitHub has not produced a mergeable test commit for fork PR #${targetNumber}.`,
+                '',
+                'Resolve conflicts in the target PR, then run the command again.',
+              ].join('\n'));
+              return;
+            }
+
+            const branch = `pr-stack/pr-${currentNumber}-with-${targetNumber}`;
+
+            try {
+              try {
+                await github.rest.git.getRef({ owner, repo, ref: `heads/${branch}` });
+                await github.rest.git.updateRef({
+                  owner,
+                  repo,
+                  ref: `heads/${branch}`,
+                  sha: target.merge_commit_sha,
+                  force: true,
+                });
+              } catch (error) {
+                if (error.status !== 404) throw error;
+                await github.rest.git.createRef({
+                  owner,
+                  repo,
+                  ref: `refs/heads/${branch}`,
+                  sha: target.merge_commit_sha,
+                });
+              }
+
+              try {
+                await github.rest.repos.merge({
+                  owner,
+                  repo,
+                  base: branch,
+                  head: 'main',
+                  commit_message: `Refresh ${branch} with latest main`,
+                });
+              } catch (error) {
+                if (error.status !== 204) throw error;
+              }
+            } catch (error) {
+              try {
+                await github.rest.git.deleteRef({ owner, repo, ref: `heads/${branch}` });
+              } catch (_) {}
+              await publishStatus([
+                '## ⛔ Could not build fork integration base',
+                '',
+                `PR #${targetNumber} could not be combined cleanly with the latest \`main\`.`,
+                '',
+                `GitHub reported: ${error.message}`,
+              ].join('\n'));
+              return;
+            }
+
+            const previousBase = current.base.ref;
+            await github.rest.pulls.update({
+              owner,
+              repo,
+              pull_number: currentNumber,
+              base: branch,
+            });
+
+            if (
+              previousBase?.startsWith(`pr-stack/pr-${currentNumber}-with-`) &&
+              previousBase !== branch
+            ) {
+              try {
+                await github.rest.git.deleteRef({
+                  owner, repo, ref: `heads/${previousBase}`,
+                });
+              } catch (error) {
+                if (error.status !== 404) {
+                  core.warning(`Could not delete old integration base: ${error.message}`);
+                }
+              }
+            }
+
+            await publishStatus([
+              '## 🧪 Stacked PR test enabled',
+              '',
+              `PR #${currentNumber} will now be tested together with fork PR #${targetNumber}.`,
+              `Fork source: \`${target.head.repo.full_name}:${target.head.ref}\``,
+              `Internal test base: \`${branch}\``,
+              '',
+              `The validation checkout represents \`latest main + PR #${targetNumber} + PR #${currentNumber}\`.`,
+              '',
+              'The checks and PR preview will rerun automatically.',
+              'Use `test with main` on this PR to remove the stack.',
+            ].join('\n'));
