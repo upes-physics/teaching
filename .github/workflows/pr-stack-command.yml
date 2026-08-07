@@ -12,7 +12,7 @@ jobs:
     runs-on: ubuntu-latest
 
     permissions:
-      contents: read
+      contents: write
       issues: write
       pull-requests: write
 
@@ -187,6 +187,21 @@ jobs:
               }
             }
 
+            async function deleteTemporaryBase(ref) {
+              if (!ref?.startsWith(`pr-stack/pr-${currentNumber}-with-`)) return;
+              try {
+                await github.rest.git.deleteRef({
+                  owner,
+                  repo,
+                  ref: `heads/${ref}`,
+                });
+              } catch (error) {
+                if (error.status !== 404) {
+                  core.warning(`Could not delete temporary base ${ref}: ${error.message}`);
+                }
+              }
+            }
+
             if (resetMatch) {
               if (current.base.ref === 'main') {
                 await publishStatus(
@@ -195,9 +210,11 @@ jobs:
                 return;
               }
 
+              const previousBase = current.base.ref;
               await github.rest.pulls.update({
                 owner, repo, pull_number: currentNumber, base: 'main',
               });
+              await deleteTemporaryBase(previousBase);
               await publishStatus([
                 '## 🧪 PR test base updated',
                 '',
@@ -233,19 +250,15 @@ jobs:
               );
               return;
             }
-            if (target.head.repo?.full_name !== `${owner}/${repo}`) {
-              await publishStatus([
-                `⛔ PR #${targetNumber} comes from a fork, so its head branch cannot be used as another PR's GitHub base branch.`,
-                '',
-                'Use a PR whose head branch belongs to this repository.',
-              ].join('\n'));
-              return;
-            }
-            if (target.head.ref === current.head.ref) {
+
+            if (target.head.ref === current.head.ref &&
+                target.head.repo?.full_name === current.head.repo?.full_name) {
               await publishStatus('⛔ Both PRs use the same head branch and cannot be stacked.');
               return;
             }
-            if (target.base.ref === current.head.ref) {
+
+            if (target.base.ref === current.head.ref &&
+                target.base.repo?.full_name === `${owner}/${repo}`) {
               await publishStatus([
                 '## ⛔ Stacked PR test rejected',
                 '',
@@ -253,18 +266,6 @@ jobs:
                 `Stacking PR #${currentNumber} on PR #${targetNumber} would create a circular dependency.`,
                 '',
                 'Choose another open PR whose base does not depend on this PR.',
-              ].join('\n'));
-              return;
-            }
-
-            const mainComparison = (await github.rest.repos.compareCommits({
-              owner, repo, base: 'main', head: target.head.sha,
-            })).data;
-            if (!['ahead', 'identical'].includes(mainComparison.status)) {
-              await publishStatus([
-                `⛔ PR #${targetNumber} does not contain the latest \`main\`.`,
-                '',
-                'Update that PR with the latest `main`, then run this command again.',
               ].join('\n'));
               return;
             }
@@ -281,28 +282,122 @@ jobs:
               return;
             }
 
-            if (current.base.ref === target.head.ref) {
+            const targetIsFork = target.head.repo?.full_name !== `${owner}/${repo}`;
+            let desiredBase;
+            let modeText;
+
+            if (!targetIsFork) {
+              const mainComparison = (await github.rest.repos.compareCommits({
+                owner, repo, base: 'main', head: target.head.sha,
+              })).data;
+              if (!['ahead', 'identical'].includes(mainComparison.status)) {
+                await publishStatus([
+                  `⛔ PR #${targetNumber} does not contain the latest \`main\`.`,
+                  '',
+                  'Update that PR with the latest `main`, then run this command again.',
+                ].join('\n'));
+                return;
+              }
+
+              desiredBase = target.head.ref;
+              modeText = `GitHub base branch changed to \`${desiredBase}\`.`;
+            } else {
+              if (target.base.ref !== 'main') {
+                await publishStatus([
+                  `⛔ Fork PR #${targetNumber} is based on \`${target.base.ref}\`, not \`main\`.`,
+                  '',
+                  'Fork-based stacked tests currently require the target PR to be opened against `main`.',
+                ].join('\n'));
+                return;
+              }
+
+              if (!target.merge_commit_sha) {
+                await publishStatus([
+                  `⛔ GitHub has not produced a mergeable test commit for fork PR #${targetNumber}.`,
+                  '',
+                  'Resolve conflicts in the target PR, then run the command again.',
+                ].join('\n'));
+                return;
+              }
+
+              desiredBase = `pr-stack/pr-${currentNumber}-with-${targetNumber}`;
+
+              try {
+                try {
+                  await github.rest.git.getRef({ owner, repo, ref: `heads/${desiredBase}` });
+                  await github.rest.git.updateRef({
+                    owner,
+                    repo,
+                    ref: `heads/${desiredBase}`,
+                    sha: target.merge_commit_sha,
+                    force: true,
+                  });
+                } catch (error) {
+                  if (error.status !== 404) throw error;
+                  await github.rest.git.createRef({
+                    owner,
+                    repo,
+                    ref: `refs/heads/${desiredBase}`,
+                    sha: target.merge_commit_sha,
+                  });
+                }
+
+                try {
+                  await github.rest.repos.merge({
+                    owner,
+                    repo,
+                    base: desiredBase,
+                    head: 'main',
+                    commit_message: `Refresh ${desiredBase} with latest main`,
+                  });
+                } catch (error) {
+                  if (error.status !== 204) throw error;
+                }
+              } catch (error) {
+                await deleteTemporaryBase(desiredBase);
+                await publishStatus([
+                  `## ⛔ Could not build fork integration base`,
+                  '',
+                  `PR #${targetNumber} could not be combined cleanly with the latest \`main\`.`,
+                  '',
+                  `GitHub reported: ${error.message}`,
+                ].join('\n'));
+                return;
+              }
+
+              modeText = [
+                `PR #${targetNumber} comes from fork \`${target.head.repo.full_name}\`.`,
+                `Created internal integration base \`${desiredBase}\` containing latest \`main\` + PR #${targetNumber}.`,
+              ].join('\n');
+            }
+
+            if (current.base.ref === desiredBase) {
               await publishStatus([
                 '## 🧪 Stacked PR test',
                 '',
                 `PR #${currentNumber} is already being tested with PR #${targetNumber}.`,
-                `Base branch: \`${target.head.ref}\``,
+                `Base branch: \`${desiredBase}\``,
                 '',
                 'Use `test with main` to remove the stack.',
               ].join('\n'));
               return;
             }
 
+            const previousBase = current.base.ref;
             await github.rest.pulls.update({
-              owner, repo, pull_number: currentNumber, base: target.head.ref,
+              owner, repo, pull_number: currentNumber, base: desiredBase,
             });
+            if (previousBase !== desiredBase) {
+              await deleteTemporaryBase(previousBase);
+            }
+
             await publishStatus([
               '## 🧪 Stacked PR test enabled',
               '',
               `PR #${currentNumber} will now be tested together with PR #${targetNumber}.`,
-              `GitHub base branch changed to \`${target.head.ref}\`.`,
+              modeText,
               '',
-              `The validation checkout represents \`main + PR #${targetNumber} + PR #${currentNumber}\`.`,
+              `The validation checkout represents \`latest main + PR #${targetNumber} + PR #${currentNumber}\`.`,
               '',
               'The checks and PR preview will rerun automatically.',
               'Use `test with main` on this PR to return it to the normal base.',
