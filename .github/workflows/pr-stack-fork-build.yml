@@ -1,0 +1,362 @@
+name: Test with fork PR
+
+on:
+  repository_dispatch:
+    types:
+      - fork-stack-test
+  workflow_dispatch:
+    inputs:
+      current_pr:
+        description: Current PR number
+        required: true
+        type: string
+      target_pr:
+        description: Fork PR number to test with
+        required: true
+        type: string
+
+concurrency:
+  group: pages-branch-write
+  cancel-in-progress: false
+
+jobs:
+  test:
+    name: Fork stacked checks
+    runs-on: ubuntu-latest
+
+    permissions:
+      contents: write
+      issues: write
+      pull-requests: write
+      deployments: read
+
+    steps:
+      - name: Resolve pull requests
+        id: prs
+        uses: actions/github-script@v9
+        env:
+          DISPATCH_CURRENT_PR: ${{ github.event.client_payload.current_pr }}
+          DISPATCH_TARGET_PR: ${{ github.event.client_payload.target_pr }}
+          INPUT_CURRENT_PR: ${{ inputs.current_pr }}
+          INPUT_TARGET_PR: ${{ inputs.target_pr }}
+        with:
+          script: |
+            const currentNumber = Number(
+              process.env.DISPATCH_CURRENT_PR || process.env.INPUT_CURRENT_PR
+            );
+            const targetNumber = Number(
+              process.env.DISPATCH_TARGET_PR || process.env.INPUT_TARGET_PR
+            );
+
+            if (!Number.isInteger(currentNumber) || !Number.isInteger(targetNumber)) {
+              core.setFailed('Valid current_pr and target_pr numbers are required.');
+              return;
+            }
+
+            const current = (await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: currentNumber,
+            })).data;
+            const target = (await github.rest.pulls.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: targetNumber,
+            })).data;
+
+            if (current.state !== 'open' || target.state !== 'open') {
+              core.setFailed('Both pull requests must be open.');
+              return;
+            }
+            if (target.head.repo?.full_name === `${context.repo.owner}/${context.repo.repo}`) {
+              core.setFailed('Target PR is not a fork PR.');
+              return;
+            }
+
+            core.setOutput('current_number', String(currentNumber));
+            core.setOutput('target_number', String(targetNumber));
+            core.setOutput('current_sha', current.head.sha);
+            core.setOutput('target_sha', target.head.sha);
+            core.setOutput('target_source', `${target.head.repo.full_name}:${target.head.ref}`);
+
+      - name: Checkout latest main
+        uses: actions/checkout@v6
+        with:
+          ref: main
+          fetch-depth: 0
+
+      - name: Prepare combined checkout
+        id: merge
+        continue-on-error: true
+        shell: bash
+        env:
+          CURRENT_PR: ${{ steps.prs.outputs.current_number }}
+          TARGET_PR: ${{ steps.prs.outputs.target_number }}
+        run: |
+          set -euo pipefail
+          mkdir -p .ci
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git fetch --no-tags origin \
+            "+refs/pull/${TARGET_PR}/head:refs/remotes/origin/stack-target" \
+            "+refs/pull/${CURRENT_PR}/head:refs/remotes/origin/stack-current"
+          git checkout -B combined-test origin/main
+
+          if ! git merge --no-ff --no-edit refs/remotes/origin/stack-target > .ci/merge.log 2>&1; then
+            cat .ci/merge.log
+            git merge --abort || true
+            exit 1
+          fi
+
+          if ! git merge --no-ff --no-edit refs/remotes/origin/stack-current >> .ci/merge.log 2>&1; then
+            cat .ci/merge.log
+            git merge --abort || true
+            exit 1
+          fi
+
+          echo "Combined latest main + target PR + current PR successfully." | tee -a .ci/merge.log
+
+      - name: Set up Node
+        if: steps.merge.outcome == 'success'
+        uses: actions/setup-node@v6
+        with:
+          node-version: 24
+
+      - name: Check JavaScript syntax
+        id: javascript
+        if: steps.merge.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          status=0
+          : > .ci/javascript.log
+          while IFS= read -r -d '' file; do
+            output="$(node --check "$file" 2>&1)"
+            code=$?
+            if [ "$code" -ne 0 ]; then
+              status=1
+              printf '### %s\n%s\n\n' "${file#./}" "$output" >> .ci/javascript.log
+            fi
+          done < <(find . -type f -name '*.js' -not -path './.git/*' -not -path './.ci/*' -print0)
+          if [ "$status" -eq 0 ]; then
+            echo "All JavaScript files passed node --check." | tee .ci/javascript.log
+          else
+            cat .ci/javascript.log
+          fi
+          exit "$status"
+
+      - name: Validate HTML
+        id: html
+        if: steps.merge.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          set +e
+          npx --yes htmlhint@1 --format unix --nocolor "**/*.html" > .ci/html.log 2>&1
+          status=$?
+          cat .ci/html.log
+          exit "$status"
+
+      - name: Validate JSON and referenced course files
+        id: json
+        if: steps.merge.outcome == 'success'
+        continue-on-error: true
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          import json
+          import re
+          from pathlib import Path
+          from urllib.parse import urlsplit
+
+          errors = []
+          for path in Path('.').rglob('*.json'):
+              if '.git' in path.parts or '.ci' in path.parts:
+                  continue
+              try:
+                  json.loads(path.read_text(encoding='utf-8'))
+              except Exception as exc:
+                  errors.append(f'{path}: {exc}')
+
+          app = Path('app.js').read_text(encoding='utf-8')
+          for relative_path in re.findall(r'dataCard\s*:\s*"([^"]+)"', app):
+              if not Path(relative_path).is_file():
+                  errors.append(f'app.js: Referenced data card does not exist: {relative_path}')
+
+          for card_path in Path('data').rglob('datacard.json'):
+              try:
+                  card = json.loads(card_path.read_text(encoding='utf-8'))
+              except Exception:
+                  continue
+              simulators = card.get('simulators', [])
+              if not isinstance(simulators, list):
+                  errors.append(f"{card_path}: 'simulators' must be an array")
+                  continue
+              for simulator in simulators:
+                  if not isinstance(simulator, dict):
+                      continue
+                  link = str(simulator.get('link', '')).strip()
+                  if not link:
+                      errors.append(f'{card_path}: simulator has no link')
+                      continue
+                  parsed = urlsplit(link)
+                  if parsed.scheme or parsed.netloc:
+                      continue
+                  if not (card_path.parent / parsed.path).is_file():
+                      errors.append(f'{card_path}: Referenced simulator file does not exist: {link}')
+
+          Path('.ci/json.log').write_text('\n'.join(errors) + ('\n' if errors else ''), encoding='utf-8')
+          if errors:
+              print('\n'.join(errors))
+              raise SystemExit(1)
+          print('All JSON and referenced course files passed validation.')
+          PY
+
+      - name: Create temporary site build
+        id: build
+        if: >-
+          steps.merge.outcome == 'success' &&
+          steps.javascript.outcome == 'success' &&
+          steps.html.outcome == 'success' &&
+          steps.json.outcome == 'success'
+        shell: bash
+        run: |
+          rm -rf _site
+          mkdir -p _site
+          rsync -a \
+            --exclude='.git/' \
+            --exclude='.github/' \
+            --exclude='.ci/' \
+            --exclude='_site/' \
+            --exclude='README.md' \
+            ./ _site/
+          touch _site/.nojekyll
+
+      - name: Publish combined test report
+        if: always()
+        uses: actions/github-script@v9
+        env:
+          PR_NUMBER: ${{ steps.prs.outputs.current_number }}
+          TARGET_NUMBER: ${{ steps.prs.outputs.target_number }}
+          TARGET_SOURCE: ${{ steps.prs.outputs.target_source }}
+          MERGE_STATUS: ${{ steps.merge.outcome }}
+          JS_STATUS: ${{ steps.javascript.outcome }}
+          HTML_STATUS: ${{ steps.html.outcome }}
+          JSON_STATUS: ${{ steps.json.outcome }}
+          BUILD_STATUS: ${{ steps.build.outcome }}
+        with:
+          script: |
+            const marker = '<!-- upes-physics-fork-stack-report -->';
+            const prNumber = Number(process.env.PR_NUMBER);
+            if (!prNumber) return;
+            const targetNumber = Number(process.env.TARGET_NUMBER);
+            const statuses = {
+              'Combine pull requests': process.env.MERGE_STATUS || 'skipped',
+              'JavaScript syntax': process.env.JS_STATUS || 'skipped',
+              'HTML validation': process.env.HTML_STATUS || 'skipped',
+              'JSON and file references': process.env.JSON_STATUS || 'skipped',
+              'Temporary build': process.env.BUILD_STATUS || 'skipped',
+            };
+            const icon = value => value === 'success' ? '✅' : value === 'failure' ? '❌' : '⏭️';
+            const passed = Object.values(statuses).every(value => value === 'success');
+            const table = Object.entries(statuses)
+              .map(([name, value]) => `| ${name} | ${icon(value)} ${value} |`)
+              .join('\n');
+            const body = [
+              marker,
+              `## ${passed ? '✅' : '❌'} Combined fork PR test`,
+              '',
+              `Tested PR #${prNumber} together with PR #${targetNumber}.`,
+              `Fork source: \`${process.env.TARGET_SOURCE}\``,
+              '',
+              '| Check | Result |',
+              '|---|---|',
+              table,
+              '',
+              passed
+                ? 'The combined state passes all required validators.'
+                : 'The combined state still has validation failures. Open this workflow run for details.',
+              '',
+              `Combined checkout: \`latest main + PR #${targetNumber} + PR #${prNumber}\`.`,
+            ].join('\n');
+
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              { owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, per_page: 100 }
+            );
+            const existing = comments.find(comment =>
+              comment.user?.type === 'Bot' && comment.body?.includes(marker)
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                comment_id: existing.id, body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: prNumber, body,
+              });
+            }
+
+      - name: Deploy combined preview to gh-pages
+        if: steps.build.outcome == 'success'
+        uses: JamesIves/github-pages-deploy-action@v4.8.0
+        with:
+          branch: gh-pages
+          folder: _site
+          target-folder: pr-preview/pr-${{ steps.prs.outputs.current_number }}
+          clean: true
+          force: false
+          commit-message: Deploy combined preview for PR ${{ steps.prs.outputs.current_number }} with PR ${{ steps.prs.outputs.target_number }}
+
+      - name: Publish preview link
+        if: steps.build.outcome == 'success'
+        uses: actions/github-script@v9
+        env:
+          PR_NUMBER: ${{ steps.prs.outputs.current_number }}
+          TARGET_NUMBER: ${{ steps.prs.outputs.target_number }}
+        with:
+          script: |
+            const marker = '<!-- upes-physics-preview-link -->';
+            const prNumber = Number(process.env.PR_NUMBER);
+            const targetNumber = Number(process.env.TARGET_NUMBER);
+            const url = `https://${context.repo.owner}.github.io/${context.repo.repo}/pr-preview/pr-${prNumber}/`;
+            const body = [
+              `[PR Preview](${url})`,
+              ':---:',
+              `| <p></p> :rocket: View combined preview at <br> ${url} <br><br>`,
+              `| <h6>Combined test: latest main + PR #${targetNumber} + PR #${prNumber}. <br> This preview is rebuilt when the fork-stack command is run again. <br><br> </h6>`,
+              marker,
+            ].join('\n');
+            const comments = await github.paginate(
+              github.rest.issues.listComments,
+              { owner: context.repo.owner, repo: context.repo.repo, issue_number: prNumber, per_page: 100 }
+            );
+            const existing = comments.find(comment =>
+              comment.user?.type === 'Bot' && comment.body?.includes(marker)
+            );
+            if (existing) {
+              await github.rest.issues.updateComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                comment_id: existing.id, body,
+              });
+            } else {
+              await github.rest.issues.createComment({
+                owner: context.repo.owner, repo: context.repo.repo,
+                issue_number: prNumber, body,
+              });
+            }
+
+      - name: Fail when combined checks fail
+        if: >-
+          always() &&
+          (
+            steps.merge.outcome != 'success' ||
+            steps.javascript.outcome != 'success' ||
+            steps.html.outcome != 'success' ||
+            steps.json.outcome != 'success' ||
+            steps.build.outcome != 'success'
+          )
+        run: exit 1
