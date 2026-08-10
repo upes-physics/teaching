@@ -1,0 +1,30 @@
+{
+  "courseCode": "CSEG1023",
+  "courseName": "Computational Techniques",
+  "simulators": [
+    {
+      "name": "Python",
+      "desc": "Static browser tools for teaching Python basics, scientific programming, and data handling.",
+      "link": "python.html"
+    },
+    {
+      "name": "Latex",
+      "desc": "Scientific Word Processing with LaTeX",
+      "link": "latex.html"
+    },
+    {
+      "name": "Gnuplot",
+      "desc": "Data Analysis and Visualization with Gnuplot",
+      "link": "gnuplot.html"
+    },
+    {
+      "name": "Speak to Master Obi-wan",
+      "desc": "Interactive bot to help you learn",
+      "link": "https://chatgpt.com/g/g-6a2274a907bc819180d7559b12f3255c-master-obi-wan"
+    }
+  ],
+  "faculty": {
+    "name": "Suvankar Roy Chowdhury",
+    "email": "suvankar.chowdhury@ddn.upes.ac.in"
+  }
+}

@@ -1,0 +1,54 @@
+{
+  "courseCode": "PHYS7005",
+  "courseName": "Electrodynamics",
+  "stream": "MSc Physics",
+  "semester": "1",
+  "faculty": {
+    "name": "Dr. Gagan Anand",
+    "email": "ganand@ddn.upes.ac.in"
+  },
+  "simulators": [
+    {
+      "name": "Motional EMF",
+      "desc": "Simulator for motional EMF",
+      "link": "Unit1_ motionalEMF.html",
+      "uploadFileLink": "Unit 1_ motional EMF.html"
+    },
+    {
+      "name": "Boundary Conditions",
+      "desc": "Boundary Conditions, Uniqueness, and the Method of Images",
+      "link": "UNIT 1_boundary_images_Uniqueness Theorem.html",
+      "uploadFileLink": "UNIT 1_boundary_images_Uniqueness Theorem.html"
+    },
+    {
+      "name": "Lorentz & Coulomb's gauge",
+      "desc": "Know why why the Potentials Are Not Unique??",
+      "link": "Unit 1_Lorentz gauge, Coulomnb's gauge_Applications.html",
+      "uploadFileLink": "Unit 1_Lorentz gauge, Coulomnb's gauge_Applications.html"
+    },
+    {
+      "name": "Electromagnetic Induction",
+      "desc": "Visualizing Faraday's Law & Electromagnetic Induction",
+      "link": "Unit 1_transform emf.html",
+      "uploadFileLink": "Unit 1_transform emf.html"
+    },
+    {
+      "name": "Wireless Charging",
+      "desc": "Know how a wireless charger works",
+      "link": "Unit 1_transformer-emf-wireless charger works.html",
+      "uploadFileLink": "Unit 1_transformer-emf-wireless charger works.html"
+    },
+    {
+      "name": "Poynting Theorem",
+      "desc": "How electromagnetic fields store, transport, and exchange energy?",
+      "link": "Unit 2_poynting-theorem.html",
+      "uploadFileLink": "Unit 2_poynting-theorem.html"
+    },
+    {
+      "name": "EM wave propagation",
+      "desc": "Learn the mechanisms of EM wave propagation through interactive simulation",
+      "link": "Unit2_EM wave_propagation_module.html",
+      "uploadFileLink": "Unit2_EM wave_propagation_module.html"
+    }
+  ]
+}
