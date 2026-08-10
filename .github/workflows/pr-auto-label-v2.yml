@@ -1,4 +1,4 @@
-name: PR automatic labels
+name: PR automatic labels v2
 
 on:
   pull_request_target:
@@ -7,6 +7,7 @@ on:
       - reopened
       - synchronize
       - edited
+      - ready_for_review
 
 jobs:
   auto-label:
@@ -16,7 +17,7 @@ jobs:
     permissions:
       contents: read
       issues: write
-      pull-requests: read
+      pull-requests: write
 
     steps:
       - name: Apply configured labels
@@ -46,18 +47,23 @@ jobs:
             const activeFiles = files
               .filter(file => file.status !== 'removed')
               .map(file => file.filename);
+
+            const repoLabels = await github.paginate(
+              github.rest.issues.listLabelsForRepo,
+              { owner, repo, per_page: 100 }
+            );
+            const labelsByKey = new Map(
+              repoLabels.map(label => [label.name.toLowerCase(), label])
+            );
             const currentLabels = new Set(
               (pr.labels || []).map(label => label.name.toLowerCase())
             );
 
             async function ensureLabel(rule) {
-              let label;
-              try {
-                label = (await github.rest.issues.getLabel({
-                  owner, repo, name: rule.name,
-                })).data;
-              } catch (error) {
-                if (error.status !== 404) throw error;
+              const key = rule.name.toLowerCase();
+              let label = labelsByKey.get(key);
+
+              if (!label) {
                 label = (await github.rest.issues.createLabel({
                   owner,
                   repo,
@@ -65,9 +71,15 @@ jobs:
                   color: String(rule.color || 'D4C5F9').replace('#', ''),
                   description: rule.description || '',
                 })).data;
+                labelsByKey.set(key, label);
+                return label.name;
               }
 
-              if (label.name !== rule.name) {
+              if (
+                label.name !== rule.name ||
+                (rule.color && label.color.toLowerCase() !== String(rule.color).replace('#', '').toLowerCase()) ||
+                (rule.description !== undefined && (label.description || '') !== rule.description)
+              ) {
                 label = (await github.rest.issues.updateLabel({
                   owner,
                   repo,
@@ -76,7 +88,9 @@ jobs:
                   color: String(rule.color || label.color || 'D4C5F9').replace('#', ''),
                   description: rule.description ?? label.description ?? '',
                 })).data;
+                labelsByKey.set(key, label);
               }
+
               return label.name;
             }
 
@@ -92,14 +106,25 @@ jobs:
               );
               const hasLabel = currentLabels.has(key);
 
+              core.info(
+                `${labelName}: ${shouldHave ? 'matched' : 'not matched'} ` +
+                `for PR #${pr.number}`
+              );
+
               if (shouldHave && !hasLabel) {
                 await github.rest.issues.addLabels({
-                  owner, repo, issue_number: pr.number, labels: [labelName],
+                  owner,
+                  repo,
+                  issue_number: pr.number,
+                  labels: [labelName],
                 });
                 currentLabels.add(key);
               } else if (!shouldHave && hasLabel) {
                 await github.rest.issues.removeLabel({
-                  owner, repo, issue_number: pr.number, name: labelName,
+                  owner,
+                  repo,
+                  issue_number: pr.number,
+                  name: labelName,
                 });
                 currentLabels.delete(key);
               }

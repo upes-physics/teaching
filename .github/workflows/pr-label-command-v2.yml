@@ -1,4 +1,4 @@
-name: PR label command
+name: PR label command v2
 
 on:
   issue_comment:
@@ -14,7 +14,7 @@ jobs:
     permissions:
       contents: read
       issues: write
-      pull-requests: read
+      pull-requests: write
 
     steps:
       - name: Handle label command
@@ -41,17 +41,24 @@ jobs:
               requestedName = requestedName.slice(1, -1).trim();
             }
 
+            if (!requestedName) return;
+
             const pr = (await github.rest.pulls.get({
               owner, repo, pull_number: prNumber,
             })).data;
-            if (pr.state !== 'open') return;
+            if (pr.state !== 'open') {
+              core.notice(`PR #${prNumber} is not open.`);
+              return;
+            }
 
             let permission = 'none';
             try {
               permission = (await github.rest.repos.getCollaboratorPermissionLevel({
                 owner, repo, username: actor,
               })).data.permission;
-            } catch (_) {}
+            } catch (error) {
+              core.info(`No collaborator permission record for ${actor}: ${error.message}`);
+            }
 
             const isMaintainer = ['triage', 'write', 'maintain', 'admin'].includes(permission);
             const isRequestedReviewer = (pr.requested_reviewers || [])
