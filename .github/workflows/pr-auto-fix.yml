@@ -1,8 +1,6 @@
 name: PR semi-automatic fixes
 
 on:
-  pull_request_review_comment:
-    types: [created]
   issue_comment:
     types: [created]
 
@@ -12,26 +10,61 @@ permissions:
   pull-requests: write
 
 jobs:
-  propose:
-    if: github.event_name == 'pull_request_review_comment' && github.event.comment.user.login == 'github-actions[bot]'
+  scan:
+    if: github.event.issue.pull_request != null && startsWith(github.event.comment.body, '/scan-autofix')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v9
         with:
           script: |
-            const body = context.payload.comment.body || '';
-            const path = context.payload.comment.path || '';
-            if (!path.toLowerCase().endsWith('.html')) return;
-            const supported = /<title> must be present in <head>|Tag must be paired, no start tag:.*<\/?(head|aside|html)>/i.test(body);
-            if (!supported) return;
-            let fix = /<title> must be present/i.test(body) ? 'add a missing <title> inside <head>' : /<\/aside>/i.test(body) ? 'remove the unmatched </aside>' : /<\/head>/i.test(body) ? 'add missing <html>/<head> opening tags' : 'add the missing <html> opening tag';
-            const marker = `<!-- upes-physics-autofix:${context.payload.comment.id} -->`;
-            const comments = await github.paginate(github.rest.issues.listComments, {owner:context.repo.owner,repo:context.repo.repo,issue_number:context.payload.pull_request.number,per_page:100});
-            if (comments.some(c => (c.body || '').includes(marker))) return;
-            await github.rest.issues.createComment({owner:context.repo.owner,repo:context.repo.repo,issue_number:context.payload.pull_request.number,body:[marker,'### 🔧 Semi-automatic fix available',`Detected in \`${path}\`.`,`**Proposed fix:** ${fix}.`,'','No code has been changed. A maintainer or PR reviewer must approve it:',`**\`/approve-fix ${context.payload.comment.id}\`**`,'','To decline: **`/reject-fix`**.'].join('\n')});
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            const prNumber = context.issue.number;
+            const actor = context.actor;
+            const permission = await (async () => {
+              try { return (await github.rest.repos.getCollaboratorPermissionLevel({owner, repo, username: actor})).data.permission; }
+              catch (e) { return 'none'; }
+            })();
+            const reviews = await github.paginate(github.rest.pulls.listReviews, {owner, repo, pull_number: prNumber, per_page: 100});
+            if (!['write','maintain','admin'].includes(permission) && !reviews.some(r => r.user?.login === actor)) {
+              await github.rest.issues.createComment({owner, repo, issue_number: prNumber, body: `⛔ @${actor}: only a maintainer or PR reviewer can start an auto-fix scan.`});
+              return;
+            }
+
+            const comments = await github.paginate(github.rest.pulls.listReviewComments, {owner, repo, pull_number: prNumber, per_page: 100});
+            const supported = comments.filter(c => {
+              const body = c.body || '';
+              const path = c.path || '';
+              if (!path.toLowerCase().endsWith('.html')) return false;
+              return /<title> must be present in <head>/i.test(body) ||
+                     /Tag must be paired, no start tag:.*<\/head>/i.test(body) ||
+                     /Tag must be paired, no start tag:.*<\/aside>/i.test(body) ||
+                     /Tag must be paired, no start tag:.*<\/html>/i.test(body);
+            });
+
+            if (!supported.length) {
+              await github.rest.issues.createComment({owner, repo, issue_number: prNumber, body: '🔎 Auto-fix scan completed: no supported HTML validator comments were found.'});
+              return;
+            }
+
+            const allIssueComments = await github.paginate(github.rest.issues.listComments, {owner, repo, issue_number: prNumber, per_page: 100});
+            let proposed = 0;
+            for (const c of supported) {
+              const marker = `<!-- upes-physics-autofix:${c.id} -->`;
+              if (allIssueComments.some(x => (x.body || '').includes(marker))) continue;
+              const body = c.body || '';
+              let fix;
+              if (/<title> must be present/i.test(body)) fix = 'add a missing <title> inside <head>';
+              else if (/<\/aside>/i.test(body)) fix = 'remove the unmatched </aside> (only if no <aside> opening tag exists)';
+              else if (/<\/head>/i.test(body)) fix = 'add the missing <html>/<head> opening structure';
+              else fix = 'add the missing <html> opening tag';
+              await github.rest.issues.createComment({owner, repo, issue_number: prNumber, body: [marker, '### 🔧 Semi-automatic fix available', `Detected in \`${c.path}\` at line ${c.line || 'unknown'}.`, `**Proposed fix:** ${fix}.`, '', 'No code has been changed.', '', `A maintainer or PR reviewer can approve this exact fix with **\`/approve-fix ${c.id}\`**.`, 'To decline it, comment **`/reject-fix`**.'].join('\n')});
+              proposed++;
+            }
+            await github.rest.issues.createComment({owner, repo, issue_number: prNumber, body: `🔎 Auto-fix scan complete. Proposed **${proposed}** supported fix(s). Review each proposal before approving.`});
 
   command:
-    if: github.event_name == 'issue_comment' && github.event.issue.pull_request != null && (startsWith(github.event.comment.body, '/approve-fix') || startsWith(github.event.comment.body, '/reject-fix'))
+    if: github.event.issue.pull_request != null && (startsWith(github.event.comment.body, '/approve-fix') || startsWith(github.event.comment.body, '/reject-fix'))
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v9
