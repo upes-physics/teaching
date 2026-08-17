@@ -9,27 +9,27 @@
   },
   "simulators": [
     {
-      "name": "Bravais Lattice",
-      "desc": "Bravais lattice",
-      "link": "",
-      "uploadFileLink": "PHYS3055_03_BravaisLattices_Simulator.html"
+	"name": "Bravais Lattice",
+	"desc": "Bravais lattice",
+        "link": "PHYS3055_03_BravaisLattices_Simulator.html",
+	"uploadFileLink": "PHYS3055_03_BravaisLattices_Simulator.html"
     },
     {
       "name": "Reciprocal lattice",
       "desc": "Reciprocal lattice",
-      "link": "",
+      "link": "PHYS3055_10_Reciprocal_Lattice_Simulator.html",
       "uploadFileLink": "PHYS3055_10_Reciprocal_Lattice_Simulator.html"
     },
     {
       "name": "Brillouin Zone",
       "desc": "Brillouin Zone",
-      "link": "",
+      "link": "PHYS3055_11_Brillouin_Zones_Simulator.html",
       "uploadFileLink": "PHYS3055_11_Brillouin_Zones_Simulator.html"
     },
     {
       "name": "Monoatomic lattice vibrations",
       "desc": "Monoatomic lattice vibrations",
-      "link": "",
+      "link": "PHYS3055_02_Monoatomic_Chain_Simulator.html",
       "uploadFileLink": "PHYS3055_02_Monoatomic_Chain_Simulator.html"
     },
     {
@@ -41,79 +41,79 @@
     {
       "name": "Acoustics and Optical Phonons",
       "desc": "Acoustics and Optical Phonons",
-      "link": "",
+      "link": "PHYS3055_04_Acoustic_vs_Optical_Phonons_Simulator.html",
       "uploadFileLink": "PHYS3055_04_Acoustic_vs_Optical_Phonons_Simulator.html"
     },
     {
       "name": "Dia and paramagnetism",
       "desc": "Dia and paramagnetism",
-      "link": "",
+      "link": "PHYS3055_06_DiaParamagnetism_Simulator.html",
       "uploadFileLink": "PHYS3055_06_DiaParamagnetism_Simulator.html"
     },
     {
       "name": "Ferro and Ferrimagnetism",
       "desc": "Ferro and Ferrimagnetism",
-      "link": "",
+      "link": "PHYS3055_07_FerroFerrimagnetism_Simulator.html",
       "uploadFileLink": "PHYS3055_07_FerroFerrimagnetism_Simulator.html"
     },
     {
       "name": "Hysteresis",
       "desc": "Hysteresis",
-      "link": "",
+      "link": "PHYS3055_07_BH_Hysteresis_Loop_Simulator.html",
       "uploadFileLink": "PHYS3055_07_BH_Hysteresis_Loop_Simulator.html"
     },
     {
       "name": "Dielectric Polarization",
       "desc": "Dielectric Polarization",
-      "link": "",
+      "link": "PHYS3055_08_Dielectric_Polarization_Simulator.html",
       "uploadFileLink": "PHYS3055_08_Dielectric_Polarization_Simulator.html"
     },
     {
       "name": "Piezoelectricity",
       "desc": "Piezoelectricity",
-      "link": "",
+      "link": "PHYS3055_08_Piezoelectric_Simulator.html",
       "uploadFileLink": "PHYS3055_08_Piezoelectric_Simulator.html"
     },
     {
       "name": "Pyroelectricity",
       "desc": "Pyroelectricity",
-      "link": "",
+      "link": "PHYS3055_09_Pyroelectric_Simulator.html",
       "uploadFileLink": "PHYS3055_09_Pyroelectric_Simulator.html"
     },
     {
       "name": "Ferroelectric Domains",
       "desc": "Ferroelectric Domains",
-      "link": "",
+      "link": "PHYS3055_10_FerroelectricDomains_PEHysteresis_Simulator.html",
       "uploadFileLink": "PHYS3055_10_FerroelectricDomains_PEHysteresis_Simulator.html"
     },
     {
       "name": "PN junction",
       "desc": "PN junction",
-      "link": "",
+      "link": "PHYS3055_12_PN_Junction_Energy_Barrier_Simulator.html",
       "uploadFileLink": "PHYS3055_12_PN_Junction_Energy_Barrier_Simulator.html"
     },
     {
       "name": "Hall Effect",
       "desc": "Hall Effect",
-      "link": "",
+      "link": "PHYS3055_13_Hall_Effect_NP_Comparison_Simulator.html",
       "uploadFileLink": "PHYS3055_13_Hall_Effect_NP_Comparison_Simulator.html"
     },
     {
       "name": "BCS Theory",
       "desc": "BCS Theory",
-      "link": "",
+      "link": "PHYS3055_14_BCS_Theory_Simulator.html",
       "uploadFileLink": "PHYS3055_14_BCS_Theory_Simulator.html"
     },
     {
       "name": "Isotope Effect",
       "desc": "Isotope Effect",
-      "link": "",
+      "link": "PHYS3055_Isotope_Effect_Simulator_v2.html",
       "uploadFileLink": "PHYS3055_Isotope_Effect_Simulator_v2.html"
     },
     {
       "name": "Type I and Type II superconductors",
       "desc": "Type I and Type II superconductors",
-      "link": "",
+      "link": "TypeI_TypeII_Superconductors_Simulator.html",
       "uploadFileLink": "TypeI_TypeII_Superconductors_Simulator.html"
     }
   ]
