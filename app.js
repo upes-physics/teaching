@@ -9,25 +9,25 @@ const catalog = {
 		{ code: "MECH1001", name: "Mechanics", description: "", dataCard: "data/ug/sem1/mechanics/datacard.json" },
 		{ id: "optics", code: "PHYSXXXX", name: "Optics", description: "", dataCard: "data/ug/sem1/optics/datacard.json" },
 		{ id: "waves-oscillations", code: "PHYSXXXX", name: "Waves and Oscillations", description: "", dataCard: "data/ug/sem1/waves-oscillations/datacard.json" },
-		{ code: "CSEG1023", name: "Computational Techniques", description: "", dataCard: "data/ug/sem1/comptech/datacard.json" },
+		{ code: "CSEG1023", name: "Computational Techniques", description: "", dataCard: "data/ug/sem1/comptech/datacard.json" }
 	    ],
 	    2: [],
 	    3: [ 
 	        {code: "PHYS2014K", name: "Computational Physics", description: "", dataCard: "data/ug/sem3/PHYS2014K/datacard.json"},
-		{code: "PHYS2025", name: "Analog Electronics", description: "", dataCard: "data/ug/sem3/PHYS2025/datacard.json"},
+		{code: "PHYS2025", name: "Analog Electronics", description: "", dataCard: "data/ug/sem3/PHYS2025/datacard.json"}
 	    ],
 	    4: [
-		{code: "", name: "Solid State Physics", description: "", dataCard: "data/ug/sem4/solidstatephysics/datacard.json"},
+		{id : "solidstatebsc", code: "PHYSXXXX", name: "Solid State Physics", description: "", dataCard: "data/ug/sem4/solidstatephysics/datacard.json"}
 	    ],
 	    5: [],
 	    6: [],
 	    7: [
 		{ code: "PHYS8204", name: "Fundamentals of Astronomy", description: "", dataCard: "data/ug/sem7/PHYS8204/datacard.json" },
-		{ code: "PHYS4022", name: "Fundamental of Astrophysics", description: "", dataCard: "data/ug/sem7/PHYS4022/datacard.json" },
+		{ code: "PHYS4022", name: "Fundamental of Astrophysics", description: "", dataCard: "data/ug/sem7/PHYS4022/datacard.json" }
 	    ],
 	    8: [],
 	    "SEC" : [
-		{ code: "HSFS2026K", name: "Radiation Safety", description: "", dataCard: "data/ug/sec/HSFS2026K/datacard.json" },
+		{ code: "HSFS2026K", name: "Radiation Safety", description: "", dataCard: "data/ug/sec/HSFS2026K/datacard.json" }
 	    ]
 	}
     },
@@ -37,11 +37,11 @@ const catalog = {
 	description: "Move beyond the fundamentals through advanced theory, computation, and research-led study.",
 	coursesBySemester: {
 	    1: [
-		{ code: "", name: "Electrodynamics", description: "", dataCard: "data/pg/sem1/electrodynamics/datacard.json" },
+		{ code: "", name: "Electrodynamics", description: "", dataCard: "data/pg/sem1/electrodynamics/datacard.json" }
 	    ],
 	    2: [],
 	    3: [
-		{ code: "", name: "Fundamentals of Astronomy", description: "", dataCard: "data/pg/sem3/PHYS4023P/datacard.json" },
+		{ code: "", name: "Fundamentals of Astronomy", description: "", dataCard: "data/pg/sem3/PHYS4023P/datacard.json" }
 	    ],
 	    4: []
 	}
