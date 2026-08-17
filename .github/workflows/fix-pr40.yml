@@ -34,7 +34,11 @@ jobs:
           PY
           git add data/ug/sem3/PHYS2025/Simulator_PN_1.html
           git commit -m 'Fix missing head closing tag' || true
-          git merge origin/main --no-edit
+          if ! git merge origin/main --no-edit; then
+            git checkout --theirs .github/workflows/fix-pr40.yml
+            git add .github/workflows/fix-pr40.yml
+            git commit -m 'Merge latest main into PR 40'
+          fi
           git push origin phys2025
           git checkout main
           git pull --ff-only origin main
