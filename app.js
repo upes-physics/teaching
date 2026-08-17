@@ -33,7 +33,9 @@ const catalog = {
 	semesterCount: 4,
 	description: "Move beyond the fundamentals through advanced theory, computation, and research-led study.",
 	coursesBySemester: {
-	    1: [],
+	    1: [
+		{ code: "", name: "Electrodynamics", description: "", dataCard: "data/pg/sem1/electrodynamics/datacard.json" },
+	    ],
 	    2: [],
 	    3: [
 		{ code: "", name: "Fundamentals of Astronomy", description: "", dataCard: "data/pg/sem3/PHYS4023P/datacard.json" },
