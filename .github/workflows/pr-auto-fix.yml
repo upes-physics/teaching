@@ -1,0 +1,64 @@
+name: PR semi-automatic fixes
+
+on:
+  pull_request_review_comment:
+    types: [created]
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+jobs:
+  propose:
+    if: github.event_name == 'pull_request_review_comment' && github.event.comment.user.login == 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v9
+        with:
+          script: |
+            const body = context.payload.comment.body || '';
+            const path = context.payload.comment.path || '';
+            if (!path.toLowerCase().endsWith('.html')) return;
+            const supported = /<title> must be present in <head>|Tag must be paired, no start tag:.*<\/?(head|aside|html)>/i.test(body);
+            if (!supported) return;
+            let fix = /<title> must be present/i.test(body) ? 'add a missing <title> inside <head>' : /<\/aside>/i.test(body) ? 'remove the unmatched </aside>' : /<\/head>/i.test(body) ? 'add missing <html>/<head> opening tags' : 'add the missing <html> opening tag';
+            const marker = `<!-- upes-physics-autofix:${context.payload.comment.id} -->`;
+            const comments = await github.paginate(github.rest.issues.listComments, {owner:context.repo.owner,repo:context.repo.repo,issue_number:context.payload.pull_request.number,per_page:100});
+            if (comments.some(c => (c.body || '').includes(marker))) return;
+            await github.rest.issues.createComment({owner:context.repo.owner,repo:context.repo.repo,issue_number:context.payload.pull_request.number,body:[marker,'### 🔧 Semi-automatic fix available',`Detected in \`${path}\`.`,`**Proposed fix:** ${fix}.`,'','No code has been changed. A maintainer or PR reviewer must approve it:',`**\`/approve-fix ${context.payload.comment.id}\`**`,'','To decline: **`/reject-fix`**.'].join('\n')});
+
+  command:
+    if: github.event_name == 'issue_comment' && github.event.issue.pull_request != null && (startsWith(github.event.comment.body, '/approve-fix') || startsWith(github.event.comment.body, '/reject-fix'))
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/github-script@v9
+        with:
+          script: |
+            const owner=context.repo.owner, repo=context.repo.repo, prNumber=context.issue.number, actor=context.actor;
+            const cmd=(context.payload.comment.body||'').trim();
+            let permission='none'; try { permission=(await github.rest.repos.getCollaboratorPermissionLevel({owner,repo,username:actor})).data.permission; } catch(e) {}
+            const reviews=await github.paginate(github.rest.pulls.listReviews,{owner,repo,pull_number:prNumber,per_page:100});
+            const allowed=['write','maintain','admin'].includes(permission)||reviews.some(r=>r.user?.login===actor);
+            if(!allowed){ await github.rest.issues.createComment({owner,repo,issue_number:prNumber,body:`⛔ @${actor}: only a maintainer or PR reviewer can approve/reject an automatic fix.`}); return; }
+            if(cmd.startsWith('/reject-fix')){ await github.rest.issues.createComment({owner,repo,issue_number:prNumber,body:`🛑 @${actor} rejected the proposed automatic fix. No code was changed.`}); return; }
+            const m=cmd.match(/^\/approve-fix\s+(\d+)$/i); if(!m){ core.setFailed('Use /approve-fix <review-comment-id>.'); return; }
+            const id=Number(m[1]);
+            const pr=(await github.rest.pulls.get({owner,repo,pull_number:prNumber})).data;
+            if(pr.state!=='open') return;
+            if(pr.head.repo?.full_name!==`${owner}/${repo}`){ await github.rest.issues.createComment({owner,repo,issue_number:prNumber,body:'⛔ Automatic fixes are disabled for fork-originated PRs.'}); return; }
+            const rc=(await github.rest.pulls.getReviewComment({owner,repo,comment_id:id})).data;
+            if(rc.pull_request_url!==pr.url){ core.setFailed('Review comment does not belong to this PR.'); return; }
+            const body=rc.body||'', path=rc.path||''; let type=null;
+            if(/<title> must be present/i.test(body)) type='title'; else if(/<\/aside>/i.test(body)) type='aside'; else if(/<\/head>/i.test(body)) type='head'; else if(/<\/html>/i.test(body)) type='html'; else { core.setFailed('Unsupported validator error.'); return; }
+            const file=(await github.rest.repos.getContent({owner,repo,path,ref:pr.head.sha})).data;
+            let text=Buffer.from(file.content,'base64').toString('utf8'), old=text;
+            if(type==='title'){ if(!/<head\b[^>]*>/i.test(text)||/<title\b[^>]*>/i.test(text)){core.setFailed('Cannot safely add title.');return;} text=text.replace(/<head\b[^>]*>/i,m=>`${m}\n<title>UPES Physics Simulator</title>`); }
+            if(type==='aside'){ if(/<aside\b[^>]*>/i.test(text)){core.setFailed('An <aside> opening tag exists; refusing unsafe removal.');return;} text=text.replace(/<\/aside>/i,''); }
+            if(type==='head'){ if(/<head\b/i.test(text)||!/<\/head>/i.test(text)){core.setFailed('Cannot safely repair missing head.');return;} text=text.replace(/<\/head>/i,'<head>\n<title>UPES Physics Simulator</title>\n</head>'); if(!/<html\b/i.test(text)) text=text.replace(/^(\s*<!DOCTYPE html>\s*)?/i,m=>`${m}<html lang="en">\n`); }
+            if(type==='html'){ if(/<html\b/i.test(text)){core.setFailed('HTML opening tag already exists.');return;} text=text.replace(/^(\s*<!DOCTYPE html>\s*)?/i,m=>`${m}<html lang="en">\n`); }
+            if(text===old){core.setFailed('Approved fix made no change.');return;}
+            const result=await github.rest.repos.createOrUpdateFileContents({owner,repo,path,message:`Apply approved HTML fix for review comment ${id}`,content:Buffer.from(text).toString('base64'),sha:file.sha,branch:pr.head.ref});
+            await github.rest.issues.createComment({owner,repo,issue_number:prNumber,body:`✅ @${actor} approved the fix for review comment ${id}. Committed ${result.data.commit.sha.slice(0,7)}; checks will run again.`});
