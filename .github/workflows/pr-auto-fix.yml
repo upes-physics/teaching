@@ -17,81 +17,37 @@ jobs:
       - uses: actions/github-script@v9
         with:
           script: |
-            const owner = context.repo.owner;
-            const repo = context.repo.repo;
-            const prNumber = context.issue.number;
-            const actor = context.actor;
-            const permission = await (async () => {
-              try { return (await github.rest.repos.getCollaboratorPermissionLevel({owner, repo, username: actor})).data.permission; }
-              catch (e) { return 'none'; }
-            })();
-            const reviews = await github.paginate(github.rest.pulls.listReviews, {owner, repo, pull_number: prNumber, per_page: 100});
-            if (!['write','maintain','admin'].includes(permission) && !reviews.some(r => r.user?.login === actor)) {
-              await github.rest.issues.createComment({owner, repo, issue_number: prNumber, body: `⛔ @${actor}: only a maintainer or PR reviewer can start an auto-fix scan.`});
-              return;
-            }
+            const {owner,repo}=context.repo, n=context.issue.number, actor=context.actor;
+            const reviews=await github.paginate(github.rest.pulls.listReviews,{owner,repo,pull_number:n,per_page:100});
+            let perm='none'; try{perm=(await github.rest.repos.getCollaboratorPermissionLevel({owner,repo,username:actor})).data.permission}catch(e){}
+            if(!['write','maintain','admin'].includes(perm)&&!reviews.some(r=>r.user?.login===actor)){await github.rest.issues.createComment({owner,repo,issue_number:n,body:`⛔ @${actor}: only a maintainer or PR reviewer can start an auto-fix scan.`});return;}
+            const cs=await github.paginate(github.rest.pulls.listReviewComments,{owner,repo,pull_number:n,per_page:100});
+            const supported=cs.filter(c=>{const b=c.body||'',p=c.path||'';return p.toLowerCase().endsWith('.html')&&(/<title> must be present/i.test(b)||/Tag must be paired, no start tag:.*<\/head>/i.test(b)||/Tag must be paired, no start tag:.*<\/aside>/i.test(b)||/Tag must be paired, no start tag:.*<\/html>/i.test(b));});
+            const all=await github.paginate(github.rest.issues.listComments,{owner,repo,issue_number:n,per_page:100}); let count=0;
+            for(const c of supported){const marker=`<!-- upes-physics-autofix:${c.id} -->`;if(all.some(x=>(x.body||'').includes(marker)))continue;const b=c.body||'';const fix=/<title> must be present/i.test(b)?'add a missing <title> inside <head>':/<\/aside>/i.test(b)?'remove the unmatched </aside> (only if no <aside> opening tag exists)':/<\/head>/i.test(b)?'repair the missing <html>/<head> opening structure':'add the missing <html> opening tag';await github.rest.issues.createComment({owner,repo,issue_number:n,body:`${marker}\n### 🔧 Semi-automatic fix available\nDetected in \`${c.path}\` at line ${c.line||'unknown'}.\n**Proposed fix:** ${fix}.\n\nNo code has been changed.\n\nApprove with **\`/approve-fix ${c.id}\`**.`});count++;}
+            await github.rest.issues.createComment({owner,repo,issue_number:n,body:`🔎 Auto-fix scan complete. Proposed **${count}** new fix(es).`});
 
-            const comments = await github.paginate(github.rest.pulls.listReviewComments, {owner, repo, pull_number: prNumber, per_page: 100});
-            const supported = comments.filter(c => {
-              const body = c.body || '';
-              const path = c.path || '';
-              if (!path.toLowerCase().endsWith('.html')) return false;
-              return /<title> must be present in <head>/i.test(body) ||
-                     /Tag must be paired, no start tag:.*<\/head>/i.test(body) ||
-                     /Tag must be paired, no start tag:.*<\/aside>/i.test(body) ||
-                     /Tag must be paired, no start tag:.*<\/html>/i.test(body);
-            });
-
-            if (!supported.length) {
-              await github.rest.issues.createComment({owner, repo, issue_number: prNumber, body: '🔎 Auto-fix scan completed: no supported HTML validator comments were found.'});
-              return;
-            }
-
-            const allIssueComments = await github.paginate(github.rest.issues.listComments, {owner, repo, issue_number: prNumber, per_page: 100});
-            let proposed = 0;
-            for (const c of supported) {
-              const marker = `<!-- upes-physics-autofix:${c.id} -->`;
-              if (allIssueComments.some(x => (x.body || '').includes(marker))) continue;
-              const body = c.body || '';
-              let fix;
-              if (/<title> must be present/i.test(body)) fix = 'add a missing <title> inside <head>';
-              else if (/<\/aside>/i.test(body)) fix = 'remove the unmatched </aside> (only if no <aside> opening tag exists)';
-              else if (/<\/head>/i.test(body)) fix = 'add the missing <html>/<head> opening structure';
-              else fix = 'add the missing <html> opening tag';
-              await github.rest.issues.createComment({owner, repo, issue_number: prNumber, body: [marker, '### 🔧 Semi-automatic fix available', `Detected in \`${c.path}\` at line ${c.line || 'unknown'}.`, `**Proposed fix:** ${fix}.`, '', 'No code has been changed.', '', `A maintainer or PR reviewer can approve this exact fix with **\`/approve-fix ${c.id}\`**.`, 'To decline it, comment **`/reject-fix`**.'].join('\n')});
-              proposed++;
-            }
-            await github.rest.issues.createComment({owner, repo, issue_number: prNumber, body: `🔎 Auto-fix scan complete. Proposed **${proposed}** supported fix(s). Review each proposal before approving.`});
-
-  command:
-    if: github.event.issue.pull_request != null && (startsWith(github.event.comment.body, '/approve-fix') || startsWith(github.event.comment.body, '/reject-fix'))
+  approve:
+    if: github.event.issue.pull_request != null && contains(github.event.comment.body, '/approve-fix')
     runs-on: ubuntu-latest
     steps:
       - uses: actions/github-script@v9
         with:
           script: |
-            const owner=context.repo.owner, repo=context.repo.repo, prNumber=context.issue.number, actor=context.actor;
-            const cmd=(context.payload.comment.body||'').trim();
-            let permission='none'; try { permission=(await github.rest.repos.getCollaboratorPermissionLevel({owner,repo,username:actor})).data.permission; } catch(e) {}
-            const reviews=await github.paginate(github.rest.pulls.listReviews,{owner,repo,pull_number:prNumber,per_page:100});
-            const allowed=['write','maintain','admin'].includes(permission)||reviews.some(r=>r.user?.login===actor);
-            if(!allowed){ await github.rest.issues.createComment({owner,repo,issue_number:prNumber,body:`⛔ @${actor}: only a maintainer or PR reviewer can approve/reject an automatic fix.`}); return; }
-            if(cmd.startsWith('/reject-fix')){ await github.rest.issues.createComment({owner,repo,issue_number:prNumber,body:`🛑 @${actor} rejected the proposed automatic fix. No code was changed.`}); return; }
-            const m=cmd.match(/^\/approve-fix\s+(\d+)$/i); if(!m){ core.setFailed('Use /approve-fix <review-comment-id>.'); return; }
-            const id=Number(m[1]);
-            const pr=(await github.rest.pulls.get({owner,repo,pull_number:prNumber})).data;
-            if(pr.state!=='open') return;
-            if(pr.head.repo?.full_name!==`${owner}/${repo}`){ await github.rest.issues.createComment({owner,repo,issue_number:prNumber,body:'⛔ Automatic fixes are disabled for fork-originated PRs.'}); return; }
-            const rc=(await github.rest.pulls.getReviewComment({owner,repo,comment_id:id})).data;
-            if(rc.pull_request_url!==pr.url){ core.setFailed('Review comment does not belong to this PR.'); return; }
-            const body=rc.body||'', path=rc.path||''; let type=null;
-            if(/<title> must be present/i.test(body)) type='title'; else if(/<\/aside>/i.test(body)) type='aside'; else if(/<\/head>/i.test(body)) type='head'; else if(/<\/html>/i.test(body)) type='html'; else { core.setFailed('Unsupported validator error.'); return; }
-            const file=(await github.rest.repos.getContent({owner,repo,path,ref:pr.head.sha})).data;
-            let text=Buffer.from(file.content,'base64').toString('utf8'), old=text;
-            if(type==='title'){ if(!/<head\b[^>]*>/i.test(text)||/<title\b[^>]*>/i.test(text)){core.setFailed('Cannot safely add title.');return;} text=text.replace(/<head\b[^>]*>/i,m=>`${m}\n<title>UPES Physics Simulator</title>`); }
-            if(type==='aside'){ if(/<aside\b[^>]*>/i.test(text)){core.setFailed('An <aside> opening tag exists; refusing unsafe removal.');return;} text=text.replace(/<\/aside>/i,''); }
-            if(type==='head'){ if(/<head\b/i.test(text)||!/<\/head>/i.test(text)){core.setFailed('Cannot safely repair missing head.');return;} text=text.replace(/<\/head>/i,'<head>\n<title>UPES Physics Simulator</title>\n</head>'); if(!/<html\b/i.test(text)) text=text.replace(/^(\s*<!DOCTYPE html>\s*)?/i,m=>`${m}<html lang="en">\n`); }
-            if(type==='html'){ if(/<html\b/i.test(text)){core.setFailed('HTML opening tag already exists.');return;} text=text.replace(/^(\s*<!DOCTYPE html>\s*)?/i,m=>`${m}<html lang="en">\n`); }
-            if(text===old){core.setFailed('Approved fix made no change.');return;}
-            const result=await github.rest.repos.createOrUpdateFileContents({owner,repo,path,message:`Apply approved HTML fix for review comment ${id}`,content:Buffer.from(text).toString('base64'),sha:file.sha,branch:pr.head.ref});
-            await github.rest.issues.createComment({owner,repo,issue_number:prNumber,body:`✅ @${actor} approved the fix for review comment ${id}. Committed ${result.data.commit.sha.slice(0,7)}; checks will run again.`});
+            const {owner,repo}=context.repo,n=context.issue.number,actor=context.actor,cmd=context.payload.comment.body||'';
+            const reviews=await github.paginate(github.rest.pulls.listReviews,{owner,repo,pull_number:n,per_page:100});
+            let perm='none';try{perm=(await github.rest.repos.getCollaboratorPermissionLevel({owner,repo,username:actor})).data.permission}catch(e){}
+            if(!['write','maintain','admin'].includes(perm)&&!reviews.some(r=>r.user?.login===actor)){await github.rest.issues.createComment({owner,repo,issue_number:n,body:`⛔ @${actor}: only a maintainer or PR reviewer can approve automatic fixes.`});return;}
+            const ids=[...cmd.matchAll(/\/approve-fix\s+(\d+)/gi)].map(m=>Number(m[1]));
+            const unique=[...new Set(ids)]; if(!unique.length){core.setFailed('No valid /approve-fix <comment-id> commands found.');return;}
+            const pr=(await github.rest.pulls.get({owner,repo,pull_number:n})).data;if(pr.state!=='open')return;
+            if(pr.head.repo?.full_name!==`${owner}/${repo}`){await github.rest.issues.createComment({owner,repo,issue_number:n,body:'⛔ Automatic fixes are disabled for fork-originated PRs.'});return;}
+            const files=new Map(),errors=[];
+            for(const id of unique){try{const rc=(await github.rest.pulls.getReviewComment({owner,repo,comment_id:id})).data;if(rc.pull_request_url!==pr.url)throw Error('comment is not from this PR');const b=rc.body||'',p=rc.path||'';let type;if(/<title> must be present/i.test(b))type='title';else if(/<\/aside>/i.test(b))type='aside';else if(/<\/head>/i.test(b))type='head';else if(/<\/html>/i.test(b))type='html';else throw Error('unsupported validator error');if(!files.has(p)){const f=(await github.rest.repos.getContent({owner,repo,path:p,ref:pr.head.sha})).data;files.set(p,{file:f,text:Buffer.from(f.content,'base64').toString('utf8'),old:Buffer.from(f.content,'base64').toString('utf8')});}files.get(p).types=(files.get(p).types||[]).concat(type);}catch(e){errors.push(`${id}: ${e.message}`);}}
+            if(errors.length){await github.rest.issues.createComment({owner,repo,issue_number:n,body:`⚠️ No changes committed because these approvals could not be prepared:\n${errors.map(e=>`- ${e}`).join('\n')}`});return;}
+            for(const [p,x] of files){for(const type of x.types){if(type==='title'){if(!/<head\b[^>]*>/i.test(x.text)||/<title\b[^>]*>/i.test(x.text))throw Error(`${p}: cannot safely add title`);x.text=x.text.replace(/<head\b[^>]*>/i,m=>`${m}\n<title>UPES Physics Simulator</title>`);}else if(type==='aside'){if(/<aside\b[^>]*>/i.test(x.text))throw Error(`${p}: an <aside> opening tag exists`);x.text=x.text.replace(/<\/aside>/i,'');}else if(type==='head'){if(/<head\b/i.test(x.text)||!/<\/head>/i.test(x.text))throw Error(`${p}: cannot safely repair head`);x.text=x.text.replace(/<\/head>/i,'<head>\n<title>UPES Physics Simulator</title>\n</head>');if(!/<html\b/i.test(x.text))x.text=x.text.replace(/^(\s*<!DOCTYPE html>\s*)?/i,m=>`${m}<html lang="en">\n`);}else if(type==='html'){if(/<html\b/i.test(x.text))throw Error(`${p}: HTML opening tag already exists`);x.text=x.text.replace(/^(\s*<!DOCTYPE html>\s*)?/i,m=>`${m}<html lang="en">\n`);}}}
+            const changed=[...files].filter(([p,x])=>x.text!==x.old);if(!changed.length){await github.rest.issues.createComment({owner,repo,issue_number:n,body:'ℹ️ Approved fixes produced no changes.'});return;}
+            const ref=(await github.rest.git.getRef({owner,repo,ref:`heads/${pr.head.ref}`})).data.object.sha;const base=(await github.rest.git.getCommit({owner,repo,commit_sha:ref})).data;const treeItems=[];
+            for(const [p,x] of changed){const blob=(await github.rest.git.createBlob({owner,repo,content:x.text,encoding:'utf-8'})).data;treeItems.push({path:p,mode:'100644',type:'blob',sha:blob.sha});}
+            const tree=(await github.rest.git.createTree({owner,repo,base_tree:base.tree.sha,tree:treeItems})).data;const commit=(await github.rest.git.createCommit({owner,repo,message:`Apply ${unique.length} approved HTML fixes`,tree:tree.sha,parents:[ref]})).data;await github.rest.git.updateRef({owner,repo,ref:`heads/${pr.head.ref}`,sha:commit.sha});
+            await github.rest.issues.createComment({owner,repo,issue_number:n,body:`✅ @${actor} approved **${unique.length}** fix(es). Applied **${changed.length}** changed file(s) in one commit \`${commit.sha.slice(0,7)}\`. Checks will run again.`});
