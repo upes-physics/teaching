@@ -1,0 +1,75 @@
+name: One-time simulator HTML repair
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+  issues: write
+
+jobs:
+  repair:
+    if: github.event.issue.pull_request != null && github.event.comment.body == '/repair-html' && github.event.issue.number == 40
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout PR branch
+        uses: actions/checkout@v4
+        with:
+          ref: phys2025
+          fetch-depth: 1
+
+      - name: Repair HTML document structure
+        run: |
+          python - <<'PY'
+          from pathlib import Path
+          import re
+
+          path = Path('data/ug/sem3/PHYS2025/Simulator_PN_1.html')
+          text = path.read_text(encoding='utf-8')
+          original = text
+
+          html = re.search(r'<html\\b[^>]*>', text, re.I)
+          if not html:
+              raise SystemExit('No <html> opening tag found')
+
+          # The current file has metadata outside <head>, followed by a misplaced
+          # <head><title>...</title></head>. Move the head opening to the document start.
+          text, n = re.subn(
+              r'\\s*<head>\\s*<title>\\s*UPES Physics Simulator\\s*</title>\\s*</head>\\s*',
+              '\\n', text, count=1, flags=re.I
+          )
+          if n != 1:
+              raise SystemExit(f'Expected one misplaced UPES head block, found {n}')
+
+          html = re.search(r'<html\\b[^>]*>', text, re.I)
+          text = text[:html.end()] + '\\n<head>\\n<title>UPES Physics Simulator</title>\\n' + text[html.end():]
+
+          # Remove only excess closing </aside> tags. If there are no opening
+          # tags, every closing tag is unmatched and must be removed.
+          opens = len(re.findall(r'<aside\\b[^>]*>', text, re.I))
+          closes = len(re.findall(r'</aside\\s*>', text, re.I))
+          if closes > opens:
+              text = re.sub(r'</aside\\s*>', '', text, count=closes-opens, flags=re.I)
+
+          # Guarantee exactly one document-level closing sequence at EOF.
+          text = re.sub(r'\\s*</body>\\s*</html>\\s*$', '', text, flags=re.I)
+          text = text.rstrip() + '\\n</body>\\n</html>\\n'
+
+          if text == original:
+              raise SystemExit('Repair produced no changes')
+
+          path.write_text(text, encoding='utf-8')
+          PY
+
+      - name: Commit repair
+        run: |
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git add data/ug/sem3/PHYS2025/Simulator_PN_1.html
+          git rm .github/workflows/repair-simulator-html.yml .github/REPAIR_TRIGGER || true
+          git commit -m 'Fix Simulator_PN_1 HTML document structure'
+          git push origin HEAD:phys2025
+
+      - name: Report
+        run: echo 'Simulator_PN_1.html structural repair committed to phys2025.'
