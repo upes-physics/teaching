@@ -40,7 +40,9 @@ const catalog = {
 	    3: [
 		{ code: "", name: "Fundamentals of Astronomy", description: "", dataCard: "data/pg/sem3/PHYS4023P/datacard.json" },
 	    ],
-	    4: []
+	    4: [
+		{ code: "PHYS7036", name: "Statistical Mechanics", description: "", dataCard: "data/pg/sem4/statistical_mechanics/datacard.json" },
+	    ]
 	}
     }
 };
