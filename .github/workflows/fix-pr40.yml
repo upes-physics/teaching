@@ -1,0 +1,43 @@
+name: Temporary PR 40 repair
+
+on:
+  issue_comment:
+    types: [created]
+
+permissions:
+  contents: write
+
+jobs:
+  repair:
+    if: github.event.issue.pull_request != null && github.event.issue.number == 40 && github.event.comment.body == '/fix-pr40-now'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: phys2025
+          fetch-depth: 0
+      - name: Repair and refresh branch
+        run: |
+          set -euo pipefail
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git fetch origin main
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('data/ug/sem3/PHYS2025/Simulator_PN_1.html')
+          s=p.read_text(encoding='utf-8')
+          if '</head>' not in s.lower():
+              i=s.lower().find('<body>')
+              if i < 0: raise SystemExit('No body tag')
+              s=s[:i].rstrip()+'\n</head>\n'+s[i:]
+          p.write_text(s,encoding='utf-8')
+          PY
+          git add data/ug/sem3/PHYS2025/Simulator_PN_1.html
+          git commit -m 'Fix missing head closing tag' || true
+          git merge origin/main --no-edit
+          git push origin phys2025
+          git checkout main
+          git pull --ff-only origin main
+          git rm .github/workflows/fix-pr40.yml
+          git commit -m 'Remove temporary PR 40 repair workflow'
+          git push origin main
