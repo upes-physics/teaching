@@ -1,0 +1,78 @@
+{
+  "courseCode": "PHYS 2025",
+  "courseName": "Analog Electronics",
+  "stream": "BSc Physics",
+  "semester": "3",
+  "faculty": {
+    "name": "Dr. Aditya Sharma",
+    "email": "aditya.sharma1@ddn.upes.ac.in"
+  },
+  "simulators": [
+    {
+      "name": "PHYS2025",
+      "desc": "simulator for Analog electronics",
+      "link": "BJT Gemini.html",
+      "uploadFileLink": "BJT Gemini.html"
+    },
+    {
+      "name": "PHYS2025",
+      "desc": "simulator for analog electronics",
+      "link": "pn_junction_simulator_ChatGPT.html",
+      "uploadFileLink": "pn_junction_simulator_ChatGPT.html"
+    },
+    {
+      "name": "PHYS2025",
+      "desc": "Simulator for analog electronics",
+      "link": "mosfet_Claude.html",
+      "uploadFileLink": "mosfet_Claude.html"
+    },
+    {
+      "name": "PHYS2025",
+      "desc": "Simulator for analog electronics",
+      "link": "jfet_characteristics_Claude.html",
+      "uploadFileLink": "jfet_characteristics_Claude.html"
+    },
+    {
+      "name": "B.Sc III sem",
+      "desc": "Analog Electronics Simulator",
+      "link": "rectifier_simulator_ChatGPT.html",
+      "uploadFileLink": "rectifier_simulator_ChatGPT.html"
+    },
+    {
+      "name": "BSc iii sem",
+      "desc": "Analog Electronics simulator",
+      "link": "op_amp_simulator.html",
+      "uploadFileLink": "op_amp_simulator.html"
+    },
+    {
+      "name": "BSC iii",
+      "desc": "Analog Electronics Simulator",
+      "link": "wien_bridge_oscillator_simulator_chat GPT.html",
+      "uploadFileLink": "wien_bridge_oscillator_simulator_chat GPT.html"
+    },
+    {
+      "name": "BSCiii",
+      "desc": "Analog Electronics simulator",
+      "link": "Classification of Class A, B & C Amplifiers_BSc_Unit3.html",
+      "uploadFileLink": "Classification of Class A, B & C Amplifiers_BSc_Unit3.html"
+    },
+    {
+      "name": "PHYS2025",
+      "desc": "Amplifier",
+      "link": "bjt_configuration_simulator_improved.html",
+      "uploadFileLink": "bjt_configuration_simulator_improved.html"
+    },
+    {
+      "name": "PHYS2025",
+      "desc": "BJT",
+      "link": "bjt_configuration_simulator_improved-2.html",
+      "uploadFileLink": "bjt_configuration_simulator_improved-2.html"
+    },
+    {
+      "name": "PHys2025",
+      "desc": "Transducer",
+      "link": "transducer_simulator.html",
+      "uploadFileLink": "transducer_simulator.html"
+    }
+  ]
+}
