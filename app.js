@@ -40,7 +40,8 @@ const catalog = {
 	    ],
 	    2: [],
 	    3: [
-		{ code: "", name: "Fundamentals of Astronomy", description: "", dataCard: "data/pg/sem3/PHYS4023P/datacard.json" }
+		{ code: "", name: "Fundamentals of Astronomy", description: "", dataCard: "data/pg/sem3/PHYS4023P/datacard.json" },
+		{ code: "PHYS8094", name: "Nuclear and Particle Physics", description: "", dataCard: "data/pg/sem3/PHYS8094/datacard.json" },
 	    ],
 	    4: []
 	}
