@@ -1,0 +1,120 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Numerical Methods Simulator</title>
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+  <header class="site-header">
+    <h1>Numerical Methods Simulator</h1>
+    <p>Static simulators for Unit 5: roots, interpolation, integration, ODEs and introductory PDE ideas.</p>
+  </header>
+
+  <main class="container">
+    <section class="hero-box">
+      <h1>Unit 5: Numerical Methods</h1>
+      <p>Students can change initial guesses, step sizes and data values to see how numerical algorithms progress step by step.</p>
+    </section>
+
+    <section class="sim-grid">
+      <div class="sim-card">
+        <h2>1. Bisection Method</h2>
+        <p>Find a root of f(x)=x²−2 in an interval [a,b].</p>
+        <div class="control-row"><label>a</label><input id="bisA" type="number" value="1" step="0.1"></div>
+        <div class="control-row"><label>b</label><input id="bisB" type="number" value="2" step="0.1"></div>
+        <div class="control-row"><label>Iterations</label><input id="bisN" type="number" value="6" min="1" max="20"></div>
+        <button class="sim-button" onclick="simulateBisection()">Run Bisection</button>
+        <div class="code-box">Given f(x) = x^2 - 2
+c = (a + b)/2
+If f(a)f(c) &lt; 0, set b = c
+Else set a = c</div>
+        <div id="bisectionOutput" class="output-box"></div>
+      </div>
+
+      <div class="sim-card">
+        <h2>2. Newton-Raphson Method</h2>
+        <p>Use xₙ₊₁ = xₙ − f(xₙ)/f′(xₙ) for f(x)=x²−2.</p>
+        <div class="control-row"><label>Initial guess x0</label><input id="newtonX" type="number" value="1.5" step="0.1"></div>
+        <div class="control-row"><label>Iterations</label><input id="newtonN" type="number" value="5" min="1" max="20"></div>
+        <button class="sim-button" onclick="simulateNewton()">Run Newton-Raphson</button>
+        <div class="code-box">f(x) = x^2 - 2
+f'(x) = 2x
+x_new = x - f(x)/f'(x)</div>
+        <div id="newtonOutput" class="output-box"></div>
+      </div>
+
+      <div class="sim-card">
+        <h2>3. Lagrange Interpolation</h2>
+        <p>Interpolate y at a chosen x using three points.</p>
+        <div class="control-row"><label>Data points x:y</label><input id="lagData" type="text" value="0:1, 1:3, 2:7"></div>
+        <div class="control-row"><label>Interpolate at x</label><input id="lagX" type="number" value="1.5" step="0.1"></div>
+        <button class="sim-button" onclick="simulateLagrange()">Interpolate</button>
+        <div class="code-box">P(x) = Σ y_i L_i(x)
+L_i(x) = Π (x - x_j)/(x_i - x_j), j ≠ i</div>
+        <div id="lagrangeOutput" class="output-box"></div>
+      </div>
+
+      <div class="sim-card">
+        <h2>4. Trapezoidal Rule</h2>
+        <p>Approximate ∫₀¹ x² dx using n intervals.</p>
+        <div class="control-row"><label>Number of intervals n</label><input id="trapN" type="number" value="4" min="1" max="100"></div>
+        <button class="sim-button" onclick="simulateTrapezoid()">Calculate Integral</button>
+        <div class="code-box">h = (b-a)/n
+I = h [ (f(a)+f(b))/2 + f(x1)+...+f(xn-1) ]</div>
+        <div id="trapOutput" class="output-box"></div>
+      </div>
+
+      <div class="sim-card">
+        <h2>5. Euler Method for ODE</h2>
+        <p>Solve dy/dx = y, y(0)=1 using Euler method.</p>
+        <div class="control-row"><label>Step size h</label><input id="eulerH" type="number" value="0.2" step="0.05"></div>
+        <div class="control-row"><label>Steps</label><input id="eulerN" type="number" value="5" min="1" max="30"></div>
+        <button class="sim-button" onclick="simulateEuler()">Run Euler Method</button>
+        <div class="code-box">y_{n+1} = y_n + h f(x_n, y_n)
+For dy/dx = y: y_{n+1} = y_n + h y_n</div>
+        <div id="eulerOutput" class="output-box"></div>
+      </div>
+
+      <div class="sim-card">
+        <h2>6. Runge-Kutta 4 Method</h2>
+        <p>Solve dy/dx = y, y(0)=1 for one or more steps.</p>
+        <div class="control-row"><label>Step size h</label><input id="rkH" type="number" value="0.2" step="0.05"></div>
+        <div class="control-row"><label>Steps</label><input id="rkN" type="number" value="3" min="1" max="20"></div>
+        <button class="sim-button" onclick="simulateRK4()">Run RK4</button>
+        <div class="code-box">k1 = h f(x, y)
+k2 = h f(x+h/2, y+k1/2)
+k3 = h f(x+h/2, y+k2/2)
+k4 = h f(x+h, y+k3)
+y_new = y + (k1 + 2k2 + 2k3 + k4)/6</div>
+        <div id="rkOutput" class="output-box"></div>
+      </div>
+
+      <div class="sim-card">
+        <h2>7. Linear Equations: 2×2 Solver</h2>
+        <p>Solve ax + by = c and dx + ey = f.</p>
+        <div class="control-row"><label>a, b, c</label><input id="lin1" type="text" value="2, 1, 5"></div>
+        <div class="control-row"><label>d, e, f</label><input id="lin2" type="text" value="1, -1, 1"></div>
+        <button class="sim-button" onclick="simulateLinear2x2()">Solve System</button>
+        <div class="code-box">D  = ae - bd
+Dx = ce - bf
+Dy = af - cd
+x = Dx/D, y = Dy/D</div>
+        <div id="linearOutput" class="output-box"></div>
+      </div>
+
+      <div class="sim-card">
+        <h2>8. PDE Idea: 1D Heat Diffusion Update</h2>
+        <p>Visualize one finite-difference update for the heat equation.</p>
+        <div class="control-row"><label>Interior temperatures</label><input id="heatVals" type="text" value="0, 20, 50, 20, 0"></div>
+        <div class="control-row"><label>r = α Δt / Δx²</label><input id="heatR" type="number" value="0.2" step="0.05"></div>
+        <button class="sim-button" onclick="simulateHeatStep()">Perform One Update</button>
+        <div class="code-box">u_i^{new} = u_i + r (u_{i+1} - 2u_i + u_{i-1})</div>
+        <div id="heatOutput" class="output-box"></div>
+      </div>
+    </section>
+  </main>
+  <script src="simulator.js"></script>
+</body>
+</html>
