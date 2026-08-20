@@ -1,0 +1,756 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Newton's Rings Interference Lab</title>
+    <!-- KaTeX for math rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, { delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true}] });"></script>
+
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f1f5f9;
+            --accent: #38bdf8;
+            --cyan: #22d3ee;
+            --yellow: #fbbf24;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 1100px;
+            width: 100%;
+            background: var(--card);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-sizing: border-box;
+        }
+
+        /* 1. Course Metadata Section */
+        .metadata-card {
+            background: rgba(34, 211, 238, 0.08);
+            border: 1px solid rgba(34, 211, 238, 0.3);
+            border-left: 5px solid var(--cyan);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+        }
+
+        .metadata-item span {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metadata-item strong {
+            font-size: 1rem;
+            color: var(--text);
+        }
+
+        .header { text-align: center; margin-bottom: 25px; }
+        .header h1 { color: var(--accent); margin: 0 0 5px 0; font-weight: 300; font-size: 2.2rem; }
+        .header p { color: #94a3b8; margin: 0; }
+
+        .section-title {
+            color: var(--cyan);
+            font-size: 1.25rem;
+            font-weight: 600;
+            border-bottom: 1px solid #334155;
+            padding-bottom: 8px;
+            margin: 30px 0 15px 0;
+        }
+
+        /* 2. Experimental Setup */
+        .setup-viz {
+            background: #fff;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: #000;
+            margin-bottom: 25px;
+        }
+
+        /* 3. Theory Section */
+        .theory-block {
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            border-radius: 10px;
+            line-height: 1.6;
+            color: #cbd5e1;
+            font-size: 0.95rem;
+            margin-bottom: 25px;
+        }
+
+        /* 4. Formulas Section */
+        .formulas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .formula-card {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid #334155;
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .formula-card h4 {
+            margin: 0 0 8px 0;
+            color: var(--yellow);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        /* 5. Main Simulator Section */
+        .preset-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .preset-btn {
+            font-size: 0.85rem;
+            padding: 5px 12px;
+            border: 1px solid #334155;
+            border-radius: 20px;
+            background: rgba(0,0,0,0.3);
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .preset-btn:hover { background: rgba(56, 189, 248, 0.2); }
+        .preset-btn.active { background: var(--accent); color: #000; font-weight: 600; border-color: var(--accent); }
+
+        .sim-grid {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+            align-items: start;
+            margin-bottom: 20px;
+        }
+
+        .ctrl-panel {
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .ctrl-row { display: flex; flex-direction: column; gap: 5px; }
+        .ctrl-label { display: flex; justify-content: space-between; font-size: 0.85rem; color: #94a3b8; }
+        .ctrl-label span:last-child { color: var(--cyan); font-weight: bold; }
+        input[type=range] { accent-color: var(--accent); cursor: pointer; }
+
+        .right-col { display: flex; flex-direction: column; gap: 15px; }
+        .display-split { display: flex; gap: 15px; flex-wrap: wrap; }
+
+        .tab-row { display: flex; gap: 5px; border-bottom: 1px solid #334155; margin-bottom: 10px; }
+        .tab {
+            font-size: 0.85rem;
+            padding: 6px 14px;
+            cursor: pointer;
+            color: #94a3b8;
+            border: none;
+            background: transparent;
+            border-bottom: 2px solid transparent;
+        }
+        .tab.active { color: var(--cyan); border-bottom-color: var(--cyan); font-weight: 600; }
+
+        canvas { background: #000; border: 1px solid #334155; border-radius: 8px; display: block; }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+        }
+
+        .metric {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid #334155;
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .metric-label { font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px; }
+        .metric-val { font-size: 1.05rem; font-weight: bold; color: var(--yellow); }
+
+        .table-wrap { overflow-x: auto; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid #334155; }
+        table { width: 100%; font-size: 0.85rem; border-collapse: collapse; }
+        th { text-align: right; padding: 8px; color: var(--cyan); border-bottom: 1px solid #334155; }
+        th:first-child { text-align: left; }
+        td { text-align: right; padding: 6px 8px; border-bottom: 1px solid rgba(51, 65, 85, 0.4); color: #cbd5e1; }
+        td:first-child { text-align: left; }
+
+        .formula-bar {
+            text-align: center;
+            font-size: 0.95rem;
+            color: var(--yellow);
+            background: rgba(0,0,0,0.3);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+        }
+
+        @media(max-width: 850px) {
+            .sim-grid { grid-template-columns: 1fr; }
+            .display-split { flex-direction: column; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 1. Course Metadata Segment -->
+    <div class="metadata-card">
+        <div class="metadata-item">
+            <span>Course Name</span>
+            <strong>Optics for B.Sc. 1st Semester</strong>
+        </div>
+        <div class="metadata-item">
+            <span>Target Level</span>
+            <strong>B.Sc. 1st Semester</strong>
+        </div>
+    </div>
+
+    <div class="header">
+        <h1>Newton's Rings Interference Lab</h1>
+        <p>Observing thin-film interference, circular ring patterns, and curvature metrics</p>
+    </div>
+
+    <!-- 2. Experimental Setup with High-Contrast Ray Diagram -->
+    <div class="section-title">1. Experimental Setup & Ray Diagram</div>
+    <div class="setup-viz">
+        <div style="font-weight: bold; margin-bottom: 10px; font-size: 0.9rem; color: #333;">Schematic Optics & Ray Propagation Path</div>
+        <svg id="schematic" width="480" height="230" viewBox="0 0 480 230">
+            <defs>
+                <marker id="arrow-blue" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                    <path d="M0,0 L0,6 L6,3 z" fill="#0284c7" />
+                </marker>
+                <marker id="arrow-ray" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                    <path d="M0,0 L0,6 L6,3 z" fill="#d97706" />
+                </marker>
+                <marker id="arrow-red" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                    <path d="M0,0 L0,6 L6,3 z" fill="#dc2626" />
+                </marker>
+            </defs>
+
+            <!-- Light Source S -->
+            <circle cx="40" cy="40" r="7" fill="#eab308" stroke="#d97706" stroke-width="1.5" />
+            <text x="15" y="20" font-size="11" font-weight="bold" fill="#334155">Monochromatic Source (S)</text>
+
+            <!-- Incident Ray to Glass Plate G (45 deg) -->
+            <line x1="40" y1="40" x2="160" y2="40" stroke="#d97706" stroke-width="2" stroke-dasharray="4,3" marker-end="url(#arrow-ray)" />
+
+            <!-- Glass Plate G at 45 degrees -->
+            <line x1="130" y1="10" x2="190" y2="70" stroke="#0284c7" stroke-width="4" />
+            <text x="185" y="30" font-size="11" font-weight="bold" fill="#0284c7">Glass Plate (G) [45°]</text>
+
+            <!-- Reflected Ray down to Plano-Convex Lens setup -->
+            <line x1="160" y1="40" x2="160" y2="125" stroke="#d97706" stroke-width="2" marker-end="url(#arrow-ray)" />
+
+            <!-- Microscope Top Observer -->
+            <rect x="140" y="0" width="40" height="15" fill="#1e293b" rx="3" />
+            <text x="110" y="-5" font-size="11" font-weight="bold" fill="#0f172a">Microscope</text>
+
+            <!-- Plano-Convex Lens Curved Profile -->
+            <path d="M 80 135 Q 160 160 240 135 Z" fill="rgba(56, 189, 248, 0.2)" stroke="#0284c7" stroke-width="2" />
+            <text x="248" y="140" font-size="11" font-weight="bold" fill="#0284c7">Plano-Convex Lens (R)</text>
+
+            <!-- Flat Glass Plate P -->
+            <rect x="60" y="155" width="200" height="8" fill="#94a3b8" stroke="#475569" stroke-width="1" />
+            <text x="268" y="162" font-size="11" font-weight="bold" fill="#334155">Glass Plate (P)</text>
+
+            <!-- Thin Film Air Gap -->
+            <text x="268" y="149" font-size="10" fill="#dc2626">Film Medium (n)</text>
+
+            <!-- Interference Rays (Ray 1 and Ray 2 returning) -->
+            <!-- Ray 1: Reflection from curved surface -->
+            <line x1="156" y1="147" x2="156" y2="15" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#arrow-red)" />
+            <!-- Ray 2: Reflection from top surface of plate P -->
+            <line x1="164" y1="155" x2="164" y2="15" stroke="#dc2626" stroke-width="1.5" stroke-dasharray="3,2" marker-end="url(#arrow-red)" />
+
+            <text x="172" y="90" font-size="10" font-weight="bold" fill="#dc2626">Interfering Rays (1 & 2)</text>
+
+            <!-- Dimension / Radius indicator -->
+            <line x1="160" y1="155" x2="160" y2="215" stroke="#cbd5e1" stroke-width="1" stroke-dasharray="2,2" />
+            <line x1="160" y1="205" x2="220" y2="205" stroke="#dc2626" stroke-width="1.5" marker-end="url(#arrow-red)" />
+            <text x="185" y="200" font-size="11" font-weight="bold" fill="#dc2626">rₘ</text>
+        </svg>
+    </div>
+
+    <!-- 3. Background, Concept & Basic Theory -->
+    <div class="section-title">2. Background, Concept & Theory</div>
+    <div class="theory-block">
+        <p>
+            <strong>Newton's Rings</strong> is a classic interference pattern formed by the <em>division of amplitude</em> when light reflects between a spherical lens surface and an adjacent flat glass plate. The enclosed air/liquid film has a variable thickness \(t\) that increases quadratically outwards from the point of contact.
+        </p>
+        <p>
+            When monochromatic light falls normally onto this setup, light reflects from both the bottom curved surface of the lens and the top flat surface of the glass plate. The ray reflected from the lower boundary (glass to air/medium) undergoes a phase change of \(\pi\) radians (path change of \(\lambda/2\)). Consequently, the central contact point (\(t=0\)) appears <strong>dark</strong> due to destructive interference.
+        </p>
+    </div>
+
+    <!-- 4. Necessary Formulas & Equations -->
+    <div class="section-title">3. Governing Formulas & Equations</div>
+    <div class="formulas-grid">
+        <div class="formula-card">
+            <h4>Dark Ring Diameter (\(D_m\))</h4>
+            <div>$$D_m^2 = \frac{4 m \lambda R}{n}$$</div>
+            <span style="font-size: 0.75rem; color: #94a3b8;">\(m = 0, 1, 2...\) order of dark ring</span>
+        </div>
+        <div class="formula-card">
+            <h4>Bright Ring Diameter (\(D_m\))</h4>
+            <div>$$D_m^2 = \frac{2(2m-1)\lambda R}{n}$$</div>
+            <span style="font-size: 0.75rem; color: #94a3b8;">\(m = 1, 2, 3...\) order of bright ring</span>
+        </div>
+        <div class="formula-card">
+            <h4>Air Gap Thickness (\(t\))</h4>
+            <div>$$t = \frac{r^2}{2R} = \frac{D_m^2}{8R}$$</div>
+            <span style="font-size: 0.75rem; color: #94a3b8;">Film thickness at radial distance \(r\)</span>
+        </div>
+    </div>
+
+    <!-- 5. Main Simulator Segment -->
+    <div class="section-title">4. Interactive Newton's Rings Simulator</div>
+
+    <div class="preset-row" id="presets">
+        <span style="font-size:0.85rem; color: #94a3b8;">Presets:</span>
+        <button class="preset-btn active" data-lam="550" data-R="1.0" data-n="1.00" data-nm="1.50" onclick="loadPreset(this)">Air gap (default)</button>
+        <button class="preset-btn" data-lam="589" data-R="1.5" data-n="1.00" data-nm="1.50" onclick="loadPreset(this)">Na-D line</button>
+        <button class="preset-btn" data-lam="550" data-R="1.0" data-n="1.33" data-nm="1.50" onclick="loadPreset(this)">Water medium</button>
+        <button class="preset-btn" data-lam="550" data-R="1.0" data-n="1.46" data-nm="1.50" onclick="loadPreset(this)">Glycerol medium</button>
+        <button class="preset-btn" data-lam="440" data-R="0.8" data-n="1.00" data-nm="1.50" onclick="loadPreset(this)">Violet light</button>
+        <button class="preset-btn" data-lam="650" data-R="2.0" data-n="1.00" data-nm="1.50" onclick="loadPreset(this)">Red, long R</button>
+    </div>
+
+    <div class="sim-grid">
+        <div class="ctrl-panel">
+            <div class="ctrl-row">
+                <div class="ctrl-label"><span>Wavelength (\(\lambda\))</span><span id="lv">550 nm</span></div>
+                <input type="range" id="lam" min="380" max="700" value="550" step="1" oninput="sync()">
+            </div>
+
+            <div class="ctrl-row">
+                <div class="ctrl-label"><span>Radius of Curvature (\(R\))</span><span id="Rv">1.00 m</span></div>
+                <input type="range" id="Rval" min="0.3" max="3.0" value="1.0" step="0.05" oninput="sync()">
+            </div>
+
+            <div class="ctrl-row">
+                <div class="ctrl-label"><span>Film Refractive Index (\(n\))</span><span id="nv">1.00</span></div>
+                <input type="range" id="nval" min="1.00" max="1.80" value="1.00" step="0.01" oninput="sync()">
+            </div>
+
+            <div class="ctrl-row">
+                <div class="ctrl-label"><span>Lens Glass (\(n_{glass}\))</span><span id="nmv">1.50</span></div>
+                <input type="range" id="nmval" min="1.40" max="1.90" value="1.50" step="0.01" oninput="sync()">
+            </div>
+
+            <div class="ctrl-row">
+                <div class="ctrl-label"><span>Visible Rings (Zoom)</span><span id="zv">8</span></div>
+                <input type="range" id="zoom" min="4" max="16" value="8" step="1" oninput="sync()">
+            </div>
+
+            <div class="ctrl-row" style="flex-direction:row; align-items:center; gap:8px;">
+                <input type="checkbox" id="showRings" checked onchange="sync()" style="width:14px; height:14px; cursor:pointer;">
+                <label for="showRings" style="font-size:0.85rem; color:#94a3b8; cursor:pointer;">Overlay ring markers</label>
+            </div>
+
+            <div class="ctrl-row" style="flex-direction:row; align-items:center; gap:8px;">
+                <input type="checkbox" id="colorMode" onchange="sync()" style="width:14px; height:14px; cursor:pointer;">
+                <label for="colorMode" style="font-size:0.85rem; color:#94a3b8; cursor:pointer;">Colour-matched light</label>
+            </div>
+        </div>
+
+        <div class="right-col">
+            <div class="display-split">
+                <div>
+                    <div style="font-size:0.8rem; color:#94a3b8; margin-bottom:5px; text-align:center;">Ring Pattern (Top View)</div>
+                    <canvas id="ringC" width="220" height="220"></canvas>
+                </div>
+                <div style="flex:1;">
+                    <div class="tab-row">
+                        <button class="tab active" onclick="setTab(0,this)">Intensity Profile</button>
+                        <button class="tab" onclick="setTab(1,this)">\(D^2\) vs \(m\) Plot</button>
+                        <button class="tab" onclick="setTab(2,this)">Cross-Section</button>
+                    </div>
+                    <canvas id="graphC" width="318" height="180"></canvas>
+                </div>
+            </div>
+
+            <div class="metrics">
+                <div class="metric"><div class="metric-label">\(D_1\) (1st dark)</div><div class="metric-val" id="mD1">—</div></div>
+                <div class="metric"><div class="metric-label">\(D_3\) (3rd dark)</div><div class="metric-val" id="mD3">—</div></div>
+                <div class="metric"><div class="metric-label">\(D_5\) (5th dark)</div><div class="metric-val" id="mD5">—</div></div>
+                <div class="metric"><div class="metric-label">Spacing (1→2)</div><div class="metric-val" id="mSp">—</div></div>
+                <div class="metric"><div class="metric-label">Eff. \(\lambda/n\)</div><div class="metric-val" id="mEff">—</div></div>
+                <div class="metric"><div class="metric-label">Rings in view</div><div class="metric-val" id="mCount">—</div></div>
+            </div>
+
+            <div class="table-wrap">
+                <table id="rtable">
+                    <thead>
+                        <tr>
+                            <th>m</th>
+                            <th>Radius \(r_m\) (mm)</th>
+                            <th>Diameter \(D_m\) (mm)</th>
+                            <th>\(D_m^2\) (mm²)</th>
+                            <th>Film Thickness \(t\) (µm)</th>
+                        </tr>
+                    </thead>
+                    <tbody id="rtbody"></tbody>
+                </table>
+            </div>
+
+            <div class="formula-bar" id="formula-box"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+let activeTab = 0;
+
+function wlToRGB(wl) {
+    let r,g,b;
+    if(wl<380){return[80,0,120];}
+    if(wl<440){r=(440-wl)/60;g=0;b=1;}
+    else if(wl<490){r=0;g=(wl-440)/50;b=1;}
+    else if(wl<510){r=0;g=1;b=(510-wl)/20;}
+    else if(wl<580){r=(wl-510)/70;g=1;b=0;}
+    else if(wl<645){r=1;g=(645-wl)/65;b=0;}
+    else{r=1;g=0;b=0;}
+    return[Math.round(r*255),Math.round(g*255),Math.round(b*255)];
+}
+
+function getParams() {
+    return {
+        lam: parseFloat(document.getElementById('lam').value)*1e-9,
+        lamNm: parseFloat(document.getElementById('lam').value),
+        R: parseFloat(document.getElementById('Rval').value),
+        n: parseFloat(document.getElementById('nval').value),
+        nm: parseFloat(document.getElementById('nmval').value),
+        zoom: parseInt(document.getElementById('zoom').value),
+        showRings: document.getElementById('showRings').checked,
+        colorMode: document.getElementById('colorMode').checked,
+    };
+}
+
+function darkRingRadius(m, lam, R, n) {
+    return Math.sqrt(m * lam * R / n);
+}
+
+function intensity(r_m, lam, R, n) {
+    const t = r_m*r_m / (2*R);
+    const phase = (4*Math.PI*n*t/lam) + Math.PI;
+    return 0.5*(1 - Math.cos(phase));
+}
+
+function drawRings(p) {
+    const c = document.getElementById('ringC');
+    const ctx = c.getContext('2d');
+    const W = c.width, H = c.height, cx = W/2, cy = H/2;
+    const maxPhysR = darkRingRadius(p.zoom, p.lam, p.R, p.n);
+    const scale = (W/2 - 6) / maxPhysR;
+    const [wr,wg,wb] = wlToRGB(p.lamNm);
+    const imgData = ctx.createImageData(W, H);
+    const d = imgData.data;
+    for(let y=0;y<H;y++) for(let x=0;x<W;x++) {
+        const dx=x-cx, dy=y-cy, r_px=Math.sqrt(dx*dx+dy*dy);
+        const r_m = r_px/scale;
+        const I = intensity(r_m, p.lam, p.R, p.n);
+        const vignette = Math.max(0, 1-(r_px/(W/2-2))*(r_px/(W/2-2)));
+        const bright = I * Math.sqrt(vignette);
+        const idx=(y*W+x)*4;
+        if(p.colorMode) {
+            d[idx]=bright*wr; d[idx+1]=bright*wg; d[idx+2]=bright*wb;
+        } else {
+            const v=Math.round(bright*245);
+            d[idx]=v; d[idx+1]=v; d[idx+2]=Math.round(v*0.92);
+        }
+        d[idx+3]=255;
+    }
+    ctx.putImageData(imgData,0,0);
+
+    if(p.showRings) {
+        for(let m=1; m<=p.zoom; m++) {
+            const r_m = darkRingRadius(m, p.lam, p.R, p.n);
+            const r_px = r_m*scale;
+            if(r_px > W/2-3) break;
+            ctx.strokeStyle='rgba(255,255,255,0.35)';
+            ctx.lineWidth=0.8;
+            ctx.beginPath(); ctx.arc(cx,cy,r_px,0,2*Math.PI); ctx.stroke();
+            if(m<=6) {
+                ctx.fillStyle='rgba(255,255,255,0.6)';
+                ctx.font='9px sans-serif';
+                ctx.fillText('m='+m, cx+r_px*0.707+2, cy-r_px*0.707-2);
+            }
+        }
+        ctx.strokeStyle='rgba(255,80,80,0.8)'; ctx.lineWidth=0.6;
+        ctx.beginPath(); ctx.moveTo(cx-8,cy); ctx.lineTo(cx+8,cy); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx,cy-8); ctx.lineTo(cx,cy+8); ctx.stroke();
+    }
+}
+
+function drawGraph(p) {
+    const c = document.getElementById('graphC');
+    const ctx = c.getContext('2d');
+    const W=c.width, H=c.height;
+    ctx.clearRect(0,0,W,H);
+    const textCol = '#94a3b8';
+    const lineCol = '#334155';
+    const [wr,wg,wb] = wlToRGB(p.lamNm);
+    const accentCol = `rgb(${wr},${wg},${wb})`;
+    const mx=36, my=10, mw=W-mx-10, mh=H-my-22;
+
+    if(activeTab===0) {
+        const pts=[];
+        const steps=300;
+        const maxPhysR = darkRingRadius(p.zoom, p.lam, p.R, p.n);
+        for(let i=0;i<steps;i++){
+            const r_m=(i/steps)*maxPhysR;
+            pts.push(intensity(r_m, p.lam, p.R, p.n));
+        }
+        ctx.strokeStyle=lineCol; ctx.lineWidth=0.5; ctx.strokeRect(mx,my,mw,mh);
+        ctx.fillStyle=textCol; ctx.font='10px sans-serif';
+        ctx.fillText('I', mx-12, my+8);
+        ctx.fillText('1', mx-12, my+16);
+        ctx.fillText('0', mx-8, my+mh+2);
+        ctx.fillText('r →', mx+mw-18, my+mh+14);
+
+        ctx.strokeStyle=accentCol; ctx.lineWidth=1.5;
+        ctx.beginPath();
+        pts.forEach((v,i)=>{
+            const px=mx+(i/steps)*mw, py=my+mh-v*mh;
+            i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+        });
+        ctx.stroke();
+
+        ctx.strokeStyle='rgba(255,255,255,0.2)'; ctx.setLineDash([2,3]); ctx.lineWidth=0.6;
+        for(let m=1;m<=p.zoom;m++){
+            const rm=darkRingRadius(m,p.lam,p.R,p.n);
+            const maxR=darkRingRadius(p.zoom,p.lam,p.R,p.n);
+            const px=mx+(rm/maxR)*mw;
+            if(px>mx && px<mx+mw){ctx.beginPath();ctx.moveTo(px,my);ctx.lineTo(px,my+mh);ctx.stroke();}
+        }
+        ctx.setLineDash([]);
+
+        document.getElementById('formula-box').innerHTML =
+            'Intensity: \\(I = I_0 \\sin^2(2\\pi n t / \\lambda)\\) &nbsp;|&nbsp; Gap: \\(t = r^2 / 2R\\) &nbsp;|&nbsp; Dark Rings: \\(r_m^2 = \\frac{m \\lambda R}{n}\\)';
+
+    } else if(activeTab===1) {
+        const pts=[];
+        for(let m=1;m<=10;m++){
+            const rm=darkRingRadius(m,p.lam,p.R,p.n);
+            pts.push({m, D2:(2*rm*1000)*(2*rm*1000)});
+        }
+        const maxD2=pts[pts.length-1].D2*1.1;
+        ctx.strokeStyle=lineCol; ctx.lineWidth=0.5; ctx.strokeRect(mx,my,mw,mh);
+        ctx.fillStyle=textCol; ctx.font='10px sans-serif';
+        ctx.fillText('D² (mm²)', mx, my-2);
+        ctx.fillText('m →', mx+mw-20, my+mh+14);
+        [0.25,0.5,0.75,1].forEach(f=>{
+            const py=my+mh-f*mh;
+            ctx.fillText((maxD2*f).toFixed(1), mx-34, py+4);
+        });
+
+        ctx.strokeStyle='rgba(34, 211, 238, 0.4)';
+        ctx.lineWidth=0.8; ctx.setLineDash([4,3]);
+        ctx.beginPath(); ctx.moveTo(mx,my+mh); ctx.lineTo(mx+mw,my+mh-mh); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.fillStyle='#22d3ee'; ctx.font='10px sans-serif';
+        ctx.fillText('slope = 4λR/n', mx+mw*0.3, my+mh*0.25);
+
+        pts.forEach(({m,D2})=>{
+            const px=mx+(m/11)*mw, py=my+mh-(D2/maxD2)*mh;
+            ctx.beginPath(); ctx.arc(px,py,3.5,0,2*Math.PI);
+            ctx.fillStyle=accentCol; ctx.fill();
+            ctx.strokeStyle='rgba(255,255,255,0.3)'; ctx.lineWidth=0.5; ctx.stroke();
+        });
+
+        ctx.strokeStyle=accentCol; ctx.lineWidth=1.2;
+        ctx.beginPath();
+        pts.forEach(({m,D2},i)=>{
+            const px=mx+(m/11)*mw, py=my+mh-(D2/maxD2)*mh;
+            i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+        });
+        ctx.stroke();
+
+        for(let i=1;i<=10;i++){
+            ctx.fillStyle=textCol; ctx.font='9px sans-serif';
+            ctx.fillText(i, mx+(i/11)*mw-3, my+mh+12);
+        }
+
+        const slope = 4*p.lam*p.R/p.n * 1e6;
+        document.getElementById('formula-box').innerHTML =
+            '\\(D_m^2 = \\frac{4m\\lambda R}{n}\\) &nbsp;|&nbsp; Slope = \\(\\frac{4\\lambda R}{n} = \\) ' + slope.toFixed(2) + ' mm²/ring';
+
+    } else {
+        const maxPhysR = darkRingRadius(p.zoom, p.lam, p.R, p.n);
+        const lensH = 60;
+        const cy_lens = my+lensH+10;
+        const plate_y = my+lensH+26;
+
+        ctx.strokeStyle=lineCol; ctx.lineWidth=0.5;
+
+        const scaleX=(mw*0.9)/(2*maxPhysR);
+        const cx2=mx+mw/2;
+
+        ctx.strokeStyle='#38bdf8'; ctx.lineWidth=1.5;
+        ctx.beginPath();
+        const arcR_px=p.R*scaleX*1;
+        const arcY=cy_lens+arcR_px-lensH/2;
+        ctx.arc(cx2, arcY, arcR_px, Math.PI*1.18, Math.PI*1.82);
+        ctx.stroke();
+        ctx.fillStyle='rgba(56, 189, 248, 0.08)';
+        ctx.fill();
+
+        ctx.strokeStyle=textCol; ctx.lineWidth=1;
+        ctx.beginPath(); ctx.moveTo(mx+5,plate_y); ctx.lineTo(mx+mw-5,plate_y); ctx.stroke();
+
+        ctx.strokeStyle=lineCol; ctx.lineWidth=0.5; ctx.setLineDash([2,3]);
+        ctx.beginPath(); ctx.moveTo(cx2,my); ctx.lineTo(cx2,plate_y); ctx.stroke();
+        ctx.setLineDash([]);
+
+        for(let m=1;m<=Math.min(p.zoom,6);m++) {
+            const rm=darkRingRadius(m,p.lam,p.R,p.n);
+            const rpx=rm*scaleX;
+            if(rpx>mw/2-4) break;
+            ctx.strokeStyle=`rgba(${wlToRGB(p.lamNm).join(',')},0.7)`;
+            ctx.lineWidth=0.8;
+            ctx.beginPath(); ctx.moveTo(cx2+rpx,cy_lens); ctx.lineTo(cx2+rpx,plate_y); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(cx2-rpx,cy_lens); ctx.lineTo(cx2-rpx,plate_y); ctx.stroke();
+        }
+
+        const tmax=maxPhysR*maxPhysR/(2*p.R);
+        ctx.strokeStyle=accentCol; ctx.lineWidth=1; ctx.beginPath();
+        for(let i=0;i<=100;i++){
+            const r_m=(i/100)*maxPhysR*1.05;
+            const t=r_m*r_m/(2*p.R);
+            const px=cx2+(r_m*scaleX), py=plate_y-t/tmax*lensH*0.5;
+            i===0?ctx.moveTo(px,py):ctx.lineTo(px,py);
+        }
+        ctx.stroke();
+        ctx.beginPath();
+        for(let i=100;i>=0;i--){
+            const r_m=(i/100)*maxPhysR*1.05;
+            const t=r_m*r_m/(2*p.R);
+            const px=cx2-(r_m*scaleX), py=plate_y-t/tmax*lensH*0.5;
+            i===100?ctx.moveTo(px,py):ctx.lineTo(px,py);
+        }
+        ctx.stroke();
+
+        ctx.fillStyle=textCol; ctx.font='10px sans-serif';
+        ctx.fillText('Plano-convex lens (R)', mx+4, my+10);
+        ctx.fillText('Flat glass plate', mx+4, plate_y+14);
+        ctx.fillText('Air gap t(r) = r²/2R', cx2+8, cy_lens+8);
+
+        document.getElementById('formula-box').innerHTML =
+            'Air gap: \\(t(r) = \\frac{r^2}{2R}\\) &nbsp;|&nbsp; Dark ring condition: \\(2nt = m\\lambda\\) &nbsp;→&nbsp; \\(r_m = \\sqrt{\\frac{m\\lambda R}{n}}\\)';
+    }
+
+    if (window.renderMathInElement) {
+        renderMathInElement(document.getElementById('formula-box'), {
+            delimiters: [{left: '\\(', right: '\\)', display: false}]
+        });
+    }
+}
+
+function updateMetrics(p) {
+    const D = m => (2*darkRingRadius(m,p.lam,p.R,p.n)*1000).toFixed(3)+' mm';
+    document.getElementById('mD1').textContent = D(1);
+    document.getElementById('mD3').textContent = D(3);
+    document.getElementById('mD5').textContent = D(5);
+    const r1=darkRingRadius(1,p.lam,p.R,p.n)*1000;
+    const r2=darkRingRadius(2,p.lam,p.R,p.n)*1000;
+    document.getElementById('mSp').textContent = (r2-r1).toFixed(3)+' mm';
+    document.getElementById('mEff').textContent = (p.lamNm/p.n).toFixed(1)+' nm';
+
+    let count=0;
+    for(let m=1;m<=50;m++){
+        const rm=darkRingRadius(m,p.lam,p.R,p.n);
+        if(rm > darkRingRadius(p.zoom,p.lam,p.R,p.n)) break;
+        count=m;
+    }
+    document.getElementById('mCount').textContent = count;
+
+    const tbody=document.getElementById('rtbody');
+    let html='';
+    for(let m=1;m<=8;m++){
+        const rm=darkRingRadius(m,p.lam,p.R,p.n);
+        const t_um=(rm*rm/(2*p.R))*1e6;
+        html+=`<tr>
+            <td>${m}</td>
+            <td>${(rm*1000).toFixed(3)}</td>
+            <td>${(rm*2000).toFixed(3)}</td>
+            <td>${((rm*2000)**2).toFixed(3)}</td>
+            <td>${t_um.toFixed(4)}</td>
+        </tr>`;
+    }
+    tbody.innerHTML=html;
+}
+
+function updateLabels(p) {
+    document.getElementById('lv').textContent = p.lamNm+' nm';
+    document.getElementById('Rv').textContent = p.R.toFixed(2)+' m';
+    document.getElementById('nv').textContent = p.n.toFixed(2);
+    document.getElementById('nmv').textContent = p.nm.toFixed(2);
+    document.getElementById('zv').textContent = p.zoom;
+}
+
+function sync() {
+    const p=getParams();
+    updateLabels(p);
+    drawRings(p);
+    drawGraph(p);
+    updateMetrics(p);
+}
+
+function setTab(i,btn) {
+    activeTab=i;
+    document.querySelectorAll('.tab').forEach(t=>t.classList.remove('active'));
+    btn.classList.add('active');
+    sync();
+}
+
+function loadPreset(btn) {
+    document.querySelectorAll('.preset-btn').forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    document.getElementById('lam').value=btn.dataset.lam;
+    document.getElementById('Rval').value=btn.dataset.R;
+    document.getElementById('nval').value=btn.dataset.n;
+    document.getElementById('nmval').value=btn.dataset.nm;
+    sync();
+}
+
+sync();
+</script>
+
+</body>
+</html>
