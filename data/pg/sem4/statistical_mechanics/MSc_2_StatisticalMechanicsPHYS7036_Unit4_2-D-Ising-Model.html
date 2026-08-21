@@ -1,0 +1,741 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>2D Ising Model - Phase Transition & Vector Spin Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700;800&family=JetBrains+Mono:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; overflow-x: hidden; }
+        code, .font-mono { font-family: 'JetBrains Mono', monospace; }
+        canvas { image-rendering: auto; cursor: crosshair; }
+        .glass { background: rgba(255, 255, 255, 0.95); backdrop-filter: blur(12px); }
+        .slider-thumb::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #3b82f6;
+            cursor: pointer;
+            border-radius: 50%;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.15);
+        }
+        .option-btn {
+            transition: all 0.2s ease;
+        }
+        .option-btn:hover:not(:disabled) {
+            background-color: rgba(59, 130, 246, 0.08);
+            border-color: rgba(59, 130, 246, 0.5);
+        }
+    </style>
+</head>
+<body class="bg-slate-100 text-slate-900 transition-colors duration-300 min-h-screen flex flex-col">
+
+    <!-- Top Header Banner with Explicit Title -->
+    <header class="bg-slate-900 text-white border-b border-slate-800 px-6 py-4 flex flex-col md:flex-row justify-between items-start md:items-center shadow-md">
+        <div>
+            <div class="flex items-center gap-3">
+                <span class="p-2 bg-blue-600/20 text-blue-400 rounded-lg border border-blue-500/30">
+                    <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z"></path></svg>
+                </span>
+                <div>
+                    <h1 class="text-xl md:text-2xl font-extrabold tracking-tight bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-300">
+                        2D Ising Model: Vector Spin Phase Transition Simulator
+                    </h1>
+                    <p class="text-xs text-slate-400 font-medium mt-0.5">Statistical Mechanics & Metropolis Monte Carlo Laboratory</p>
+                </div>
+            </div>
+        </div>
+        <div class="mt-3 md:mt-0 flex items-center gap-3 text-xs bg-slate-800/80 px-3.5 py-2 rounded-xl border border-slate-700">
+            <span class="inline-block w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse"></span>
+            <span class="text-slate-300 font-semibold">Critical Temp (Onsager Exact):</span>
+            <span class="font-mono text-emerald-400 font-bold text-sm">T<sub>c</sub> = 2.269185 J/k<sub>B</sub></span>
+        </div>
+    </header>
+
+    <div class="max-w-7xl mx-auto w-full p-4 lg:p-6 space-y-6 flex-1 flex flex-col">
+        
+        <!-- Theoretical Concept Section (At Top) -->
+        <section class="bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-3">
+            <h2 class="text-xl font-bold text-slate-900">Theoretical Concept</h2>
+            <h3 class="text-sm font-semibold text-blue-600">Concept: 2D Ising Model and Ferromagnetic Phase Transition</h3>
+            <p class="text-sm leading-relaxed text-slate-700">
+                The 2D Ising model describes a lattice of interacting spins that can point either up or down, with neighbouring spins favouring parallel alignment when the exchange interaction \(J &gt 0\). The competition between this interaction and thermal fluctuations produces a phase transition at the critical temperature \(T_c \simeq 2.269 \, J/k_B\). Below \(T_c\), the system develops long-range magnetic order and a non-zero magnetization, whereas above \(T_c\), thermal fluctuations produce a disordered state with magnetization approaching zero. The Metropolis algorithm samples spin configurations according to the Boltzmann probability \(P(\Delta E) = \min[1, e^{-\Delta E / (k_B T)}]\), allowing the phase transition to be observed computationally.
+            </p>
+        </section>
+
+        <!-- Simulator Core Container -->
+        <div class="flex-1 flex flex-col lg:flex-row gap-6">
+            
+            <!-- Sidebar Controls -->
+            <aside class="w-full lg:w-96 p-5 bg-white border border-slate-200 rounded-2xl flex flex-col gap-5 shadow-sm overflow-y-auto">
+                
+                <!-- Physics Formulas Card -->
+                <div class="bg-slate-900 text-slate-100 p-4 rounded-xl shadow-md border border-slate-800 space-y-3">
+                    <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                        <h3 class="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
+                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                            Theoretical Formulas
+                        </h3>
+                        <span class="text-[10px] bg-blue-900/60 text-blue-300 font-mono px-2 py-0.5 rounded">2D Lattice</span>
+                    </div>
+                    
+                    <div class="space-y-2 text-xs">
+                        <div>
+                            <span class="text-slate-400 text-[10px] block font-semibold">1. System Hamiltonian (Energy)</span>
+                            <div class="bg-slate-800/80 p-2 rounded border border-slate-700/60 text-center font-mono text-indigo-300 text-xs my-1">
+                                \(H = -J \sum_{\langle i,j \rangle} s_i s_j - B \sum_i s_i\)
+                            </div>
+                        </div>
+                        <div>
+                            <span class="text-slate-400 text-[10px] block font-semibold">2. Metropolis Flip Probability</span>
+                            <div class="bg-slate-800/80 p-2 rounded border border-slate-700/60 text-center font-mono text-emerald-300 text-xs my-1">
+                                \(P(\Delta E) = \min(1, e^{-\Delta E / (k_B T)})\)
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Units Reference Card -->
+                <div class="bg-indigo-50/70 p-3.5 rounded-xl border border-indigo-100 text-xs space-y-1.5">
+                    <h4 class="font-bold text-indigo-900 flex items-center gap-1 text-[11px] uppercase tracking-wider">
+                        <svg class="w-3.5 h-3.5 text-indigo-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                        Physical Units Definition
+                    </h4>
+                    <ul class="grid grid-cols-2 gap-1.5 text-[11px] text-indigo-950 font-medium pt-1">
+                        <li class="bg-white/80 p-1.5 rounded border border-indigo-100/60"><strong class="text-indigo-700">T:</strong> J / k<sub>B</sub> <span class="text-[9.5px] text-slate-500">(Reduced)</span></li>
+                        <li class="bg-white/80 p-1.5 rounded border border-indigo-100/60"><strong class="text-indigo-700">J:</strong> Joules <span class="text-[9.5px] text-slate-500">(J = 1)</span></li>
+                        <li class="bg-white/80 p-1.5 rounded border border-indigo-100/60"><strong class="text-indigo-700">B:</strong> J / μ<sub>B</sub> <span class="text-[9.5px] text-slate-500">(Ext. Field)</span></li>
+                        <li class="bg-white/80 p-1.5 rounded border border-indigo-100/60"><strong class="text-indigo-700">M:</strong> μ<sub>B</sub> / site <span class="text-[9.5px] text-slate-500">(Spin Mag)</span></li>
+                        <li class="bg-white/80 p-1.5 rounded border border-indigo-100/60 col-span-2"><strong class="text-indigo-700">E:</strong> J / site <span class="text-[9.5px] text-slate-500">(Energy Density)</span></li>
+                    </ul>
+                </div>
+
+                <div class="space-y-4">
+                    <!-- Temperature Control -->
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label class="text-xs font-bold uppercase tracking-wider text-slate-700">Temperature (T)</label>
+                            <span class="text-blue-600 font-mono font-bold text-sm"><span id="t-val">2.27</span> <span class="text-xs font-normal text-slate-500">J/k<sub>B</sub></span></span>
+                        </div>
+                        <input id="temp-slider" type="range" min="0.1" max="5.0" step="0.01" value="2.27" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider-thumb">
+                        <div class="flex justify-between text-[10px] font-semibold text-slate-400 mt-1">
+                            <span>0.1 (Ordered)</span>
+                            <span class="text-emerald-600 font-bold">T<sub>c</sub> ≈ 2.27</span>
+                            <span>5.0 (Disordered)</span>
+                        </div>
+                    </div>
+
+                    <!-- Field Controls -->
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                        <label class="text-xs font-bold uppercase tracking-wider text-slate-700 block mb-2.5">External Field Direction (B)</label>
+                        <div class="grid grid-cols-3 gap-2 mb-3">
+                            <button id="field-up" class="py-2 text-xs font-bold rounded-lg border border-slate-200 bg-white hover:bg-slate-100 transition shadow-sm">↑ Up</button>
+                            <button id="field-none" class="py-2 text-xs font-bold rounded-lg border-2 border-blue-500 bg-blue-50 text-blue-700 transition shadow-sm">None</button>
+                            <button id="field-down" class="py-2 text-xs font-bold rounded-lg border border-slate-200 bg-white hover:bg-slate-100 transition shadow-sm">↓ Down</button>
+                        </div>
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label class="text-xs font-semibold text-slate-500 uppercase">Field Intensity (|B|)</label>
+                            <span class="text-indigo-600 font-mono font-bold text-xs"><span id="h-val">0.00</span> <span class="text-[10px] text-slate-400">J/μ<sub>B</sub></span></span>
+                        </div>
+                        <input id="field-slider" type="range" min="0.0" max="2.0" step="0.05" value="0.0" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider-thumb">
+                    </div>
+
+                    <!-- Simulation Speed -->
+                    <div class="p-4 bg-slate-50 rounded-xl border border-slate-200">
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label class="text-xs font-bold uppercase tracking-wider text-slate-700">Sim Speed</label>
+                            <span id="speed-val" class="text-slate-700 font-mono font-bold text-xs">10x</span>
+                        </div>
+                        <input id="speed-slider" type="range" min="1" max="50" step="1" value="10" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider-thumb">
+                    </div>
+                </div>
+
+                <!-- Action Buttons -->
+                <div class="flex flex-col gap-2 pt-1">
+                    <button id="reset-btn" class="w-full py-2.5 bg-slate-800 text-white rounded-lg font-semibold hover:bg-slate-700 transition shadow-md active:scale-95 text-xs">Randomize Spins (High T Init)</button>
+                    <button id="align-btn" class="w-full py-2.5 bg-white border border-slate-300 text-slate-700 rounded-lg font-semibold hover:bg-slate-50 transition active:scale-95 text-xs">Force Align (Zero T Ferromagnet)</button>
+                    <button id="play-pause" class="w-full py-2.5 bg-blue-600 text-white rounded-lg font-semibold hover:bg-blue-500 transition shadow-md active:scale-95 text-xs">Pause Simulation</button>
+                </div>
+
+                <div class="mt-auto pt-4 border-t border-slate-200 text-[11px] text-slate-400 space-y-1">
+                    <p class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-blue-500 inline-block"></span> Blue Vectors: ↑ Spin Up (+1 μ<sub>B</sub>)</p>
+                    <p class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-red-500 inline-block"></span> Red Vectors: ↓ Spin Down (-1 μ<sub>B</sub>)</p>
+                </div>
+            </aside>
+
+            <!-- Main Display Area -->
+            <main class="flex-1 flex flex-col gap-6 relative">
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6 h-full">
+                    
+                    <!-- Lattice Display -->
+                    <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col">
+                        <div class="flex justify-between items-center mb-4">
+                            <div>
+                                <h2 class="text-base font-bold text-slate-800">Spin Vector Lattice Visualizer</h2>
+                                <p class="text-xs text-slate-400">48 × 48 Discrete Spin Matrix (N = 2,304 sites)</p>
+                            </div>
+                            <div class="flex gap-3 text-xs font-semibold">
+                                <span class="flex items-center gap-1 text-blue-600 bg-blue-50 px-2 py-1 rounded border border-blue-200">↑ +1 μ<sub>B</sub></span>
+                                <span class="flex items-center gap-1 text-red-600 bg-red-50 px-2 py-1 rounded border border-red-200">↓ -1 μ<sub>B</sub></span>
+                            </div>
+                        </div>
+                        <div class="flex-1 relative min-h-[380px] flex items-center justify-center overflow-hidden">
+                            <canvas id="lattice-canvas" class="w-full h-full max-w-[560px] max-h-[560px] bg-slate-50 rounded-xl shadow-inner border border-slate-200"></canvas>
+                            <div class="absolute bottom-3 left-3 bg-slate-900/80 text-white px-3 py-1 rounded-full text-[10px] font-semibold uppercase tracking-wider backdrop-blur-sm pointer-events-none">
+                                Interactive: Drag to Pin Spins
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Analysis Panel -->
+                    <div class="flex flex-col gap-6">
+                        <!-- Magnetization Chart -->
+                        <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 h-1/2 flex flex-col">
+                            <div class="flex justify-between items-center mb-2">
+                                <h2 class="text-base font-bold text-slate-800">Global Absolute Magnetization (|M|)</h2>
+                                <span class="text-xs font-mono text-slate-400">Unit: μ<sub>B</sub> / site</span>
+                            </div>
+                            <div class="flex-1 min-h-[160px]">
+                                <canvas id="chart-m"></canvas>
+                            </div>
+                        </div>
+                        
+                        <!-- Numeric Stats -->
+                        <div class="grid grid-cols-2 gap-4 h-1/2">
+                            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-center items-center text-center">
+                                <span class="text-slate-400 text-xs font-bold uppercase tracking-wider">Magnetization (M)</span>
+                                <div class="my-1 flex items-baseline gap-1">
+                                    <span id="stat-mag" class="text-3xl lg:text-4xl font-black text-blue-600 tabular-nums">0.000</span>
+                                    <span class="text-xs text-slate-400 font-mono">μ<sub>B</sub>/site</span>
+                                </div>
+                                <div class="w-full bg-slate-100 h-2 rounded-full mt-3 overflow-hidden border border-slate-200">
+                                    <div id="stat-mag-bar" class="bg-blue-600 h-full transition-all duration-300" style="width: 0%"></div>
+                                </div>
+                            </div>
+                            <div class="bg-white p-5 rounded-2xl shadow-sm border border-slate-200 flex flex-col justify-center items-center text-center relative overflow-hidden">
+                                <div id="field-indicator" class="absolute top-2 right-2 text-xl opacity-20"></div>
+                                <span class="text-slate-400 text-xs font-bold uppercase tracking-wider">Energy Density (E)</span>
+                                <div class="my-1 flex items-baseline gap-1">
+                                    <span id="stat-energy" class="text-3xl lg:text-4xl font-black text-slate-800 tabular-nums">0.00</span>
+                                    <span class="text-xs text-slate-400 font-mono">J/site</span>
+                                </div>
+                                <p class="text-[10px] text-slate-400 mt-2 font-medium">Effective Field B = <span id="h-display" class="font-mono font-bold text-slate-600">0.00</span> J/μ<sub>B</sub></p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </main>
+        </div>
+
+        <!-- MCQ Concept Check Section (At Bottom) -->
+        <section class="bg-white p-6 lg:p-8 rounded-2xl border border-slate-200 shadow-sm space-y-6">
+            <div class="flex flex-wrap justify-between items-center border-b border-slate-200 pb-4 gap-4">
+                <div>
+                    <h2 class="text-2xl font-bold text-slate-900 flex items-center gap-2">
+                        <span>Interactive Concept Check</span>
+                    </h2>
+                    <p class="text-xs text-slate-500 mt-1">Test your understanding of the 2D Ising phase transition by answering these questions based on the simulator.</p>
+                </div>
+                <div class="flex items-center gap-3">
+                    <span id="quiz-score" class="text-xs font-mono font-semibold px-3.5 py-1.5 bg-slate-100 border border-slate-300 text-blue-700 rounded-full">Score: 0 / 5</span>
+                    <button id="btn-reset-quiz" class="text-xs px-3 py-1.5 bg-slate-100 hover:bg-slate-200 border border-slate-300 text-slate-700 rounded-lg transition-all font-semibold">Reset Answers</button>
+                </div>
+            </div>
+
+            <div id="mcq-container" class="space-y-6">
+                <!-- Question 1 -->
+                <div class="mcq-card p-5 bg-slate-50 rounded-xl border border-slate-200 space-y-4" data-qid="q1" data-correct="A">
+                    <div>
+                        <span class="text-xs font-bold tracking-wider uppercase text-blue-600">Q1. Effect of Temperature on Magnetic Order</span>
+                        <p class="text-sm text-slate-800 mt-1 leading-relaxed">
+                            Start with the <strong>Randomize Spins</strong> option and set the external field to <strong>None</strong>. Run the simulation at a low temperature, for example \(T = 1.0 \, J/k_B\), and then increase the temperature to \(T = 4.0 \, J/k_B\). Observe the spin lattice and the magnetization \(|M|\). What do you observe?
+                        </p>
+                    </div>
+                    <div class="grid grid-cols-1 gap-2 text-xs">
+                        <button class="option-btn text-left p-3 rounded-lg border border-slate-300 bg-white text-slate-800 flex items-start gap-2" data-opt="A">
+                            <span class="font-bold text-blue-600 shrink-0">A)</span>
+                            <span>At low temperature, spins tend to form large ordered regions and \(|M|\) is relatively large; at high temperature, the lattice becomes disordered and \(|M|\) decreases toward zero.</span>
+                        </button>
+                        <button class="option-btn text-left p-3 rounded-lg border border-slate-300 bg-white text-slate-800 flex items-start gap-2" data-opt="B">
+                            <span class="font-bold text-blue-600 shrink-0">B)</span>
+                            <span>The system becomes more ordered as temperature increases.</span>
+                        </button>
+                        <button class="option-btn text-left p-3 rounded-lg border border-slate-300 bg-white text-slate-800 flex items-start gap-2" data-opt="C">
+                            <span class="font-bold text-blue-600 shrink-0">C)</span>
+                            <span>The magnetization remains unchanged because temperature does not affect the spin configuration.</span>
+                        </button>
+                        <button class="option-btn text-left p-3 rounded-lg border border-slate-300 bg-white text-slate-800 flex items-start gap-2" data-opt="D">
+                            <span class="font-bold text-blue-600 shrink-0">D)</span>
+                            <span>At high temperature, all spins become aligned in the same direction.</span>
+                        </button>
+                    </div>
+                    <div class="explanation hidden text-xs p-3 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-950">
+                        <span class="font-semibold text-emerald-800 block mb-1">Correct Answer: A</span>
+                        At low temperatures below \(T_c \approx 2.27 \, J/k_B\), exchange energy dominates over thermal noise, causing spins to cluster into large ferromagnetic domains with high net \(|M|\). At high temperatures, thermal fluctuations destroy this order.
+                    </div>
+                </div>
+
+                <!-- Question 2 -->
+                <div class="mcq-card p-5 bg-slate-50 rounded-xl border border-slate-200 space-y-4" data-qid="q2" data-correct="A">
+                    <div>
+                        <span class="text-xs font-bold tracking-wider uppercase text-blue-600">Q2. Identifying the Critical Temperature</span>
+                        <p class="text-sm text-slate-800 mt-1 leading-relaxed">
+                            Set the external field to <strong>None</strong>. Start with a randomized lattice and gradually vary the temperature through the region around
+                            \[T_c \simeq 2.27 \, J/k_B.\]
+                            Watch both the spin lattice and the \(|M|\) versus simulation-time plot. Which observation best indicates that you are approaching the phase-transition region?
+                        </p>
+                    </div>
+                    <div class="grid grid-cols-1 gap-2 text-xs">
+                        <button class="option-btn text-left p-3 rounded-lg border border-slate-300 bg-white text-slate-800 flex items-start gap-2" data-opt="A">
+                            <span class="font-bold text-blue-600 shrink-0">A)</span>
+                            <span>The system changes from strongly ordered configurations with appreciable \(|M|\) to increasingly disordered configurations with much smaller \(|M|\).</span>
+                        </button>
+                        <button class="option-btn text-left p-3 rounded-lg border border-slate-300 bg-white text-slate-800 flex items-start gap-2" data-opt="B">
+                            <span class="font-bold text-blue-600 shrink-0">B)</span>
+                            <span>The spins become perfectly aligned exactly at \(T_c\).</span>
+                        </button>
+                        <button class="option-btn text-left p-3 rounded-lg border border-slate-300 bg-white text-slate-800 flex items-start gap-2" data-opt="C">
+                            <span class="font-bold text-blue-600 shrink-0">C)</span>
+                            <span>The energy becomes independent of temperature.</span>
+                        </button>
+                        <button class="option-btn text-left p-3 rounded-lg border border-slate-300 bg-white text-slate-800 flex items-start gap-2" data-opt="D">
+                            <span class="font-bold text-blue-600 shrink-0">D)</span>
+                            <span>The magnetization becomes exactly 1 for all temperatures.</span>
+                        </button>
+                    </div>
+                    <div class="explanation hidden text-xs p-3 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-950">
+                        <span class="font-semibold text-emerald-800 block mb-1">Correct Answer: A</span>
+                        Passing through \(T_c \approx 2.27 \, J/k_B\) marks the continuous phase transition where spontaneous magnetization drops sharply and large domain fluctuations occur.
+                    </div>
+                </div>
+
+                <!-- Question 3 -->
+                <div class="mcq-card p-5 bg-slate-50 rounded-xl border border-slate-200 space-y-4" data-qid="q3" data-correct="A">
+                    <div>
+                        <span class="text-xs font-bold tracking-wider uppercase text-blue-600">Q3. Why Does the System Become Disordered at High Temperature?</span>
+                        <p class="text-sm text-slate-800 mt-1 leading-relaxed">
+                            Set \(B = 0\) and compare the simulation at \(T = 1.0 \, J/k_B\) and \(T = 4.0 \, J/k_B\). Examine individual spin flips as the simulation runs. Why are energetically unfavourable spin flips more frequently accepted at the higher temperature?
+                        </p>
+                    </div>
+                    <div class="grid grid-cols-1 gap-2 text-xs">
+                        <button class="option-btn text-left p-3 rounded-lg border border-slate-300 bg-white text-slate-800 flex items-start gap-2" data-opt="A">
+                            <span class="font-bold text-blue-600 shrink-0">A)</span>
+                            <span>Because the Metropolis acceptance probability for an energetically unfavourable flip increases with temperature.</span>
+                        </button>
+                        <button class="option-btn text-left p-3 rounded-lg border border-slate-300 bg-white text-slate-800 flex items-start gap-2" data-opt="B">
+                            <span class="font-bold text-blue-600 shrink-0">B)</span>
+                            <span>Because the exchange interaction \(J\) becomes zero at high temperature.</span>
+                        </button>
+                        <button class="option-btn text-left p-3 rounded-lg border border-slate-300 bg-white text-slate-800 flex items-start gap-2" data-opt="C">
+                            <span class="font-bold text-blue-600 shrink-0">C)</span>
+                            <span>Because the external magnetic field becomes stronger automatically.</span>
+                        </button>
+                        <button class="option-btn text-left p-3 rounded-lg border border-slate-300 bg-white text-slate-800 flex items-start gap-2" data-opt="D">
+                            <span class="font-bold text-blue-600 shrink-0">D)</span>
+                            <span>Because the spins stop interacting with their neighbours.</span>
+                        </button>
+                    </div>
+                    <div class="explanation hidden text-xs p-3 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-950">
+                        <span class="font-semibold text-emerald-800 block mb-1">Correct Answer: A</span>
+                        The simulator uses the Metropolis rule \(P(\Delta E) = \min(1, e^{-\Delta E/(k_B T)})\). For \(\Delta E &gt 0\), increasing \(T\) makes the exponential suppression weaker, so energetically unfavourable flips become much more likely.
+                    </div>
+                </div>
+
+                <!-- Question 4 -->
+                <div class="mcq-card p-5 bg-slate-50 rounded-xl border border-slate-200 space-y-4" data-qid="q4" data-correct="A">
+                    <div>
+                        <span class="text-xs font-bold tracking-wider uppercase text-blue-600">Q4. Effect of an External Magnetic Field</span>
+                        <p class="text-sm text-slate-800 mt-1 leading-relaxed">
+                            Set the temperature near the critical region, for example \(T = 2.27 \, J/k_B\). First select <strong>Field = None</strong> and observe the spin configuration. Then apply an <strong>Up</strong> magnetic field with a moderate field intensity. What change do you observe?
+                        </p>
+                    </div>
+                    <div class="grid grid-cols-1 gap-2 text-xs">
+                        <button class="option-btn text-left p-3 rounded-lg border border-slate-300 bg-white text-slate-800 flex items-start gap-2" data-opt="A">
+                            <span class="font-bold text-blue-600 shrink-0">A)</span>
+                            <span>The external field biases the spins toward the field direction, producing a preference for spin-up states and increasing the net magnetization in that direction.</span>
+                        </button>
+                        <button class="option-btn text-left p-3 rounded-lg border border-slate-300 bg-white text-slate-800 flex items-start gap-2" data-opt="B">
+                            <span class="font-bold text-blue-600 shrink-0">B)</span>
+                            <span>The external field has no effect because the Ising model contains only spin–spin interactions.</span>
+                        </button>
+                        <button class="option-btn text-left p-3 rounded-lg border border-slate-300 bg-white text-slate-800 flex items-start gap-2" data-opt="C">
+                            <span class="font-bold text-blue-600 shrink-0">C)</span>
+                            <span>The field forces every spin to flip randomly between up and down.</span>
+                        </button>
+                        <button class="option-btn text-left p-3 rounded-lg border border-slate-300 bg-white text-slate-800 flex items-start gap-2" data-opt="D">
+                            <span class="font-bold text-blue-600 shrink-0">D)</span>
+                            <span>The field changes the critical temperature but has no effect on the spin configuration.</span>
+                        </button>
+                    </div>
+                    <div class="explanation hidden text-xs p-3 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-950">
+                        <span class="font-semibold text-emerald-800 block mb-1">Correct Answer: A</span>
+                        The Hamiltonian used by the simulator contains the field contribution \(H = -J \sum_{\langle i,j \rangle} s_i s_j - B \sum_i s_i\), so an external field energetically favours spins aligned with the field.
+                    </div>
+                </div>
+
+                <!-- Question 5 -->
+                <div class="mcq-card p-5 bg-slate-50 rounded-xl border border-slate-200 space-y-4" data-qid="q5" data-correct="A">
+                    <div>
+                        <span class="text-xs font-bold tracking-wider uppercase text-blue-600">Q5. Energy–Magnetization Connection</span>
+                        <p class="text-sm text-slate-800 mt-1 leading-relaxed">
+                            Set the external field to <strong>None</strong>. Compare a low-temperature state, \(T = 1.0 \, J/k_B\), with a high-temperature state, \(T = 4.0 \, J/k_B\). Observe both the spin lattice and the displayed energy density \(E\). Which statement best describes the relationship between magnetic ordering and energy?
+                        </p>
+                    </div>
+                    <div class="grid grid-cols-1 gap-2 text-xs">
+                        <button class="option-btn text-left p-3 rounded-lg border border-slate-300 bg-white text-slate-800 flex items-start gap-2" data-opt="A">
+                            <span class="font-bold text-blue-600 shrink-0">A)</span>
+                            <span>The low-temperature ordered state generally has lower energy because neighbouring spins are predominantly aligned, while the high-temperature disordered state has a higher energy.</span>
+                        </button>
+                        <button class="option-btn text-left p-3 rounded-lg border border-slate-300 bg-white text-slate-800 flex items-start gap-2" data-opt="B">
+                            <span class="font-bold text-blue-600 shrink-0">B)</span>
+                            <span>The ordered state always has the highest energy because all spins point in the same direction.</span>
+                        </button>
+                        <button class="option-btn text-left p-3 rounded-lg border border-slate-300 bg-white text-slate-800 flex items-start gap-2" data-opt="C">
+                            <span class="font-bold text-blue-600 shrink-0">C)</span>
+                            <span>The energy is independent of the spin configuration.</span>
+                        </button>
+                        <button class="option-btn text-left p-3 rounded-lg border border-slate-300 bg-white text-slate-800 flex items-start gap-2" data-opt="D">
+                            <span class="font-bold text-blue-600 shrink-0">D)</span>
+                            <span>The energy is determined only by the simulation speed.</span>
+                        </button>
+                    </div>
+                    <div class="explanation hidden text-xs p-3 rounded-lg bg-emerald-50 border border-emerald-300 text-emerald-950">
+                        <span class="font-semibold text-emerald-800 block mb-1">Correct Answer: A</span>
+                        For the ferromagnetic model \(H = -J \sum_{\langle i,j \rangle} s_i s_j - B \sum_i s_i\), parallel neighbouring spins lower the interaction energy. The simulator calculates and displays the energy density alongside the magnetization.
+                    </div>
+                </div>
+            </div>
+        </section>
+    </div>
+
+    <script>
+        // Render math on page load
+        document.addEventListener("DOMContentLoaded", function() {
+            renderMathInElement(document.body, {
+                delimiters: [
+                    {left: '$$', right: '$$', display: true},
+                    {left: '\\[', right: '\\]', display: true},
+                    {left: '$', right: '$', display: false},
+                    {left: '\\(', right: '\\)', display: false}
+                ],
+                throwOnError : false
+            });
+        });
+
+        const CONFIG = {
+            N: 48, 
+            UP_COLOR: '#3b82f6',
+            DOWN_COLOR: '#ef4444',
+            UPDATE_STEPS_BASE: 5000,
+            CHART_MAX_POINTS: 100
+        };
+
+        const canvas = document.getElementById('lattice-canvas');
+        const ctx = canvas.getContext('2d');
+        
+        function setupCanvas() {
+            const size = Math.min(560, canvas.parentElement.clientWidth);
+            const dpr = window.devicePixelRatio || 1;
+            canvas.width = size * dpr;
+            canvas.height = size * dpr;
+            canvas.style.width = size + 'px';
+            canvas.style.height = size + 'px';
+            ctx.scale(dpr, dpr);
+        }
+        setupCanvas();
+        window.addEventListener('resize', setupCanvas);
+
+        let lattice = new Int8Array(CONFIG.N * CONFIG.N);
+        let T = 2.27;
+        let fieldMagnitude = 0.0;
+        let fieldDirection = 0; 
+        let H = 0.0; 
+        let speed = 10;
+        let isPaused = false;
+        let currentM = 0;
+        let currentE = 0;
+
+        function initializeLattice(random = true) {
+            for (let i = 0; i < lattice.length; i++) {
+                lattice[i] = random ? (Math.random() > 0.5 ? 1 : -1) : 1;
+            }
+        }
+
+        function getIdx(x, y) {
+            const xx = (x + CONFIG.N) % CONFIG.N;
+            const yy = (y + CONFIG.N) % CONFIG.N;
+            return yy * CONFIG.N + xx;
+        }
+
+        function stepMetropolis() {
+            if (isPaused) return;
+            const steps = CONFIG.UPDATE_STEPS_BASE * (speed / 10);
+            for (let s = 0; s < steps; s++) {
+                const x = Math.floor(Math.random() * CONFIG.N);
+                const y = Math.floor(Math.random() * CONFIG.N);
+                const i = y * CONFIG.N + x;
+                const s_i = lattice[i];
+                const sum_neighbors = 
+                    lattice[getIdx(x + 1, y)] +
+                    lattice[getIdx(x - 1, y)] +
+                    lattice[getIdx(x, y + 1)] +
+                    lattice[getIdx(x, y - 1)];
+                const dE = 2 * s_i * (sum_neighbors + H);
+                if (dE <= 0 || Math.random() < Math.exp(-dE / T)) {
+                    lattice[i] = -s_i;
+                }
+            }
+        }
+
+        function drawSpin(x, y, size, value) {
+            const centerX = x + size / 2;
+            const centerY = y + size / 2;
+            const arrowPadding = size * 0.2;
+            const arrowLength = size - arrowPadding * 2;
+            
+            ctx.beginPath();
+            ctx.strokeStyle = value === 1 ? CONFIG.UP_COLOR : CONFIG.DOWN_COLOR;
+            ctx.lineWidth = Math.max(1, size * 0.15);
+            ctx.lineCap = 'round';
+            ctx.lineJoin = 'round';
+
+            if (value === 1) {
+                ctx.moveTo(centerX, centerY + arrowLength / 2);
+                ctx.lineTo(centerX, centerY - arrowLength / 2);
+                ctx.lineTo(centerX - size * 0.2, centerY - arrowLength / 2 + size * 0.2);
+                ctx.moveTo(centerX, centerY - arrowLength / 2);
+                ctx.lineTo(centerX + size * 0.2, centerY - arrowLength / 2 + size * 0.2);
+            } else {
+                ctx.moveTo(centerX, centerY - arrowLength / 2);
+                ctx.lineTo(centerX, centerY + arrowLength / 2);
+                ctx.lineTo(centerX - size * 0.2, centerY + arrowLength / 2 - size * 0.2);
+                ctx.moveTo(centerX, centerY + arrowLength / 2);
+                ctx.lineTo(centerX + size * 0.2, centerY + arrowLength / 2 - size * 0.2);
+            }
+            ctx.stroke();
+        }
+
+        function renderLattice() {
+            const drawArea = canvas.width / (window.devicePixelRatio || 1);
+            const cellSize = drawArea / CONFIG.N;
+            ctx.clearRect(0, 0, drawArea, drawArea);
+            for (let y = 0; y < CONFIG.N; y++) {
+                for (let x = 0; x < CONFIG.N; x++) {
+                    const val = lattice[y * CONFIG.N + x];
+                    drawSpin(x * cellSize, y * cellSize, cellSize, val);
+                }
+            }
+        }
+
+        function updateStats() {
+            let totalM = 0;
+            let totalE = 0;
+            for (let x = 0; x < CONFIG.N; x++) {
+                for (let y = 0; y < CONFIG.N; y++) {
+                    const i = y * CONFIG.N + x;
+                    const s_i = lattice[i];
+                    totalM += s_i;
+                    const neighbors = lattice[getIdx(x + 1, y)] + lattice[getIdx(x, y + 1)];
+                    totalE -= s_i * (neighbors + H);
+                }
+            }
+            currentM = totalM / (CONFIG.N * CONFIG.N);
+            currentE = totalE / (CONFIG.N * CONFIG.N);
+            document.getElementById('stat-mag').innerText = Math.abs(currentM).toFixed(3);
+            document.getElementById('stat-energy').innerText = currentE.toFixed(2);
+            document.getElementById('stat-mag-bar').style.width = (Math.abs(currentM) * 100) + '%';
+        }
+
+        const chartCtx = document.getElementById('chart-m').getContext('2d');
+        const mChart = new Chart(chartCtx, {
+            type: 'line',
+            data: {
+                labels: Array(CONFIG.CHART_MAX_POINTS).fill(''),
+                datasets: [{
+                    label: 'Abs Magnetization (|M|)',
+                    data: Array(CONFIG.CHART_MAX_POINTS).fill(0),
+                    borderColor: '#3b82f6',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    borderWidth: 2,
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 0
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                animation: false,
+                scales: {
+                    y: { min: 0, max: 1.1, grid: { color: '#f1f5f9' } },
+                    x: { display: false }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+
+        function updateChart() {
+            mChart.data.datasets[0].data.push(Math.abs(currentM));
+            if (mChart.data.datasets[0].data.length > CONFIG.CHART_MAX_POINTS) {
+                mChart.data.datasets[0].data.shift();
+            }
+            mChart.update();
+        }
+
+        const tempSlider = document.getElementById('temp-slider');
+        const fieldSlider = document.getElementById('field-slider');
+        const speedSlider = document.getElementById('speed-slider');
+        const playBtn = document.getElementById('play-pause');
+        const btnUp = document.getElementById('field-up');
+        const btnNone = document.getElementById('field-none');
+        const btnDown = document.getElementById('field-down');
+        const fieldIndicator = document.getElementById('field-indicator');
+
+        function updateField() {
+            H = fieldMagnitude * fieldDirection;
+            document.getElementById('h-val').innerText = fieldMagnitude.toFixed(2);
+            document.getElementById('h-display').innerText = H.toFixed(2);
+            [btnUp, btnNone, btnDown].forEach(b => {
+                b.classList.remove('border-blue-500', 'bg-blue-50', 'text-blue-700', 'border-2');
+                b.classList.add('border-slate-200', 'bg-white', 'text-slate-700');
+            });
+            let activeBtn = fieldDirection === 1 ? btnUp : (fieldDirection === -1 ? btnDown : btnNone);
+            activeBtn.classList.add('border-blue-500', 'bg-blue-50', 'text-blue-700', 'border-2');
+            activeBtn.classList.remove('border-slate-200', 'bg-white');
+            fieldIndicator.innerHTML = fieldDirection === 1 ? '↑' : (fieldDirection === -1 ? '↓' : '');
+            fieldIndicator.className = `absolute top-2 right-2 text-2xl font-bold transition-all duration-300 ${fieldDirection === 1 ? 'text-blue-500 opacity-40' : (fieldDirection === -1 ? 'text-red-500 opacity-40' : 'opacity-0')}`;
+        }
+
+        tempSlider.addEventListener('input', (e) => {
+            T = parseFloat(e.target.value);
+            document.getElementById('t-val').innerText = T.toFixed(2);
+        });
+
+        fieldSlider.addEventListener('input', (e) => {
+            fieldMagnitude = parseFloat(e.target.value);
+            updateField();
+        });
+
+        btnUp.addEventListener('click', () => { fieldDirection = 1; updateField(); });
+        btnNone.addEventListener('click', () => { fieldDirection = 0; updateField(); });
+        btnDown.addEventListener('click', () => { fieldDirection = -1; updateField(); });
+
+        speedSlider.addEventListener('input', (e) => {
+            speed = parseInt(e.target.value);
+            document.getElementById('speed-val').innerText = speed + 'x';
+        });
+
+        document.getElementById('reset-btn').addEventListener('click', () => initializeLattice(true));
+        document.getElementById('align-btn').addEventListener('click', () => initializeLattice(false));
+        
+        playBtn.addEventListener('click', () => {
+            isPaused = !isPaused;
+            playBtn.innerText = isPaused ? "Resume Simulation" : "Pause Simulation";
+            playBtn.classList.toggle('bg-emerald-600');
+            playBtn.classList.toggle('bg-blue-600');
+        });
+
+        let isDrawing = false;
+        const brush = (e) => {
+            if (!isDrawing) return;
+            const rect = canvas.getBoundingClientRect();
+            const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+            const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+            const x = Math.floor(((clientX - rect.left) / rect.width) * CONFIG.N);
+            const y = Math.floor(((clientY - rect.top) / rect.height) * CONFIG.N);
+            if (x >= 0 && x < CONFIG.N && y >= 0 && y < CONFIG.N) {
+                for (let dx = -1; dx <= 1; dx++) {
+                    for (let dy = -1; dy <= 1; dy++) {
+                        const targetX = (x + dx + CONFIG.N) % CONFIG.N;
+                        const targetY = (y + dy + CONFIG.N) % CONFIG.N;
+                        lattice[targetY * CONFIG.N + targetX] = 1; 
+                    }
+                }
+            }
+        };
+
+        canvas.addEventListener('mousedown', () => isDrawing = true);
+        window.addEventListener('mouseup', () => isDrawing = false);
+        canvas.addEventListener('mousemove', brush);
+        canvas.addEventListener('touchstart', (e) => { isDrawing = true; brush(e); e.preventDefault(); }, {passive: false});
+        canvas.addEventListener('touchmove', (e) => { brush(e); e.preventDefault(); }, {passive: false});
+
+        const mcqCards = document.querySelectorAll('.mcq-card');
+        const scoreDisplay = document.getElementById('quiz-score');
+        const btnResetQuiz = document.getElementById('btn-reset-quiz');
+        let quizState = {};
+
+        function updateScore() {
+            let correctCount = 0;
+            Object.values(quizState).forEach(isCorrect => {
+                if (isCorrect) correctCount++;
+            });
+            scoreDisplay.innerText = `Score: ${correctCount} / 5`;
+        }
+
+        mcqCards.forEach(card => {
+            const qid = card.dataset.qid;
+            const correctOpt = card.dataset.correct;
+            const options = card.querySelectorAll('.option-btn');
+            const explanation = card.querySelector('.explanation');
+
+            options.forEach(optBtn => {
+                optBtn.addEventListener('click', () => {
+                    const selectedOpt = optBtn.dataset.opt;
+                    
+                    options.forEach(btn => {
+                        btn.disabled = true;
+                        if (btn.dataset.opt === correctOpt) {
+                            btn.classList.remove('bg-white', 'border-slate-300');
+                            btn.classList.add('bg-emerald-100', 'border-emerald-500', 'text-emerald-950', 'font-semibold');
+                        } else if (btn.dataset.opt === selectedOpt && selectedOpt !== correctOpt) {
+                            btn.classList.remove('bg-white', 'border-slate-300');
+                            btn.classList.add('bg-rose-100', 'border-rose-400', 'text-rose-950');
+                        }
+                    });
+
+                    explanation.classList.remove('hidden');
+                    quizState[qid] = (selectedOpt === correctOpt);
+                    updateScore();
+                });
+            });
+        });
+
+        btnResetQuiz.addEventListener('click', () => {
+            quizState = {};
+            mcqCards.forEach(card => {
+                const options = card.querySelectorAll('.option-btn');
+                const explanation = card.querySelector('.explanation');
+
+                options.forEach(btn => {
+                    btn.disabled = false;
+                    btn.className = 'option-btn text-left p-3 rounded-lg border border-slate-300 bg-white text-slate-800 flex items-start gap-2';
+                });
+                explanation.classList.add('hidden');
+            });
+            updateScore();
+        });
+
+        let lastUpdateTime = 0;
+        function loop(timestamp) {
+            stepMetropolis();
+            renderLattice();
+            if (timestamp - lastUpdateTime > 150) { 
+                updateStats();
+                updateChart();
+                lastUpdateTime = timestamp;
+            }
+            requestAnimationFrame(loop);
+        }
+
+        initializeLattice(true);
+        requestAnimationFrame(loop);
+    </script>
+</body>
+</html>
