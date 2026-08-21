@@ -19,7 +19,9 @@ const catalog = {
 	    4: [
 		{id : "solidstatebsc", code: "PHYSXXXX", name: "Solid State Physics", description: "", dataCard: "data/ug/sem4/solidstatephysics/datacard.json"}
 	    ],
-	    5: [],
+	    5: [
+		{id : "qmbsc", code: "PHYS3058", name: "Quantum Mechanics and Application", description: "", dataCard: "data/ug/sem5/phys3058/datacard.json"}
+	    ],
 	    6: [],
 	    7: [
 		{ code: "PHYS8204", name: "Fundamentals of Astronomy", description: "", dataCard: "data/ug/sem7/PHYS8204/datacard.json" },
