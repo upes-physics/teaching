@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Spintronics: MTJ & MRAM Simulator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #05050a;
+            --panel: rgba(15, 18, 30, 0.98);
+            --accent: #00f2ff;
+            --p-state: #34d399;
+            --ap-state: #ff3e3e;
+            --text: #e0e6ed;
+            --border: #2d3343;
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background: var(--bg); color: var(--text);
+            font-family: 'Inter', system-ui, sans-serif; overflow: hidden;
+        }
+
+        #app-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            height: 100vh; width: 100vw; gap: 8px; padding: 8px; box-sizing: border-box;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            display: flex; flex-direction: column;
+            position: relative; overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 12px 18px;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid var(--border);
+            font-size: 0.75rem; font-weight: 800;
+            text-transform: uppercase; letter-spacing: 2px;
+            color: var(--accent);
+            display: flex; justify-content: space-between;
+        }
+
+        #viewport-3d { grid-column: 1; grid-row: 1; }
+        #tunneling-dynamics { grid-column: 2; grid-row: 1; }
+        #analysis-panel { grid-column: 1; grid-row: 2; }
+        #dashboard { grid-column: 2; grid-row: 2; padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+        .canvas-container { flex: 1; width: 100%; cursor: crosshair; }
+
+        .control-group { margin-bottom: 15px; }
+        label { display: block; font-size: 0.8rem; margin-bottom: 8px; color: #8892b0; }
+        select, input[type=range] {
+            width: 100%; background: #161b22; color: #fff; border: 1px solid var(--border);
+            padding: 8px; border-radius: 6px; accent-color: var(--accent);
+        }
+
+        .stat-card {
+            background: rgba(0,0,0,0.4); border: 1px solid var(--border);
+            padding: 12px; border-radius: 8px; margin-bottom: 10px;
+        }
+        .stat-val { font-family: 'monospace'; font-size: 1.2rem; font-weight: bold; }
+        
+        .btn {
+            background: #1a1f2e; border: 1px solid var(--accent); color: var(--accent);
+            padding: 10px; border-radius: 6px; cursor: pointer; font-size: 0.75rem;
+            transition: 0.3s; font-weight: bold; width: 100%; margin-top: 10px;
+        }
+        .btn:hover { background: var(--accent); color: #000; }
+
+        #formula-box { font-size: 0.7rem; color: #667; line-height: 1.5; margin-top: 10px; border-top: 1px solid #222; padding-top: 10px; }
+        .bit-display { font-size: 3rem; text-align: center; font-weight: 900; }
+    </style>
+</head>
+<body>
+
+<div id="app-layout">
+    <div class="panel" id="viewport-3d">
+        <div class="panel-header">1. MTJ Architecture <span>3D Spintronic Stack</span></div>
+        <div id="c1" class="canvas-container"></div>
+    </div>
+
+    <div class="panel" id="tunneling-dynamics">
+        <div class="panel-header">2. Carrier Injection <span>Spin-Polarized Tunneling</span></div>
+        <div id="c2" class="canvas-container"></div>
+    </div>
+
+    <div class="panel" id="analysis-panel">
+        <div class="panel-header">3. MRAM Logic <span>Resistance Switching (TMR)</span></div>
+        <div style="flex:1; padding: 15px;">
+            <canvas id="tmrChart"></canvas>
+        </div>
+    </div>
+
+    <div class="panel" id="dashboard">
+        <div style="border-right: 1px solid var(--border); padding-right: 20px;">
+            <div class="control-group">
+                <label>Write Line Current ($I_w$)</label>
+                <input type="range" id="write-current" min="-100" max="100" value="0">
+            </div>
+            <div class="control-group">
+                <label>Tunnel Barrier Width ($d$)</label>
+                <input type="range" id="barrier-width" min="1" max="3" step="0.1" value="1.5">
+            </div>
+            <button class="btn" onclick="spintronics.writeBit(0)">Write '0' (Parallel)</button>
+            <button class="btn" onclick="spintronics.writeBit(1)">Write '1' (Anti-Parallel)</button>
+            <div id="formula-box">
+                $$TMR = \frac{R_{AP} - R_P}{R_P} = \frac{2P_1P_2}{1-P_1P_2}$$
+                $$P = \frac{N_{\uparrow} - N_{\downarrow}}{N_{\uparrow} + N_{\downarrow}}$$
+            </div>
+        </div>
+
+        <div>
+            <div class="stat-card">
+                <label style="font-size: 0.6rem; text-transform: uppercase;">Resistance State</label>
+                <div class="stat-val" id="res-label" style="color: var(--p-state);">P (LOW)</div>
+            </div>
+            <div class="stat-card">
+                <label style="font-size: 0.6rem; text-transform: uppercase;">Digital Bit</label>
+                <div class="bit-display" id="bit-label" style="color: var(--p-state);">0</div>
+            </div>
+            <div class="stat-card">
+                <label style="font-size: 0.6rem; text-transform: uppercase;">Spin Polarization ($P$)</label>
+                <div class="stat-val" id="p-val" style="color: var(--accent);">0.45</div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+/** * MTJ SIMULATION ENGINE */
+const spintronics = {
+    state: 0, // 0 = Parallel, 1 = Anti-Parallel
+    scene1: null, scene2: null,
+    renderer1: null, renderer2: null,
+    camera1: null, camera2: null,
+    chart: null,
+    freeSpins: [],
+    
+    init() {
+        this.setupScenes();
+        this.buildMTJ();
+        this.initCharts();
+        this.animate();
+        
+        window.addEventListener('resize', () => this.resize());
+        document.getElementById('write-current').oninput = (e) => this.handleWrite(e.target.value);
+    },
+
+    setupScenes() {
+        const c1 = document.getElementById('c1');
+        const c2 = document.getElementById('c2');
+
+        this.scene1 = new THREE.Scene();
+        this.camera1 = new THREE.PerspectiveCamera(45, c1.clientWidth/c1.clientHeight, 0.1, 1000);
+        this.camera1.position.set(10, 8, 12);
+        this.renderer1 = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        this.renderer1.setSize(c1.clientWidth, c1.clientHeight);
+        c1.appendChild(this.renderer1.domElement);
+
+        this.scene2 = new THREE.Scene();
+        this.camera2 = new THREE.PerspectiveCamera(45, c2.clientWidth/c2.clientHeight, 0.1, 1000);
+        this.camera2.position.set(0, 0, 10);
+        this.renderer2 = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        this.renderer2.setSize(c2.clientWidth, c2.clientHeight);
+        c2.appendChild(this.renderer2.domElement);
+
+        const amb = new THREE.AmbientLight(0xffffff, 0.5);
+        this.scene1.add(amb);
+        this.scene2.add(amb.clone());
+        const dir = new THREE.DirectionalLight(0xffffff, 1);
+        dir.position.set(5, 10, 5);
+        this.scene1.add(dir);
+    },
+
+    buildMTJ() {
+        const layerWidth = 6, layerDepth = 6;
+        
+        // Fixed Layer
+        const fixedGeo = new THREE.BoxGeometry(layerWidth, 1.2, layerDepth);
+        const fixedMat = new THREE.MeshPhongMaterial({ color: 0x334466 });
+        const fixedLayer = new THREE.Mesh(fixedGeo, fixedMat);
+        fixedLayer.position.y = -2;
+        this.scene1.add(fixedLayer);
+        this.addSpins(fixedLayer.position.y, 0); // Fixed Up
+
+        // MgO Barrier
+        const mgoGeo = new THREE.BoxGeometry(layerWidth + 0.1, 0.6, layerDepth + 0.1);
+        const mgoMat = new THREE.MeshPhongMaterial({ color: 0xffffff, transparent: true, opacity: 0.3 });
+        this.barrier = new THREE.Mesh(mgoGeo, mgoMat);
+        this.scene1.add(this.barrier);
+
+        // Free Layer
+        const freeGeo = new THREE.BoxGeometry(layerWidth, 1.2, layerDepth);
+        const freeMat = new THREE.MeshPhongMaterial({ color: 0x00f2ff, transparent: true, opacity: 0.8 });
+        this.freeLayerMesh = new THREE.Mesh(freeGeo, freeMat);
+        this.freeLayerMesh.position.y = 2;
+        this.scene1.add(this.freeLayerMesh);
+        this.addSpins(this.freeLayerMesh.position.y, 1); // Free Spins
+    },
+
+    addSpins(y, type) {
+        const spinGeo = new THREE.ConeGeometry(0.12, 0.5, 8);
+        const spinMat = new THREE.MeshBasicMaterial({ color: 0xffffff });
+        for(let i=0; i<16; i++) {
+            const s = new THREE.Mesh(spinGeo, spinMat);
+            s.position.set((i%4 - 1.5)*1.2, y, (Math.floor(i/4)-1.5)*1.2);
+            this.scene1.add(s);
+            if(type === 1) this.freeSpins.push(s);
+        }
+    },
+
+    writeBit(bit) {
+        this.state = bit;
+        const targetRot = bit === 0 ? 0 : Math.PI;
+        const color = bit === 0 ? "var(--p-state)" : "var(--ap-state)";
+        const label = bit === 0 ? "P (LOW)" : "AP (HIGH)";
+
+        this.freeSpins.forEach(s => {
+            gsap.to(s.rotation, { x: targetRot, duration: 0.8, ease: "back.inOut" });
+        });
+
+        document.getElementById('res-label').innerText = label;
+        document.getElementById('res-label').style.color = color;
+        document.getElementById('bit-label').innerText = bit;
+        document.getElementById('bit-label').style.color = color;
+        
+        this.updateChart();
+    },
+
+    handleWrite(val) {
+        if(val > 80 && this.state === 0) this.writeBit(1);
+        if(val < -80 && this.state === 1) this.writeBit(0);
+    },
+
+    initCharts() {
+        const ctx = document.getElementById('tmrChart').getContext('2d');
+        this.chart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Array(20).fill(''),
+                datasets: [{
+                    label: 'Resistance (Ω)',
+                    data: Array(20).fill(100),
+                    borderColor: '#00f2ff',
+                    tension: 0.4,
+                    fill: true,
+                    backgroundColor: 'rgba(0, 242, 255, 0.05)'
+                }]
+            },
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: { 
+                    y: { min: 80, max: 250, grid: {color: '#222'} },
+                    x: { grid: {display: false} }
+                },
+                plugins: { legend: { display: false }}
+            }
+        });
+    },
+
+    updateChart() {
+        const r = this.state === 0 ? 100 : 220;
+        this.chart.data.datasets[0].data.push(r);
+        this.chart.data.datasets[0].data.shift();
+        this.chart.update('none');
+    },
+
+    spawnElectron() {
+        const e = new THREE.Mesh(new THREE.SphereGeometry(0.1), new THREE.MeshBasicMaterial({ color: 0xffff00 }));
+        e.position.set((Math.random()-0.5)*4, -5, 0);
+        this.scene2.add(e);
+
+        // Tunneling logic: Prob is higher in Parallel state
+        const duration = this.state === 0 ? 1 : 2.5;
+        const opacity = this.state === 0 ? 1 : 0.2;
+
+        gsap.to(e.position, {
+            y: 5, duration: duration, ease: "none",
+            onStart: () => { e.material.opacity = opacity; e.material.transparent = true; },
+            onComplete: () => this.scene2.remove(e)
+        });
+    },
+
+    animate() {
+        requestAnimationFrame(() => this.animate());
+        this.renderer1.render(this.scene1, this.camera1);
+        this.renderer2.render(this.scene2, this.camera2);
+        this.scene1.rotation.y += 0.003;
+        if(Math.random() > 0.85) this.spawnElectron();
+    },
+
+    resize() {
+        const c1 = document.getElementById('c1');
+        this.camera1.aspect = c1.clientWidth / c1.clientHeight;
+        this.camera1.updateProjectionMatrix();
+        this.renderer1.setSize(c1.clientWidth, c1.clientHeight);
+    }
+};
+
+window.onload = () => spintronics.init();
+</script>
+</body>
+</html>
