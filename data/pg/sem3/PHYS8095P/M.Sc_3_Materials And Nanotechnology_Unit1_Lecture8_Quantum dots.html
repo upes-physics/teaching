@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Dot Size & Confinement Simulator</title>
+    
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+
+    <style>
+        :root {
+            --bg: #05070a;
+            --panel: rgba(15, 20, 30, 0.9);
+            --accent: #00f2ff;
+            --text: #e0e6ed;
+            --border: rgba(0, 242, 255, 0.2);
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            overflow: hidden;
+        }
+
+        /* Layout Grid */
+        #app-container {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            width: 100vw;
+            height: 100vh;
+            gap: 10px;
+            padding: 10px;
+            box-sizing: border-box;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            position: relative;
+            overflow: hidden;
+            backdrop-filter: blur(10px);
+        }
+
+        .panel-header {
+            position: absolute;
+            top: 15px;
+            left: 15px;
+            z-index: 10;
+            pointer-events: none;
+        }
+
+        h2 { margin: 0; font-size: 0.9rem; text-transform: uppercase; letter-spacing: 2px; color: var(--accent); }
+
+        /* Controls Panel Overlay */
+        #controls {
+            position: absolute;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
+            width: 80%;
+            max-width: 800px;
+            background: rgba(10, 15, 25, 0.95);
+            padding: 20px;
+            border-radius: 50px;
+            border: 1px solid var(--accent);
+            display: flex;
+            align-items: center;
+            gap: 30px;
+            z-index: 100;
+            box-shadow: 0 0 30px rgba(0, 242, 255, 0.2);
+        }
+
+        .control-group { display: flex; flex-direction: column; flex-grow: 1; }
+        label { font-size: 0.7rem; text-transform: uppercase; margin-bottom: 5px; opacity: 0.7; }
+
+        input[type="range"] {
+            width: 100%;
+            cursor: pointer;
+            accent-color: var(--accent);
+        }
+
+        select {
+            background: #1a202c;
+            color: white;
+            border: 1px solid var(--border);
+            padding: 5px 15px;
+            border-radius: 20px;
+            outline: none;
+        }
+
+        /* Visualization Elements */
+        #three-canvas { width: 100%; height: 100%; }
+        .chart-container { width: 100%; height: 100%; padding: 40px 20px 20px 20px; box-sizing: border-box; }
+        
+        #energy-diagram {
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+        }
+
+        .stats-overlay {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            text-align: right;
+            font-family: 'Courier New', monospace;
+            font-size: 0.85rem;
+        }
+
+        .highlight { color: var(--accent); font-weight: bold; }
+
+        #color-indicator {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            display: inline-block;
+            vertical-align: middle;
+            margin-left: 10px;
+            box-shadow: 0 0 10px currentColor;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app-container">
+    <div class="panel">
+        <div class="panel-header"><h2>3D Nanocrystal Lattice</h2></div>
+        <div class="stats-overlay">
+            Size: <span id="stat-size" class="highlight">5.0</span> nm<br>
+            Atoms: <span id="stat-atoms" class="highlight">~450</span>
+        </div>
+        <div id="three-canvas"></div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><h2>Electronic Structure & Confinement</h2></div>
+        <canvas id="energy-canvas" style="width:100%; height:100%;"></canvas>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><h2>Band Gap Evolution</h2></div>
+        <div class="chart-container"><canvas id="gapChart"></canvas></div>
+    </div>
+
+    <div class="panel">
+        <div class="panel-header"><h2>Emission Spectrum</h2></div>
+        <div class="stats-overlay">
+            λ: <span id="stat-lambda" class="highlight">550</span> nm<br>
+            $E_g$: <span id="stat-eg" class="highlight">2.25</span> eV
+            <div id="color-indicator"></div>
+        </div>
+        <div class="chart-container"><canvas id="specChart"></canvas></div>
+    </div>
+</div>
+
+<div id="controls">
+    <div class="control-group" style="flex: 0.5;">
+        <label>Material System</label>
+        <select id="material-select">
+            <option value="CdSe">CdSe (Cadmium Selenide)</option>
+            <option value="InP">InP (Indium Phosphide)</option>
+            <option value="PbS">PbS (Lead Sulfide)</option>
+            <option value="Si">Si (Silicon)</option>
+            <option value="ZnO">ZnO (Zinc Oxide)</option>
+            <option value="GaAs">GaAs (Gallium Arsenide)</option>
+        </select>
+    </div>
+    <div class="control-group">
+        <label>Quantum Dot Diameter: <span id="diameter-val">5.0</span> nm</label>
+        <input type="range" id="size-slider" min="2" max="20" step="0.1" value="5">
+    </div>
+</div>
+
+<script>
+    /**
+     * SCIENTIFIC CONSTANTS & MATERIAL DATA
+     */
+    const materials = {
+        "CdSe": { bulkGap: 1.74, me: 0.13, mh: 0.45, eps: 10.6, bohr: 5.6, color: 0xff4500 },
+        "InP":  { bulkGap: 1.35, me: 0.08, mh: 0.60, eps: 12.4, bohr: 15.0, color: 0xcd7f32 },
+        "PbS":  { bulkGap: 0.41, me: 0.08, mh: 0.08, eps: 169,  bohr: 20.0, color: 0x4a4a4a },
+        "Si":   { bulkGap: 1.12, me: 1.08, mh: 0.56, eps: 11.7, bohr: 4.5,  color: 0x888888 },
+        "ZnO":  { bulkGap: 3.37, me: 0.24, mh: 0.59, eps: 8.5,  bohr: 2.3,  color: 0xffffff },
+        "GaAs": { bulkGap: 1.42, me: 0.06, mh: 0.51, eps: 12.9, bohr: 10.0, color: 0xaaaaff }
+    };
+
+    const h_planck = 6.626e-34;
+    const h_bar = 1.054e-34;
+    const m_e0 = 9.11e-31;
+    const q_e = 1.602e-19;
+    const c = 3e8;
+
+    let currentSize = 5.0; // nm
+    let currentMat = "CdSe";
+
+    /**
+     * THREE.JS: CRYSTAL STRUCTURE
+     */
+    const scene = new THREE.Scene();
+    const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+    const container = document.getElementById('three-canvas');
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    container.appendChild(renderer.domElement);
+
+    const group = new THREE.Group();
+    scene.add(group);
+    scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+    const light = new THREE.PointLight(0x00f2ff, 1, 100);
+    light.position.set(10, 10, 10);
+    scene.add(light);
+
+    camera.position.z = 15;
+
+    function createLattice(radius, matKey) {
+        group.clear();
+        const spacing = 0.8; // Simplified lattice scaling
+        const atomGeom = new THREE.SphereGeometry(0.15, 8, 8);
+        const atomMat = new THREE.MeshPhongMaterial({ color: materials[matKey].color });
+        
+        let atomCount = 0;
+        // Limit rendering for performance at high diameters (visually represent the sphere)
+        const renderStep = radius > 8 ? 1.5 : 0.8; 
+
+        for(let x = -radius; x <= radius; x += renderStep) {
+            for(let y = -radius; y <= radius; y += renderStep) {
+                for(let z = -radius; z <= radius; z += renderStep) {
+                    if(Math.sqrt(x*x + y*y + z*z) <= radius) {
+                        const atom = new THREE.Mesh(atomGeom, atomMat);
+                        atom.position.set(x, y, z);
+                        group.add(atom);
+                        atomCount++;
+                    }
+                }
+            }
+        }
+        document.getElementById('stat-atoms').innerText = `~${Math.floor(atomCount * (radius > 8 ? 4 : 1))}`;
+    }
+
+    /**
+     * PHYSICS ENGINE: CONFINEMENT CALCULATIONS
+     */
+    function calculatePhysics(diameter, matKey) {
+        const mat = materials[matKey];
+        const R = (diameter / 2) * 1e-9;
+        const mu = (mat.me * mat.mh) / (mat.me + mat.mh) * m_e0;
+        
+        // Brus Equation: E_gap(R) = E_bulk + h^2 / (8R^2 * mu) - 1.8e^2 / (4pi eps R)
+        const confinementTerm = (Math.pow(h_planck, 2) / (8 * Math.pow(R, 2) * mu)) / q_e;
+        const coulombTerm = (1.8 * Math.pow(q_e, 2) / (4 * Math.PI * 8.854e-12 * mat.eps * R)) / q_e;
+        
+        const energyGap = mat.bulkGap + confinementTerm - coulombTerm;
+        const wavelength = (1240 / energyGap); // nm
+        
+        return { energyGap, wavelength, confinementTerm };
+    }
+
+    /**
+     * CHARTING & UI UPDATES
+     */
+    let gapChart, specChart;
+    const energyCanvas = document.getElementById('energy-canvas');
+    const ctxE = energyCanvas.getContext('2d');
+
+    function initCharts() {
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            plugins: { legend: { display: false } },
+            scales: {
+                x: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#888' } },
+                y: { grid: { color: 'rgba(255,255,255,0.05)' }, ticks: { color: '#888' } }
+            }
+        };
+
+        gapChart = new Chart(document.getElementById('gapChart'), {
+            type: 'line',
+            data: { labels: [], datasets: [{ data: [], borderColor: '#00f2ff', borderWidth: 2, pointRadius: 0 }] },
+            options: { ...commonOptions, scales: { ...commonOptions.scales, 
+                x: { ...commonOptions.scales.x, title: { display: true, text: 'Diameter (nm)' } },
+                y: { ...commonOptions.scales.y, title: { display: true, text: 'Energy Gap (eV)' } } 
+            }}
+        });
+
+        specChart = new Chart(document.getElementById('specChart'), {
+            type: 'line',
+            data: { labels: Array.from({length: 100}, (_, i) => 300 + i * 5), datasets: [{ data: [], fill: true, backgroundColor: 'rgba(0, 242, 255, 0.2)', borderColor: '#00f2ff' }] },
+            options: { ...commonOptions, scales: { ...commonOptions.scales, 
+                x: { ...commonOptions.scales.x, title: { display: true, text: 'Wavelength (nm)' } }
+            }}
+        });
+    }
+
+    function drawEnergyLevels(gap) {
+        const w = energyCanvas.width = energyCanvas.offsetWidth;
+        const h = energyCanvas.height = energyCanvas.offsetHeight;
+        ctxE.clearRect(0,0,w,h);
+
+        const mid = h / 2;
+        const gapPx = gap * 40; 
+
+        // Bands
+        ctxE.strokeStyle = "rgba(255,255,255,0.2)";
+        ctxE.lineWidth = 2;
+
+        // Conduction Band (Blue)
+        ctxE.fillStyle = "rgba(0, 242, 255, 0.1)";
+        ctxE.fillRect(w/4, 0, w/2, mid - gapPx/2);
+        
+        // Valence Band (Red)
+        ctxE.fillStyle = "rgba(255, 69, 0, 0.1)";
+        ctxE.fillRect(w/4, mid + gapPx/2, w/2, h);
+
+        // Discrete Levels (Artificial Atom states)
+        const levels = [0, 15, 40, 75];
+        ctxE.lineWidth = 1;
+        levels.forEach(l => {
+            // Electron states
+            ctxE.strokeStyle = "#00f2ff";
+            ctxE.beginPath();
+            ctxE.moveTo(w/4, mid - gapPx/2 - l);
+            ctxE.lineTo(3*w/4, mid - gapPx/2 - l);
+            ctxE.stroke();
+
+            // Hole states
+            ctxE.strokeStyle = "#ff4500";
+            ctxE.beginPath();
+            ctxE.moveTo(w/4, mid + gapPx/2 + l);
+            ctxE.lineTo(3*w/4, mid + gapPx/2 + l);
+            ctxE.stroke();
+        });
+    }
+
+    function updateSimulation() {
+        const phys = calculatePhysics(currentSize, currentMat);
+        
+        // Update Stats
+        document.getElementById('stat-size').innerText = currentSize.toFixed(1);
+        document.getElementById('stat-eg').innerText = phys.energyGap.toFixed(2);
+        document.getElementById('stat-lambda').innerText = Math.round(phys.wavelength);
+        document.getElementById('diameter-val').innerText = currentSize.toFixed(1);
+
+        // Update Color
+        const color = `hsl(${Math.max(0, Math.min(280, (phys.wavelength - 400) * (280/350)))}, 100%, 50%)`;
+        document.getElementById('color-indicator').style.backgroundColor = color;
+        document.getElementById('color-indicator').style.color = color;
+
+        // Update 3D
+        createLattice(currentSize / 2, currentMat);
+
+        // Update Charts
+        const d_range = Array.from({length: 50}, (_, i) => 2 + i * 0.4);
+        gapChart.data.labels = d_range.map(d => d.toFixed(1));
+        gapChart.data.datasets[0].data = d_range.map(d => calculatePhysics(d, currentMat).energyGap);
+        gapChart.update('none');
+
+        // Update Spectrum (Gaussian peak)
+        specChart.data.datasets[0].data = specChart.data.labels.map(l => 
+            Math.exp(-Math.pow(l - phys.wavelength, 2) / (2 * Math.pow(20, 2)))
+        );
+        specChart.update('none');
+
+        drawEnergyLevels(phys.energyGap);
+    }
+
+    // Interaction Listeners
+    document.getElementById('size-slider').addEventListener('input', (e) => {
+        currentSize = parseFloat(e.target.value);
+        updateSimulation();
+    });
+
+    document.getElementById('material-select').addEventListener('change', (e) => {
+        currentMat = e.target.value;
+        updateSimulation();
+    });
+
+    // Animation Loop
+    function animate() {
+        requestAnimationFrame(animate);
+        group.rotation.y += 0.005;
+        renderer.render(scene, camera);
+    }
+
+    // Startup
+    window.onload = () => {
+        initCharts();
+        updateSimulation();
+        animate();
+    };
+
+    window.addEventListener('resize', () => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+
+</script>
+
+</body>
+</html>
