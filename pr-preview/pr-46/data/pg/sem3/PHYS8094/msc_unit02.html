@@ -1,0 +1,778 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>AI-assisted SEMF Analysis (Liquid Drop Model)</title>
+
+  <style>
+    :root{
+      --border:#ddd; --muted:#555; --bg:#fafafa;
+      --good:#e9f7ef; --warn:#fff3cd; --bad:#f8d7da;
+      --blue:#2a6fdb; --purple:#6f42c1; --red:#dc3545; --green:#1aa35d; --orange:#ff8c00;
+    }
+    body{
+      font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;
+      margin:18px; line-height:1.35; color:#111; background:#fff;
+    }
+    h1{margin:0 0 8px 0;}
+    h2{margin:0 0 8px 0;}
+    h3{margin:14px 0 8px 0;}
+    p{margin:8px 0;}
+    .muted{color:var(--muted);}
+    .pill{
+      display:inline-block; padding:4px 10px; border-radius:999px;
+      background:#f3f3f3; font-size:0.9rem; margin:2px 8px 2px 0;
+    }
+    .grid{
+      display:grid; grid-template-columns: 1.15fr 0.85fr; gap:14px; margin-top:12px;
+      align-items:start;
+    }
+    .card{
+      border:1px solid var(--border); border-radius:12px; padding:12px; background:#fff;
+    }
+    .row{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+    label{display:block; font-size:0.92rem; margin:8px 0 4px;}
+    input, select, button, textarea{
+      width:100%; padding:8px; border:1px solid #ccc; border-radius:10px;
+      box-sizing:border-box; background:#fff;
+    }
+    input[type=range]{padding:0;}
+    button{cursor:pointer;}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+
+    .kpi{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;}
+    .kpi .box{
+      border:1px solid #eee; border-radius:12px; padding:10px; background:#fcfcfc;
+      min-height:78px;
+    }
+
+    /* Term bars */
+    .bars{margin-top:8px;}
+    .barrow{display:grid; grid-template-columns: 150px 1fr 72px; gap:10px; align-items:center; margin:8px 0;}
+    .track{height:12px; border-radius:999px; background:#eee; overflow:hidden;}
+    .fill{height:100%; width:0%; border-radius:999px;}
+    .c-vol{background:rgba(26,163,93,0.90);}
+    .c-sur{background:rgba(255,140,0,0.85);}
+    .c-col{background:rgba(220,53,69,0.85);}
+    .c-asy{background:rgba(111,66,193,0.85);}
+    .c-pair{background:rgba(42,111,219,0.85);}
+
+    canvas.plot{
+      width:100%; height:250px; border:1px solid #eee; border-radius:12px; background:#fff;
+    }
+    canvas.nucleus{
+      width:100%; height:260px; border:1px solid #eee; border-radius:12px; background:#fff;
+    }
+
+    details summary{cursor:pointer; font-weight:700;}
+    .tight p{margin:6px 0;}
+
+    .good{background:var(--good);}
+    .warn{background:var(--warn);}
+    .bad{background:var(--bad);}
+
+    .split{
+      display:grid;
+      grid-template-columns: 1fr 1fr;
+      gap:10px;
+      margin-top:10px;
+    }
+
+    @media (max-width: 980px){
+      .grid{grid-template-columns: 1fr;}
+      .kpi{grid-template-columns: 1fr;}
+      .barrow{grid-template-columns: 140px 1fr 60px;}
+      .split{grid-template-columns: 1fr;}
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>AI-assisted Analysis of Semi-Empirical Mass Formula (SEMF)</h1>
+
+  <div class="muted">
+    <span class="pill">Liquid Drop Model</span>
+    <span class="pill">Binding Energy & BE/A</span>
+    <span class="pill">Mass parabola (isobars)</span>
+    <span class="pill">Valley of stability (Z₀)</span>
+    <span class="pill">Separation energies Sₙ, Sₚ</span>
+    <span class="pill">AI prompt builder</span>
+  </div>
+
+  <!-- Theory first (as you prefer) -->
+  <div class="card" style="margin-top:12px;">
+    <h2>1) Concept / Theory (read first)</h2>
+    <div class="tight">
+      <p><b>Goal:</b> Use SEMF (Bethe–Weizsäcker / liquid-drop model) to estimate nuclear binding energy and interpret stability trends. </p>
+      <p><b>Inputs:</b> Mass number <span class="mono">A</span>, proton number <span class="mono">Z</span>, neutron number <span class="mono">N = A − Z</span>.</p>
+      <p><b>SEMF binding energy:</b></p>
+      <p class="mono">
+        B(A,Z) = a<sub>v</sub>A − a<sub>s</sub>A<sup>2/3</sup> − a<sub>c</sub> Z(Z−1)/A<sup>1/3</sup>
+        − a<sub>a</sub>(A−2Z)<sup>2</sup>/A + δ(A,Z)
+      </p>
+      <p class="muted">
+        Pairing term δ depends on parity (even-even, odd-odd, odd A). Typical coefficient sets exist; this demo uses a common fitted set and lets you edit coefficients.
+      </p>
+
+      <details open>
+        <summary>How to interpret the terms (what students should say)</summary>
+        <div class="tight muted" style="margin-top:10px;">
+          <p><b>Volume term (+a<sub>v</sub>A):</b> strong force saturates → binding ∝ number of nucleons.</p>
+          <p><b>Surface term (−a<sub>s</sub>A<sup>2/3</sup>):</b> surface nucleons have fewer neighbours → reduces binding.</p>
+          <p><b>Coulomb term (−a<sub>c</sub> Z(Z−1)/A<sup>1/3</sup>):</b> proton repulsion reduces binding; Z(Z−1) avoids “self-repulsion” at Z=1.</p>
+          <p><b>Asymmetry term (−a<sub>a</sub>(A−2Z)<sup>2</sup>/A):</b> penalizes N≠Z due to Pauli principle / filling.</p>
+          <p><b>Pairing term (±δ):</b> even-even nuclei get extra binding; odd-odd are less stable; odd A has ~0 pairing.</p>
+        </div>
+      </details>
+
+    </div>
+  </div>
+
+  <div class="grid">
+
+    <!-- LEFT: interactive controls + nucleus visual -->
+    <div class="card">
+      <h2>2) Interactive SEMF simulator</h2>
+
+      <div class="row">
+        <div>
+          <label>Nucleus preset</label>
+          <select id="preset">
+            <option value="custom" selected>Custom</option>
+            <option value="Fe56">Iron-56 (Z=26,A=56)</option>
+            <option value="Ni62">Nickel-62 (Z=28,A=62)</option>
+            <option value="C12">Carbon-12 (Z=6,A=12)</option>
+            <option value="O16">Oxygen-16 (Z=8,A=16)</option>
+            <option value="Pb208">Lead-208 (Z=82,A=208)</option>
+            <option value="U238">Uranium-238 (Z=92,A=238)</option>
+          </select>
+        </div>
+        <div>
+          <label>Show</label>
+          <select id="mode">
+            <option value="massParabola" selected>Mass parabola (fixed A, scan Z)</option>
+            <option value="beCurve">Binding energy per nucleon vs A (for chosen Z/A trend)</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>Mass number A</label>
+          <input id="A" type="range" min="2" max="250" step="1" value="56">
+          <div><span class="pill">A = <span id="Aout"></span></span></div>
+        </div>
+        <div>
+          <label>Proton number Z</label>
+          <input id="Z" type="range" min="1" max="56" step="1" value="26">
+          <div><span class="pill">Z = <span id="Zout"></span>, N = <span id="Nout"></span></span></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>Auto-suggest stable Z₀ for this A</label>
+          <button id="setZ0">Set Z = Z₀ (valley of stability)</button>
+          <small class="muted">Uses SEMF trend N/Z ≈ 1 + (a<sub>c</sub>/(2a<sub>a</sub>))A<sup>2/3</sup>. [3](https://en.wikipedia.org/wiki/Semi-empirical_mass_formula)</small>
+        </div>
+        <div>
+          <label>Pairing on/off (for learning)</label>
+          <select id="pairToggle">
+            <option value="on" selected>On (realistic)</option>
+            <option value="off">Off (see mass parabola simplify)</option>
+          </select>
+          <small class="muted">Turning pairing off makes a single parabola clearer for odd-A. [3](https://en.wikipedia.org/wiki/Semi-empirical_mass_formula)</small>
+        </div>
+      </div>
+
+      <h3>Nucleus picture (what is Z and N?)</h3>
+      <p class="muted">Red dots = protons (Z), blue dots = neutrons (N). This is a schematic visualization (not shell-model).</p>
+      <canvas id="nucleusCanvas" class="nucleus" width="800" height="320"></canvas>
+
+      <h3>SEMF term contributions</h3>
+      <div class="bars">
+        <div class="barrow">
+          <div class="mono">Volume (+)</div>
+          <div class="track"><div id="barVol" class="fill c-vol"></div></div>
+          <div class="mono" id="tVol">0</div>
+        </div>
+        <div class="barrow">
+          <div class="mono">Surface (−)</div>
+          <div class="track"><div id="barSur" class="fill c-sur"></div></div>
+          <div class="mono" id="tSur">0</div>
+        </div>
+        <div class="barrow">
+          <div class="mono">Coulomb (−)</div>
+          <div class="track"><div id="barCol" class="fill c-col"></div></div>
+          <div class="mono" id="tCol">0</div>
+        </div>
+        <div class="barrow">
+          <div class="mono">Asymmetry (−)</div>
+          <div class="track"><div id="barAsy" class="fill c-asy"></div></div>
+          <div class="mono" id="tAsy">0</div>
+        </div>
+        <div class="barrow">
+          <div class="mono">Pairing (±)</div>
+          <div class="track"><div id="barPair" class="fill c-pair"></div></div>
+          <div class="mono" id="tPair">0</div>
+        </div>
+      </div>
+
+      <details style="margin-top:10px;">
+        <summary>Editable coefficients (for AI-assisted “fit and compare” task)</summary>
+        <div class="row" style="margin-top:10px;">
+          <div>
+            <label>a_v (MeV)</label>
+            <input id="av" type="number" step="0.01" value="15.75">
+          </div>
+          <div>
+            <label>a_s (MeV)</label>
+            <input id="as" type="number" step="0.01" value="17.80">
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>a_c (MeV)</label>
+            <input id="ac" type="number" step="0.001" value="0.711">
+          </div>
+          <div>
+            <label>a_a (MeV)</label>
+            <input id="aa" type="number" step="0.01" value="23.70">
+          </div>
+        </div>
+        <div class="row">
+          <div>
+            <label>a_p (MeV)</label>
+            <input id="ap" type="number" step="0.01" value="11.18">
+          </div>
+          <div>
+            <label>pairing exponent k (use −1/2)</label>
+            <input id="kp" type="number" step="0.01" value="-0.5">
+          </div>
+        </div>
+        <small class="muted">
+          These are standard fitted SEMF-style values; different textbooks use slightly different sets. [3](https://en.wikipedia.org/wiki/Semi-empirical_mass_formula)
+        </small>
+      </details>
+
+    </div>
+
+    <!-- RIGHT: outputs + plots + AI prompt builder -->
+    <div class="card">
+      <h2>3) Results + plots + AI-assisted analysis</h2>
+
+      <div class="kpi">
+        <div class="box">
+          <div><b>Binding energy</b></div>
+          <div class="mono" style="margin-top:6px;">
+            B(A,Z) = <span id="Bout"></span> MeV<br/>
+            B/A = <span id="BAout"></span> MeV
+          </div>
+          <small class="muted">SEMF predicts gross trends well; shell/magic effects are not included. [3](https://en.wikipedia.org/wiki/Semi-empirical_mass_formula)</small>
+        </div>
+
+        <div class="box">
+          <div><b>Stability indicators</b></div>
+          <div class="mono" style="margin-top:6px;">
+            Z₀(A) ≈ <span id="Z0out"></span><br/>
+            N/Z ≈ <span id="NZout"></span>
+          </div>
+          <small class="muted">Trend from minimizing SEMF: N/Z increases with A. [3](https://en.wikipedia.org/wiki/Semi-empirical_mass_formula)</small>
+        </div>
+
+        <div class="box">
+          <div><b>Separation energies (approx.)</b></div>
+          <div class="mono" style="margin-top:6px;">
+            S<sub>n</sub> ≈ <span id="Snout"></span> MeV<br/>
+            S<sub>p</sub> ≈ <span id="Spout"></span> MeV
+          </div>
+          <small class="muted">Computed from SEMF differences: Sₙ=B(A,Z)−B(A−1,Z), Sₚ=B(A,Z)−B(A−1,Z−1).</small>
+        </div>
+
+        <div class="box">
+          <div><b>“Auto-analysis” (rule-based)</b></div>
+          <div class="mono" style="margin-top:6px;" id="autoText"></div>
+          <small class="muted">This text is generated from your outputs (so students can verify AI answers).</small>
+        </div>
+      </div>
+ 
+
+      <h3>SEMF (per nucleon) Components vs A (Physics Insight)</h3>
+<canvas id="plotTerms" class="plot" width="800" height="250"></canvas>
+
+<p class="muted">
+  This graph shows how different SEMF terms compete:
+  Volume increases binding, while Coulomb and surface reduce it, explaining nuclear stability trends.
+</p>
+
+      <h3>Plot</h3>
+      <canvas id="plot" class="plot" width="900" height="300"></canvas>
+      <p class="muted" id="plotCaption"></p>
+
+
+
+      <details style="margin-top:10px;">
+        <summary>Suggested submission format (what your university usually expects)</summary>
+        <div class="tight muted" style="margin-top:10px;">
+          <p><b>1.</b> Aim + formula + coefficient set used (screenshot of simulator).</p>
+          <p><b>2.</b> One chosen nucleus: A,Z,N, B, BE/A, Z₀(A), Sₙ,Sₚ.</p>
+          <p><b>3.</b> AI interaction: prompt + AI output screenshot + your correction/verification.</p>
+          <p><b>4.</b> Conclusions: what term dominates for light/heavy nuclei; role of Coulomb and asymmetry.</p>
+        </div>
+      </details>
+
+    </div>
+  </div>
+
+<script>
+/* ---------- helpers ---------- */
+function clamp(x,a,b){ return Math.max(a, Math.min(b,x)); }
+function cbrt(x){ return Math.cbrt ? Math.cbrt(x) : Math.pow(x,1/3); }
+
+/* ---------- SEMF model ----------
+   Using the common structure in references. [3](https://en.wikipedia.org/wiki/Semi-empirical_mass_formula)[4](https://www.hep.ph.ic.ac.uk/~dauncey/will/lecture19.pdf)
+*/
+function pairingDelta(A,Z,ap,kp,enabled=true){
+  if(!enabled) return 0;
+  const N = A - Z;
+  if(A % 2 === 1) return 0; // odd A
+  const delta0 = ap * Math.pow(A, kp); // kp negative => decreases with A [3](https://en.wikipedia.org/wiki/Semi-empirical_mass_formula)
+  const evenZ = (Z % 2 === 0), evenN = (N % 2 === 0);
+  if(evenZ && evenN) return +delta0;
+  if((!evenZ) && (!evenN)) return -delta0;
+  return 0;
+}
+
+function semfTerms(A,Z,coeff,pairEnabled=true){
+  const av=coeff.av, as=coeff.as, ac=coeff.ac, aa=coeff.aa, ap=coeff.ap, kp=coeff.kp;
+
+  const vol = av * A;
+  const sur = -as * Math.pow(A, 2/3);
+  const col = -ac * (Z*(Z-1)) / Math.pow(A, 1/3); // Z(Z-1) form [4](https://www.hep.ph.ic.ac.uk/~dauncey/will/lecture19.pdf)[3](https://en.wikipedia.org/wiki/Semi-empirical_mass_formula)
+  const asy = -aa * Math.pow((A - 2*Z),2) / A;     // (A-2Z)^2 / A [3](https://en.wikipedia.org/wiki/Semi-empirical_mass_formula)
+  const pair = pairingDelta(A,Z,ap,kp,pairEnabled);
+
+  const B = vol + sur + col + asy + pair;
+  return {B, vol, sur, col, asy, pair};
+}
+
+// valley of stability trend from SEMF minimization: N/Z ≈ 1 + (ac/(2aa)) A^(2/3) [3](https://en.wikipedia.org/wiki/Semi-empirical_mass_formula)
+function ZstableApprox(A, ac, aa){
+  const k = ac / (2*aa);
+  const denom = 2 + k * Math.pow(A, 2/3);
+  return A / denom;
+}
+
+/* Separation energies (approx): Sn = B(A,Z) - B(A-1,Z), Sp = B(A,Z) - B(A-1,Z-1) */
+function separationEnergies(A,Z,coeff,pairEnabled=true){
+  if(A<=2) return {Sn:NaN, Sp:NaN};
+  const B1 = semfTerms(A,Z,coeff,pairEnabled).B;
+  const Sn = B1 - semfTerms(A-1,Z,coeff,pairEnabled).B;
+  const Sp = (Z>1) ? (B1 - semfTerms(A-1,Z-1,coeff,pairEnabled).B) : NaN;
+  return {Sn, Sp};
+}
+
+/* ---------- nucleus drawing ---------- */
+function drawNucleus(Z,N){
+  const c = document.getElementById("nucleusCanvas");
+  const ctx = c.getContext("2d");
+  ctx.clearRect(0,0,c.width,c.height);
+
+  const w=c.width, h=c.height;
+  ctx.fillStyle="#fff";
+  ctx.fillRect(0,0,w,h);
+
+  // nucleus boundary (schematic)
+  const cx=w*0.5, cy=h*0.52;
+  const R = Math.min(w,h)*0.34;
+  ctx.strokeStyle="rgba(0,0,0,0.2)";
+  ctx.lineWidth=2;
+  ctx.beginPath(); ctx.arc(cx,cy,R,0,Math.PI*2); ctx.stroke();
+
+  // place nucleons as dots randomly packed (simple)
+  const total = Z+N;
+  const dots = [];
+  const maxTries = 8000;
+  const dotR = clamp(10 - 0.02*total, 3.2, 8.5);
+  let tries=0;
+
+  function ok(x,y){
+    // inside circle
+    if((x-cx)*(x-cx)+(y-cy)*(y-cy) > (R-dotR)*(R-dotR)) return false;
+    for(const d of dots){
+      const dx=x-d.x, dy=y-d.y;
+      if(dx*dx+dy*dy < (2.1*dotR)*(2.1*dotR)) return false;
+    }
+    return true;
+  }
+
+  while(dots.length < total && tries < maxTries){
+    tries++;
+    const x = cx + (Math.random()*2-1)*R;
+    const y = cy + (Math.random()*2-1)*R;
+    if(ok(x,y)) dots.push({x,y});
+  }
+
+  // draw protons first then neutrons (colored)
+  ctx.font="14px system-ui,Segoe UI,Arial";
+  ctx.fillStyle="rgba(0,0,0,0.75)";
+  ctx.fillText(`Protons Z=${Z} (red), Neutrons N=${N} (blue)`, 14, 22);
+
+  // shuffle
+  for(let i=dots.length-1;i>0;i--){
+    const j = Math.floor(Math.random()*(i+1));
+    [dots[i],dots[j]]=[dots[j],dots[i]];
+  }
+
+  // protons
+  for(let i=0;i<Math.min(Z,dots.length);i++){
+    const d=dots[i];
+    ctx.fillStyle="rgba(220,53,69,0.85)";
+    ctx.beginPath(); ctx.arc(d.x,d.y,dotR,0,Math.PI*2); ctx.fill();
+  }
+  // neutrons
+  for(let i=Z;i<Math.min(Z+N,dots.length);i++){
+    const d=dots[i];
+    ctx.fillStyle="rgba(42,111,219,0.85)";
+    ctx.beginPath(); ctx.arc(d.x,d.y,dotR,0,Math.PI*2); ctx.fill();
+  }
+}
+
+/* ---------- plotting ---------- */
+function plotTermsVsA(coeff){
+
+  const canvas = document.getElementById("plotTerms");
+  const ctx = canvas.getContext("2d");
+  ctx.clearRect(0,0,canvas.width,canvas.height);
+
+  const padL=50, padB=30, padT=10, padR=10;
+
+  let xMin = 0;let xMax = 300;function X(x){   return padL + (x - xMin)/(xMax - xMin) * (canvas.width - padL - padR);}
+  let yMin = -10;let yMax = 20;function Y(y){   return padT + (yMax - y) / (yMax - yMin) * (canvas.height - padT - padB);}
+
+  function drawCurve(arr, color){
+      ctx.strokeStyle=color;
+      ctx.beginPath();
+      arr.forEach((p,i)=>{
+        let x=X(p.x/2); // scale
+        let y=Y(p.y);
+        if(i===0) ctx.moveTo(x,y);
+        else ctx.lineTo(x,y);
+      });
+      ctx.stroke();
+  }
+
+  let vol=[], sur=[], col=[], asy=[], tot=[];
+
+  for(let A=5; A<=400; A+=2){
+
+    let Z = Math.round(ZstableApprox(A, coeff.ac, coeff.aa));
+    let t = semfTerms(A,Z,coeff,true);
+
+    vol.push({x:A,y:t.vol/A});
+    sur.push({x:A,y:t.sur/A});
+    col.push({x:A,y:t.col/A});
+    asy.push({x:A,y:t.asy/A});
+    tot.push({x:A,y:t.B/A});
+  }
+
+  drawCurve(vol,"green");
+  drawCurve(sur,"orange");
+  drawCurve(col,"red");
+  drawCurve(asy,"purple");
+  drawCurve(tot,"blue");
+
+  ctx.fillStyle="black";
+  let xLegend = canvas.width - 180;   // right side
+let yLegend = 30;
+let dy = 18;  // spacing
+
+ctx.fillStyle = "black";
+ctx.font = "12px system-ui";
+
+ctx.fillText("SEMF Terms:", xLegend, yLegend);
+
+ctx.fillStyle = "green";
+ctx.fillText("Volume (+)", xLegend, yLegend + dy);
+
+ctx.fillStyle = "orange";
+ctx.fillText("Surface (-)", xLegend, yLegend + 2*dy);
+
+ctx.fillStyle = "red";
+ctx.fillText("Coulomb (-)", xLegend, yLegend + 3*dy);
+
+ctx.fillStyle = "purple";
+ctx.fillText("Asymmetry (-)", xLegend, yLegend + 4*dy);
+
+ctx.fillStyle = "blue";
+ctx.fillText("Total BE/A", xLegend, yLegend + 5*dy);
+}
+function plotMassParabola(A, Zcur, coeff, pairEnabled=true){
+  const c=document.getElementById("plot");
+  const ctx=c.getContext("2d");
+  ctx.clearRect(0,0,c.width,c.height);
+
+  const padL=56, padB=30, padT=12, padR=10;
+  ctx.strokeStyle="#bbb"; ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.moveTo(padL,padT);
+  ctx.lineTo(padL,c.height-padB);
+  ctx.lineTo(c.width-padR,c.height-padB);
+  ctx.stroke();
+
+  // scan Z from 1..A-1
+  const xs=[], ys=[];
+  for(let Z=1; Z<=A-1; Z++){
+    const t = semfTerms(A,Z,coeff,pairEnabled);
+    // Use -B as a proxy for mass trend at fixed A (mass parabola shape)
+    // (We focus on shape; absolute atomic mass not needed for the exercise.)
+    xs.push(Z);
+    ys.push(-t.B);
+  }
+
+  const xmin=Math.min(...xs), xmax=Math.max(...xs);
+  let ymin=Math.min(...ys), ymax=Math.max(...ys);
+  if(Math.abs(ymax-ymin)<1e-9){ ymax=ymin+1; }
+
+  const X = (x)=> padL + (x-xmin)/(xmax-xmin)*(c.width-padL-padR);
+  const Y = (y)=> (c.height-padB) - (y-ymin)/(ymax-ymin)*(c.height-padT-padB);
+
+  ctx.strokeStyle="#6f42c1"; ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(X(xs[0]),Y(ys[0]));
+  for(let i=1;i<xs.length;i++) ctx.lineTo(X(xs[i]),Y(ys[i]));
+  ctx.stroke();
+
+  // current marker
+  const ycur = -semfTerms(A,Zcur,coeff,pairEnabled).B;
+  ctx.fillStyle="#d33";
+  ctx.beginPath(); ctx.arc(X(Zcur),Y(ycur),4,0,Math.PI*2); ctx.fill();
+
+  ctx.fillStyle="#333"; ctx.font="12px system-ui,Segoe UI,Arial";
+  ctx.fillText("proxy mass (∝ −B)  vs  Z  (A fixed)", padL+6, 16);
+  ctx.fillText("Z", c.width-24, c.height-10);
+}
+
+function plotBEcurve(coeff){
+  const c=document.getElementById("plot");
+  const ctx=c.getContext("2d");
+  ctx.clearRect(0,0,c.width,c.height);
+
+  const padL=56, padB=30, padT=12, padR=10;
+  ctx.strokeStyle="#bbb"; ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.moveTo(padL,padT);
+  ctx.lineTo(padL,c.height-padB);
+  ctx.lineTo(c.width-padR,c.height-padB);
+  ctx.stroke();
+
+  // crude scan over A, choose Z ~ Z0(A)
+  const xs=[], ys=[];
+  for(let A=2; A<=250; A++){
+    const Z0 = ZstableApprox(A, coeff.ac, coeff.aa);
+    const Z = clamp(Math.round(Z0), 1, A-1);
+    const t = semfTerms(A,Z,coeff,true);
+    xs.push(A);
+    ys.push(t.B/A);
+  }
+
+  const xmin=Math.min(...xs), xmax=Math.max(...xs);
+  let ymin=Math.min(...ys), ymax=Math.max(...ys);
+  if(Math.abs(ymax-ymin)<1e-9){ ymax=ymin+1; }
+
+  const X = (x)=> padL + (x-xmin)/(xmax-xmin)*(c.width-padL-padR);
+  const Y = (y)=> (c.height-padB) - (y-ymin)/(ymax-ymin)*(c.height-padT-padB);
+
+  ctx.strokeStyle="#2a6fdb"; ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(X(xs[0]),Y(ys[0]));
+  for(let i=1;i<xs.length;i++) ctx.lineTo(X(xs[i]),Y(ys[i]));
+  ctx.stroke();
+
+  ctx.fillStyle="#333"; ctx.font="12px system-ui,Segoe UI,Arial";
+  ctx.fillText("B/A vs A (using Z≈Z₀(A))", padL+6, 16);
+  ctx.fillText("A", c.width-24, c.height-10);
+}
+
+/* ---------- UI + AI prompt ---------- */
+function buildAutoText(A,Z,N,B,BA,Z0,Sn,Sp){
+  const dz = Z - Z0;
+  let betaHint = "";
+  if(Math.abs(dz) < 0.6) betaHint = "Near valley of stability (β-decay less favored).";
+  else if(dz < 0) betaHint = "Z is below Z₀ → nucleus is neutron-rich → β− decay tends to move toward stability.";
+  else betaHint = "Z is above Z₀ → nucleus is proton-rich → β+ / electron capture tends to move toward stability.";
+
+  const sepHint = (isFinite(Sn) && isFinite(Sp))
+    ? `Separation: Sn≈${Sn.toFixed(2)} MeV, Sp≈${Sp.toFixed(2)} MeV (low values suggest weakly bound nucleon).`
+    : "Separation energies not defined for this A/Z edge.";
+
+  let note = "";
+  if(BA < 7.5) note = "Lower BE/A: either light nucleus (surface dominates) or heavy nucleus (Coulomb dominates).";
+  else if(BA > 8.3) note = "High BE/A: near mid-mass region where volume wins and Coulomb not too large.";
+  else note = "Moderate BE/A: typical of many stable nuclei.";
+
+  return `• B≈${B.toFixed(2)} MeV, BE/A≈${BA.toFixed(2)} MeV.\n• Z₀(A)≈${Z0.toFixed(2)} → ${betaHint}\n• ${sepHint}\n• Interpretation: ${note}`;
+}
+
+function generatePrompt(focus, level, state){
+  const {A,Z,N,B,BA,Z0,Sn,Sp,terms,coeff,pairEnabled} = state;
+
+  const coeffLine = `Coefficients used: av=${coeff.av}, as=${coeff.as}, ac=${coeff.ac}, aa=${coeff.aa}, ap=${coeff.ap}, k=${coeff.kp} (pairing ${pairEnabled?"ON":"OFF"}).`;
+  const nucleusLine = `Nucleus: A=${A}, Z=${Z}, N=${N}. Results: B=${B.toFixed(3)} MeV, BE/A=${BA.toFixed(3)} MeV, Z0(A)≈${Z0.toFixed(3)}. Separation: Sn≈${isFinite(Sn)?Sn.toFixed(3):"NA"} MeV, Sp≈${isFinite(Sp)?Sp.toFixed(3):"NA"} MeV.`;
+  const termsLine = `Term contributions (MeV): Volume=${terms.vol.toFixed(3)}, Surface=${terms.sur.toFixed(3)}, Coulomb=${terms.col.toFixed(3)}, Asymmetry=${terms.asy.toFixed(3)}, Pairing=${terms.pair.toFixed(3)}.`;
+
+  let task = "";
+  if(level==="basic"){
+    task = "Task: Explain each SEMF term physically and show how each term changes with A and Z. Identify which term dominates for light vs heavy nuclei.";
+  } else if(level==="mid"){
+    task = "Task: Use Z0(A) and the sign of (Z−Z0) to predict whether β− or β+/EC is favored. Justify with asymmetry and Coulomb terms.";
+  } else {
+    task = "Task: Scan isobars (fixed A) and discuss the mass parabola. Explain why pairing causes even-even to be more stable than odd-odd, and how the curve changes if pairing is OFF.";
+  }
+
+  let focusBlock = "";
+  if(focus==="full"){
+    focusBlock = "Explain the computed binding energy and interpret stability. Provide a short conclusion and what SEMF misses (shell effects).";
+  } else if(focus==="beta"){
+    focusBlock = "Focus only on beta stability: infer likely decay direction and how it moves toward valley of stability.";
+  } else if(focus==="compare"){
+    focusBlock = "Compare pairing ON vs OFF: describe effect on stability and mass parabola shape (odd-A vs even-A).";
+  } else {
+    focusBlock = "Focus on separation energies: interpret Sn and Sp, and relate them to driplines qualitatively.";
+  }
+
+  return `You are a nuclear physics tutor. Using the semi-empirical mass formula (liquid drop model), analyze the following case.\n\n${coeffLine}\n${nucleusLine}\n${termsLine}\n\n${task}\n${focusBlock}\n\nImportant: Keep units and sign conventions correct. If you make assumptions, state them explicitly.\nFinally, give 3 verification checks I should do using the simulator numbers.`;
+}
+
+function setBar(fillId, txtId, val, maxAbs){
+  const w = clamp(Math.abs(val)/maxAbs, 0, 1) * 100;
+  document.getElementById(fillId).style.width = w.toFixed(0)+"%";
+  document.getElementById(txtId).textContent = val.toFixed(2);
+}
+
+/* ---------- main update ---------- */
+function getCoeff(){
+  return {
+    av: parseFloat(document.getElementById("av").value),
+    as: parseFloat(document.getElementById("as").value),
+    ac: parseFloat(document.getElementById("ac").value),
+    aa: parseFloat(document.getElementById("aa").value),
+    ap: parseFloat(document.getElementById("ap").value),
+    kp: parseFloat(document.getElementById("kp").value),
+  };
+}
+
+function syncZMax(){
+  const A = parseInt(document.getElementById("A").value,10);
+  const Z = document.getElementById("Z");
+  Z.max = A-1;
+  if(parseInt(Z.value,10) > A-1) Z.value = A-1;
+}
+
+function applyPreset(){
+  const p = document.getElementById("preset").value;
+  const presets = {
+    Fe56:{A:56,Z:26}, Ni62:{A:62,Z:28}, C12:{A:12,Z:6}, O16:{A:16,Z:8},
+    Pb208:{A:208,Z:82}, U238:{A:238,Z:92}
+  };
+  if(p !== "custom" && presets[p]){
+    document.getElementById("A").value = presets[p].A;
+    syncZMax();
+    document.getElementById("Z").value = presets[p].Z;
+  }
+}
+
+function updateAll(){
+  syncZMax();
+
+  const A = parseInt(document.getElementById("A").value,10);
+  const Z = parseInt(document.getElementById("Z").value,10);
+  const N = A - Z;
+
+  const coeff = getCoeff();
+  const pairEnabled = (document.getElementById("pairToggle").value === "on");
+
+  const terms = semfTerms(A,Z,coeff,pairEnabled);
+  const B = terms.B;
+  const BA = B / A;
+
+  const Z0 = ZstableApprox(A, coeff.ac, coeff.aa);
+  const NZ = (Z>0) ? (N/Z) : NaN;
+
+  const sep = separationEnergies(A,Z,coeff,pairEnabled);
+  const Sn = sep.Sn, Sp = sep.Sp;
+  plotTermsVsA(coeff);
+  // outputs
+  document.getElementById("Aout").textContent = A;
+  document.getElementById("Zout").textContent = Z;
+  document.getElementById("Nout").textContent = N;
+
+  document.getElementById("Bout").textContent = B.toFixed(3);
+  document.getElementById("BAout").textContent = BA.toFixed(3);
+  document.getElementById("Z0out").textContent = Z0.toFixed(2);
+  document.getElementById("NZout").textContent = isFinite(NZ) ? NZ.toFixed(3) : "NA";
+  document.getElementById("Snout").textContent = isFinite(Sn) ? Sn.toFixed(3) : "NA";
+  document.getElementById("Spout").textContent = isFinite(Sp) ? Sp.toFixed(3) : "NA";
+
+  // auto text
+  document.getElementById("autoText").textContent = buildAutoText(A,Z,N,B,BA,Z0,Sn,Sp);
+
+  // nucleus picture
+  drawNucleus(Z,N);
+
+  // term bars scale: choose maxAbs ~ volume scale for visibility
+  const maxAbs = Math.max(Math.abs(terms.vol), Math.abs(terms.sur), Math.abs(terms.col), Math.abs(terms.asy), Math.abs(terms.pair), 1);
+  setBar("barVol","tVol",terms.vol,maxAbs);
+  setBar("barSur","tSur",terms.sur,maxAbs);
+  setBar("barCol","tCol",terms.col,maxAbs);
+  setBar("barAsy","tAsy",terms.asy,maxAbs);
+  setBar("barPair","tPair",terms.pair,maxAbs);
+
+  // plot
+  const mode = document.getElementById("mode").value;
+  if(mode==="massParabola"){
+    plotMassParabola(A,Z,coeff,pairEnabled);
+    document.getElementById("plotCaption").textContent =
+      "Mass parabola proxy: at fixed A, −B(A,Z) vs Z. Pairing ON can split even-even vs odd-odd behaviour (especially even A).";
+  } else {
+    plotBEcurve(coeff);
+    document.getElementById("plotCaption").textContent =
+      "Binding energy per nucleon curve B/A vs A using Z≈Z₀(A). This shows the gross peak near mid-mass region (shell effects not included).";
+  }
+
+  // prompt builder
+  const state = {A,Z,N,B,BA,Z0,Sn,Sp,terms,coeff,pairEnabled};
+  const focus = document.getElementById("promptFocus").value;
+  const level = document.getElementById("taskLevel").value;
+  document.getElementById("promptBox").value = generatePrompt(focus, level, state);
+}
+
+/* ---------- events ---------- */
+document.getElementById("preset").addEventListener("change", ()=>{ applyPreset(); updateAll(); });
+document.getElementById("A").addEventListener("input", ()=>{ syncZMax(); updateAll(); });
+document.getElementById("Z").addEventListener("input", updateAll);
+document.getElementById("mode").addEventListener("change", updateAll);
+document.getElementById("pairToggle").addEventListener("change", updateAll);
+
+["av","as","ac","aa","ap","kp"].forEach(id=>{
+  document.getElementById(id).addEventListener("input", updateAll);
+});
+
+document.getElementById("setZ0").addEventListener("click", ()=>{
+  const A = parseInt(document.getElementById("A").value,10);
+  const coeff = getCoeff();
+  const z0 = ZstableApprox(A, coeff.ac, coeff.aa);
+  document.getElementById("Z").value = clamp(Math.round(z0), 1, A-1);
+  updateAll();
+});
+
+
+// init
+applyPreset();
+updateAll();
+</script>
+
+</body>
+</html>
