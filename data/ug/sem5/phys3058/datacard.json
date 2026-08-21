@@ -1,0 +1,18 @@
+{
+  "courseCode": "PHYS3058",
+  "courseName": "Quantum Mechanics and Application",
+  "stream": "BSc Physics",
+  "semester": "5",
+  "faculty": {
+    "name": "",
+    "email": ""
+  },
+  "simulators": [
+    {
+      "name": "Simulators for Quantum Mechanics",
+      "desc": "The webpage contains simulators for Quantum Mechanics",
+      "link": "https://spathakiitd.github.io/physics-virtual-lab/#subject/quantum",
+      "uploadFileLink": ""
+    }
+  ]
+}
