@@ -23,7 +23,7 @@
     {
       "name": "Classical Chaos",
       "desc": "Lorenz attractor solver with variable particle number, and constants.",
-      "link": "",
+      "link": "lorenz_attractor_simulation_updated.html",
       "uploadFileLink": "lorenz_attractor_simulation_updated.html"
     },
     {
