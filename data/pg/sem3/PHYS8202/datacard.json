@@ -29,7 +29,7 @@
     {
       "name": "Monte-Carlo Integration",
       "desc": "Integration with variable number of beamed particles to estimate the area under the curve.",
-      "link": "",
+      "link": "monte_carlo_pi_estimation.html",
       "uploadFileLink": "monte_carlo_pi_estimation.html"
     }
   ]
