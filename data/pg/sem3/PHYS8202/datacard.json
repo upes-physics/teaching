@@ -11,7 +11,7 @@
     {
       "name": "Harmonic Oscillator",
       "desc": "Solver for second order differential equation with variable frequencies.",
-      "link": "",
+      "link": "simple_harmonic_oscillator_ensemble.html",
       "uploadFileLink": "simple_harmonic_oscillator_ensemble.html"
     },
     {
