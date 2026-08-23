@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum DOS Explorer | 3D to 0D Simulator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #050508;
+            --panel: rgba(20, 20, 35, 0.85);
+            --accent: #00f2ff;
+            --text: #e0e0ff;
+            --glass: rgba(255, 255, 255, 0.05);
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background-color: var(--bg); color: var(--text);
+            font-family: 'Segoe UI', Roboto, sans-serif; overflow: hidden;
+        }
+
+        #app-wrapper {
+            display: grid;
+            grid-template-columns: 380px 1fr;
+            grid-template-rows: 1fr 320px;
+            height: 100vh;
+            gap: 12px; padding: 12px; box-sizing: border-box;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            backdrop-filter: blur(10px);
+            display: flex; flex-direction: column;
+            position: relative; overflow: hidden;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.5);
+        }
+
+        .header {
+            padding: 12px 20px; background: rgba(255, 255, 255, 0.03);
+            font-size: 0.75rem; letter-spacing: 2px; color: var(--accent);
+            text-transform: uppercase; border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+            display: flex; justify-content: space-between; align-items: center;
+        }
+
+        /* Viewport */
+        #viewport-container { grid-column: 2; grid-row: 1; }
+        #three-canvas { width: 100%; height: 100%; cursor: move; }
+
+        /* Controls */
+        #control-panel { grid-column: 1; grid-row: 1 / 3; padding: 20px; gap: 15px; }
+        
+        .control-group { margin-bottom: 20px; }
+        label { display: block; font-size: 0.85rem; margin-bottom: 10px; opacity: 0.8; }
+
+        select, input[type=range] {
+            width: 100%; background: #111; color: white; border: 1px solid #333;
+            padding: 10px; border-radius: 8px; accent-color: var(--accent);
+        }
+
+        .mode-btn {
+            width: 100%; padding: 12px; margin-bottom: 8px;
+            background: var(--glass); border: 1px solid #444; color: white;
+            border-radius: 8px; cursor: pointer; transition: 0.3s;
+            text-align: left; font-size: 0.9rem;
+        }
+        .mode-btn:hover { background: rgba(0, 242, 255, 0.1); border-color: var(--accent); }
+        .mode-btn.active { background: var(--accent); color: #000; font-weight: bold; border-color: var(--accent); }
+
+        /* DOS Graph */
+        #graph-container { grid-column: 2; grid-row: 2; padding: 10px; }
+
+        /* Dashboard */
+        .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-top: 15px; }
+        .stat-item { background: #000; padding: 10px; border-radius: 8px; border: 1px solid #222; }
+        .stat-label { font-size: 0.65rem; opacity: 0.6; display: block; }
+        .stat-value { font-size: 1rem; color: var(--accent); font-family: monospace; }
+
+        .formula { font-style: italic; color: #888; font-size: 0.8rem; margin-top: 15px; padding: 10px; background: #000; border-radius: 5px; }
+
+        #hud {
+            position: absolute; top: 20px; right: 20px; text-align: right; pointer-events: none;
+        }
+    </style>
+</head>
+<body>
+
+<div id="app-wrapper">
+    <div class="panel" id="control-panel">
+        <div class="header">System Configuration</div>
+        
+        <div class="control-group">
+            <label>Dimensionality</label>
+            <button class="mode-btn" onclick="setMode('3D')">3D Bulk Semiconductor</button>
+            <button class="mode-btn" onclick="setMode('2D')">2D Quantum Well (Sheet)</button>
+            <button class="mode-btn" onclick="setMode('1D')">1D Quantum Wire</button>
+            <button class="mode-btn active" onclick="setMode('0D')">0D Quantum Dot</button>
+        </div>
+
+        <div class="control-group">
+            <label>Confinement Size (L): <span id="size-val">5.0</span> nm</label>
+            <input type="range" id="size-slider" min="2" max="50" step="0.1" value="5">
+        </div>
+
+        <div class="control-group">
+            <label>Material System</label>
+            <select id="mat-select" onchange="updatePhysics()">
+                <option value="GaAs">GaAs (Gallium Arsenide)</option>
+                <option value="Si">Si (Silicon)</option>
+                <option value="InP">InP (Indium Phosphide)</option>
+                <option value="CdSe">CdSe (Cadmium Selenide)</option>
+            </select>
+        </div>
+
+        <div class="stat-grid">
+            <div class="stat-item"><span class="stat-label">DOF</span><span class="stat-value" id="val-dof">0</span></div>
+            <div class="stat-item"><span class="stat-label">Confinement</span><span class="stat-value" id="val-conf">XYZ</span></div>
+            <div class="stat-item"><span class="stat-label">Effective Mass</span><span class="stat-value" id="val-me">0.067 m₀</span></div>
+            <div class="stat-item"><span class="stat-label">Gap Shift</span><span class="stat-value" id="val-shift">+0.24 eV</span></div>
+        </div>
+
+        <div class="formula" id="formula-display">
+            g(E) = Σ δ(E - E_n)
+        </div>
+    </div>
+
+    <div class="panel" id="viewport-container">
+        <div class="header">Spatial Wavefunction & Confinement</div>
+        <div id="three-canvas"></div>
+        <div id="hud">
+            <div style="font-size: 1.5rem; font-weight: bold;" id="hud-mode">0D QUANTUM DOT</div>
+            <div style="color: var(--accent); font-size: 0.8rem;" id="hud-desc">Fully Localized States</div>
+        </div>
+    </div>
+
+    <div class="panel" id="graph-container">
+        <div class="header">Density of States g(E) <span style="color: #666; font-size: 0.6rem;">Energy (eV) vs. States</span></div>
+        <canvas id="dos-chart"></canvas>
+    </div>
+</div>
+
+<script>
+    /** * PHYSICS CONSTANTS & STATE 
+     */
+    const materials = {
+        GaAs: { eg: 1.42, me: 0.067, color: 0x00f2ff },
+        Si: { eg: 1.12, me: 0.19, color: 0xaaaaaa },
+        InP: { eg: 1.35, me: 0.08, color: 0x00ffcc },
+        CdSe: { eg: 1.74, me: 0.13, color: 0xffcc00 }
+    };
+
+    let currentMode = '0D';
+    let scene, camera, renderer, currentMesh, wavefunction;
+    let dosChart;
+
+    /**
+     * INITIALIZE 3D ENVIRONMENT
+     */
+    function initThree() {
+        const container = document.getElementById('three-canvas');
+        scene = new THREE.Scene();
+        camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+        camera.position.set(15, 15, 25);
+
+        renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        renderer.setSize(container.clientWidth, container.clientHeight);
+        renderer.setPixelRatio(window.devicePixelRatio);
+        container.appendChild(renderer.domElement);
+
+        const light = new THREE.PointLight(0xffffff, 1, 100);
+        light.position.set(10, 20, 10);
+        scene.add(light);
+        scene.add(new THREE.AmbientLight(0x404040));
+
+        updateNanostructure();
+        animate();
+    }
+
+    /**
+     * NANOSTRUCTURE GEOMETRY LOGIC
+     */
+    function updateNanostructure() {
+        if (currentMesh) scene.remove(currentMesh);
+        if (wavefunction) scene.remove(wavefunction);
+
+        const L = parseFloat(document.getElementById('size-slider').value) / 2;
+        const mat = materials[document.getElementById('mat-select').value];
+        const group = new THREE.Group();
+
+        let geo;
+        if (currentMode === '0D') {
+            geo = new THREE.SphereGeometry(L, 32, 32);
+        } else if (currentMode === '1D') {
+            geo = new THREE.CylinderGeometry(1, 1, 25, 32);
+            geo.rotateZ(Math.PI/2);
+        } else if (currentMode === '2D') {
+            geo = new THREE.BoxGeometry(25, L/2, 25);
+        } else {
+            geo = new THREE.BoxGeometry(20, 20, 20);
+        }
+
+        const material = new THREE.MeshPhongMaterial({ 
+            color: mat.color, 
+            transparent: true, 
+            opacity: 0.3, 
+            wireframe: true 
+        });
+        currentMesh = new THREE.Mesh(geo, material);
+        scene.add(currentMesh);
+
+        // Probability Cloud (Wavefunction)
+        const cloudGeo = (currentMode === '0D') ? new THREE.SphereGeometry(L*0.8, 32, 32) : geo.clone();
+        const cloudMat = new THREE.MeshBasicMaterial({
+            color: mat.color,
+            transparent: true,
+            opacity: 0.5,
+            side: THREE.DoubleSide
+        });
+        wavefunction = new THREE.Mesh(cloudGeo, cloudMat);
+        scene.add(wavefunction);
+
+        // GSAP transition
+        gsap.from(currentMesh.scale, { x: 0, y: 0, z: 0, duration: 0.5, ease: "back.out" });
+    }
+
+    /**
+     * DOS CALCULATION & GRAPHING
+     */
+    function initChart() {
+        const ctx = document.getElementById('dos-chart').getContext('2d');
+        dosChart = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: Array.from({length: 100}, (_, i) => (i * 0.02).toFixed(2)),
+                datasets: [{
+                    label: 'Density of States',
+                    borderColor: '#00f2ff',
+                    backgroundColor: 'rgba(0, 242, 255, 0.1)',
+                    borderWidth: 2,
+                    data: [],
+                    fill: true,
+                    pointRadius: 0,
+                    tension: 0.1
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    x: { title: { display: true, text: 'Energy (E - Eg) [eV]' }, grid: { color: '#222' } },
+                    y: { title: { display: true, text: 'g(E)' }, grid: { color: '#222' }, beginAtZero: true }
+                },
+                plugins: { legend: { display: false } }
+            }
+        });
+        updatePhysics();
+    }
+
+    function updatePhysics() {
+        const L = parseFloat(document.getElementById('size-slider').value);
+        const mat = materials[document.getElementById('mat-select').value];
+        const data = [];
+        const energies = Array.from({length: 100}, (_, i) => i * 0.02);
+
+        // Simplified physics constants for visualization
+        const h2_8mL2 = 0.4 / (mat.me * Math.pow(L, 2)); 
+
+        energies.forEach(E => {
+            let val = 0;
+            if (currentMode === '3D') {
+                val = Math.sqrt(E) * 10;
+                document.getElementById('formula-display').innerHTML = "g(E) ∝ √(E - E_g)";
+            } else if (currentMode === '2D') {
+                val = Math.floor(E / (h2_8mL2 * 5)) + 1;
+                val *= 5;
+                document.getElementById('formula-display').innerHTML = "g(E) = Σ θ(E - E_n)";
+            } else if (currentMode === '1D') {
+                const subbands = [1, 4, 9];
+                subbands.forEach(n => {
+                    const En = n * h2_8mL2 * 5;
+                    if (E > En) val += 1 / (Math.sqrt(E - En) + 0.1);
+                });
+                document.getElementById('formula-display').innerHTML = "g(E) ∝ Σ (E - E_n)^{-1/2}";
+            } else if (currentMode === '0D') {
+                const En = [0.2, 0.6, 1.2, 1.8];
+                En.forEach(n => {
+                    if (Math.abs(E - n) < 0.02) val = 15;
+                });
+                document.getElementById('formula-display').innerHTML = "g(E) = Σ δ(E - E_n)";
+            }
+            data.push(val);
+        });
+
+        dosChart.data.datasets[0].data = data;
+        dosChart.update();
+
+        // Update Dashboard
+        document.getElementById('val-me').innerText = mat.me + " m₀";
+        document.getElementById('val-shift').innerText = "+" + (h2_8mL2 * 10).toFixed(2) + " eV";
+        document.getElementById('size-val').innerText = L.toFixed(1);
+    }
+
+    /**
+     * UI LOGIC
+     */
+    function setMode(mode) {
+        currentMode = mode;
+        document.querySelectorAll('.mode-btn').forEach(btn => {
+            btn.classList.toggle('active', btn.innerText.includes(mode));
+        });
+        
+        document.getElementById('hud-mode').innerText = 
+            mode === '3D' ? '3D BULK SEMI' : 
+            mode === '2D' ? '2D QUANTUM WELL' :
+            mode === '1D' ? '1D QUANTUM WIRE' : '0D QUANTUM DOT';
+
+        document.getElementById('val-dof').innerText = mode === '3D' ? '3' : mode === '2D' ? '2' : mode === '1D' ? '1' : '0';
+        document.getElementById('val-conf').innerText = mode === '3D' ? 'NONE' : mode === '2D' ? 'Z' : mode === '1D' ? 'YZ' : 'XYZ';
+
+        updateNanostructure();
+        updatePhysics();
+    }
+
+    function animate() {
+        requestAnimationFrame(animate);
+        if (currentMesh) {
+            currentMesh.rotation.y += 0.005;
+            wavefunction.rotation.y += 0.005;
+            // Pulsing wavefunction
+            const pulse = 1 + Math.sin(Date.now() * 0.003) * 0.05;
+            wavefunction.scale.set(pulse, pulse, pulse);
+        }
+        renderer.render(scene, camera);
+    }
+
+    // Resize handler
+    window.addEventListener('resize', () => {
+        const container = document.getElementById('three-canvas');
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+
+    document.getElementById('size-slider').oninput = (e) => {
+        updateNanostructure();
+        updatePhysics();
+    };
+
+    // Start
+    initThree();
+    initChart();
+    setMode('0D');
+</script>
+</body>
+</html>

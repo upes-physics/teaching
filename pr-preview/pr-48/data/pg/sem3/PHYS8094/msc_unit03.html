@@ -1,0 +1,835 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Nuclear Collisions Demo: b → mechanism, σ, θ, dE/dx (offline)</title>
+
+  <style>
+    :root{
+      --border:#ddd; --muted:#555; --bg:#fafafa;
+      --good:#e9f7ef; --warn:#fff3cd; --bad:#f8d7da;
+      --blue:#2a6fdb; --purple:#6f42c1;
+    }
+    body{
+      font-family:system-ui,Segoe UI,Roboto,Arial,sans-serif;
+      margin:18px; line-height:1.35; color:#111; background:#fff;
+    }
+    h1{margin:0 0 8px 0;}
+    h2{margin:0 0 8px 0;}
+    p{margin:8px 0;}
+    .muted{color:var(--muted);}
+    .pill{
+      display:inline-block; padding:4px 10px; border-radius:999px;
+      background:#f3f3f3; font-size:0.9rem; margin:2px 8px 2px 0;
+    }
+    .grid{
+      display:grid; grid-template-columns: 1.2fr 0.8fr; gap:14px; margin-top:12px;
+      align-items:start;
+    }
+    .card{
+      border:1px solid var(--border); border-radius:12px; padding:12px; background:#fff;
+    }
+    label{display:block; font-size:0.92rem; margin:8px 0 4px;}
+    input, select, button, textarea{
+      width:100%; padding:8px; border:1px solid #ccc; border-radius:10px;
+      box-sizing:border-box; background:#fff;
+    }
+    input[type=range]{padding:0;}
+    button{cursor:pointer;}
+    .row{display:grid; grid-template-columns:1fr 1fr; gap:10px;}
+    .kpi{display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:10px;}
+    .kpi .box{
+      border:1px solid #eee; border-radius:12px; padding:10px; background:#fcfcfc;
+      min-height:78px;
+    }
+    .good{background:var(--good);}
+    .warn{background:var(--warn);}
+    .bad{background:var(--bad);}
+    .mono{font-family:ui-monospace,SFMono-Regular,Menlo,Consolas,monospace;}
+
+    /* --- image + overlay --- */
+    .imgwrap{
+      position:relative;
+      width:100%;
+      height:340px;                 /* ensures image + overlay always have space */
+      border:1px solid #eee;
+      border-radius:12px;
+      overflow:hidden;
+      background:var(--bg);
+    }
+    .imgwrap img{
+      width:100%;
+      height:100%;
+      object-fit:contain;           /* keep full schematic visible */
+      display:block;
+    }
+    #mechOverlay{
+      position:absolute;
+      inset:0;
+      width:100%;
+      height:100%;
+      pointer-events:none;
+    }
+
+    /* probability bars */
+    .bars{margin-top:10px;}
+    .barrow{display:grid; grid-template-columns: 140px 1fr 60px; gap:10px; align-items:center; margin:8px 0;}
+    .track{height:12px; border-radius:999px; background:#eee; overflow:hidden;}
+    .fill{height:100%; width:0%; border-radius:999px;}
+    .c-el{background:rgba(0,160,90,0.85);}
+    .c-inel{background:rgba(255,193,7,0.85);}
+    .c-dir{background:rgba(255,140,0,0.85);}
+    .c-deep{background:rgba(128,0,128,0.80);}
+    .c-comp{background:rgba(220,53,69,0.85);}
+
+    canvas.plot{
+      width:100%;
+      height:240px;
+      border:1px solid #eee;
+      border-radius:12px;
+      background:#fff;
+    }
+
+    details summary{cursor:pointer; font-weight:700;}
+    .tight p{margin:6px 0;}
+
+    @media (max-width: 980px){
+      .grid{grid-template-columns: 1fr;}
+      .kpi{grid-template-columns: 1fr;}
+      .barrow{grid-template-columns: 120px 1fr 60px;}
+      .imgwrap{height:320px;}
+    }
+  </style>
+</head>
+
+<body>
+
+  <h1>Nuclear Collisions (Teaching Demo)</h1>
+  <div class="muted">
+    <span class="pill">Impact parameter b</span>
+    <span class="pill">Mechanism (elastic / inelastic / direct / compound)</span>
+    <span class="pill">σ ≈ πb²</span>
+    <span class="pill">θ(b) (Rutherford-like)</span>
+    <span class="pill">dE/dx model (offline)</span>
+  </div>
+
+  <!-- 0) Teaching explanation FIRST -->
+  <div class="card" style="margin-top:12px;">
+    <h2>Concept first (what students should understand)</h2>
+    <div class="tight">
+      <p><b>Incoming particle (projectile):</b> a charged particle/ion coming in with beam energy <span class="mono">E</span> (examples: proton, α, heavy ion).</p>
+      <p><b>Target nucleus:</b> the nucleus it strikes (set by <span class="mono">Z</span>, <span class="mono">A</span>). Bigger Z increases Coulomb repulsion.</p>
+      <p><b>Impact parameter (b):</b> the “miss distance” between the incoming trajectory and the target center.
+        <b>Large b</b> → distant encounter; <b>small b</b> → strong overlap/contact.</p>
+
+      <details open>
+        <summary>Collision mechanisms (short but complete)</summary>
+        <div class="tight muted" style="margin-top:10px;">
+          <p><b>Elastic scattering (distant; Coulomb-dominated):</b> projectile and target remain the same; mainly direction changes. Typically at large b.</p>
+          <p><b>Inelastic / Coulomb excitation (peripheral):</b> no strong nuclear overlap, but the time-varying Coulomb field can excite the nucleus (rotations/vibrations). Same particles out, but with excitation energy.</p>
+          <p><b>Direct reactions (grazing; surface interaction):</b> surface overlap—interaction with one/few nucleons (transfer, knockout, inelastic). Strong “memory” of entrance channel and structured angular distributions.</p>
+          <p><b>Compound nucleus / capture (close collision):</b> strong overlap forms an excited composite; energy gets shared among many nucleons; decay looks statistical (evaporation/γ). Happens for small b and sufficient energy relative to the Coulomb barrier.</p>
+          <p><b>Deep-inelastic (heavy ions; partial overlap):</b> dissipative collisions with large energy loss and nucleon exchange without full fusion (b in an intermediate overlap region for heavy ions).</p>
+        </div>
+      </details>
+    </div>
+  </div>
+
+  <!-- 1) Image + slider + physics -->
+  <div class="grid">
+
+    <!-- LEFT: image + controls (slider underneath image) -->
+    <div class="card">
+      <h2>Interactive schematic (highlight + projectile/target overlay)</h2>
+
+      <div class="row">
+        <div>
+          <label>Load local schematic image (offline-safe)</label>
+          <input id="imgFile" type="file" accept="image/*"/>
+          <small class="muted">Recommended for classroom: keep <span class="mono">slide4-l.jpg</span> in the same folder as this HTML.</small>
+        </div>
+        <div>
+          <label>Highlight style</label>
+          <select id="hlStyle">
+            <option value="band" selected>Wide bands (works immediately)</option>
+            <option value="tight">Tighter regions (fine-tune coordinates)</option>
+            <option value="none">No highlight</option>
+          </select>
+          <small class="muted">This highlights the same image based on b (and the mechanism).</small>
+        </div>
+      </div>
+
+      <div class="imgwrap" style="margin-top:10px;">
+        <img id="mechImg" src="slide4-l.jpg" alt="Collision mechanism schematic"/>
+        <canvas id="mechOverlay"></canvas>
+      </div>
+
+      <!-- Slider directly below image -->
+      <label style="margin-top:12px;">Impact parameter (normalized) b / b<sub>max</sub></label>
+      <input id="b" type="range" min="0.00" max="1.00" step="0.01" value="0.75"/>
+      <div class="row">
+        <div><span class="pill">b/b<sub>max</sub> = <span id="bout"></span></span></div>
+        <div><span class="pill">b ≈ <span id="bfm"></span> fm</span></div>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <div>
+          <label>Incoming particle (projectile)</label>
+          <select id="proj">
+            <option value="p" selected>proton (p)</option>
+            <option value="a">alpha (α)</option>
+            <option value="hi">generic heavy ion</option>
+          </select>
+        </div>
+        <div>
+          <label>Beam energy E (MeV)</label>
+          <input id="E" type="range" min="1" max="200" value="20" step="1"/>
+          <div><span class="pill"><span id="Eout"></span> MeV</span></div>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>Target nucleus preset</label>
+          <select id="targetPreset">
+            <option value="custom" selected>Custom (use Z, A below)</option>
+            <option value="C12">Carbon-12 (Z=6, A=12)</option>
+            <option value="Al27">Aluminium-27 (Z=13, A=27)</option>
+            <option value="Fe56">Iron-56 (Z=26, A=56)</option>
+            <option value="Au197">Gold-197 (Z=79, A=197)</option>
+            <option value="Pb208">Lead-208 (Z=82, A=208)</option>
+          </select>
+        </div>
+        <div>
+          <label>Animation</label>
+          <select id="animMode">
+            <option value="on" selected>On (moving projectile + impact line)</option>
+            <option value="off">Off</option>
+          </select>
+        </div>
+      </div>
+
+      <div class="row">
+        <div>
+          <label>Target Z</label>
+          <input id="Zt" type="number" min="1" max="100" value="82"/>
+        </div>
+        <div>
+          <label>Target A</label>
+          <input id="At" type="number" min="1" max="250" value="208"/>
+        </div>
+      </div>
+
+      <div class="card" style="margin-top:10px;">
+        <h3 style="margin:0 0 6px 0;">Live mechanism</h3>
+        <div id="classBox" class="pill good" style="font-size:1.0rem;"></div>
+        <div id="explain" class="tight muted" style="margin-top:8px;"></div>
+      </div>
+    </div>
+
+    <!-- RIGHT: computed observables -->
+    <div class="card">
+      <h2>Computed observables (offline models)</h2>
+      <p class="muted">
+        These are <b>teaching models</b>: they reproduce the trends and connect geometry (b) to measurable quantities (σ, θ, energy loss).
+      </p>
+
+      <div class="kpi">
+        <div class="box">
+          <div><b>Nuclear size + Coulomb barrier</b></div>
+          <div class="mono" style="margin-top:6px;">
+            R ≈ <span id="Rout"></span> fm<br/>
+            V<sub>C</sub> ≈ <span id="VcOut"></span> MeV
+          </div>
+          <small class="muted">R = r₀(Aₚ¹ᐟ³ + Aₜ¹ᐟ³), r₀≈1.2 fm; V<sub>C</sub>≈1.44 ZₚZₜ/R</small>
+        </div>
+
+        <div class="box">
+          <div><b>Geometric cross-section</b></div>
+          <div class="mono" style="margin-top:6px;">
+            σ ≈ π b² = <span id="sigmaFm2"></span> fm²<br/>
+            σ ≈ <span id="sigmaBarn"></span> barn
+          </div>
+          <small class="muted">1 barn = 100 fm²</small>
+        </div>
+
+        <div class="box">
+          <div><b>Deflection angle (Rutherford-like)</b></div>
+          <div class="mono" style="margin-top:6px;">
+            θ ≈ <span id="thetaOut"></span>°
+          </div>
+          <small class="muted">θ ≈ 2 arctan( k / (2Eb) ), k=1.44 ZₚZₜ MeV·fm (concept)</small>
+        </div>
+
+        <div class="box">
+          <div><b>dE/dx model + thin-target ΔE</b></div>
+          <div class="mono" style="margin-top:6px;">
+            dE/dx (total) ≈ <span id="dedxOut"></span> MeV·cm²/g<br/>
+            ΔE ≈ <span id="dEOut"></span> MeV
+          </div>
+          <small class="muted">ΔE ≈ (dE/dx)<sub>mass</sub> × (ρx)</small>
+        </div>
+      </div>
+
+      <div class="row" style="margin-top:10px;">
+        <div>
+          <label>Areal density ρx (mg/cm²)</label>
+          <input id="areal" type="number" min="0" step="1" value="100"/>
+        </div>
+        <div>
+          <label>Show dE/dx component</label>
+          <select id="dedxComp">
+            <option value="total" selected>Total</option>
+            <option value="electronic">Electronic</option>
+            <option value="nuclear">Nuclear</option>
+          </select>
+        </div>
+      </div>
+
+      <h3 style="margin:12px 0 6px 0;">Reaction probability (conceptual, normalized)</h3>
+      <div class="bars">
+        <div class="barrow">
+          <div class="mono">Elastic</div>
+          <div class="track"><div id="p_el" class="fill c-el"></div></div>
+          <div class="mono" id="p_el_txt">0.00</div>
+        </div>
+        <div class="barrow">
+          <div class="mono">Inelastic</div>
+          <div class="track"><div id="p_inel" class="fill c-inel"></div></div>
+          <div class="mono" id="p_inel_txt">0.00</div>
+        </div>
+        <div class="barrow">
+          <div class="mono">Direct</div>
+          <div class="track"><div id="p_dir" class="fill c-dir"></div></div>
+          <div class="mono" id="p_dir_txt">0.00</div>
+        </div>
+        <div class="barrow">
+          <div class="mono">Deep-inelastic</div>
+          <div class="track"><div id="p_deep" class="fill c-deep"></div></div>
+          <div class="mono" id="p_deep_txt">0.00</div>
+        </div>
+        <div class="barrow">
+          <div class="mono">Compound</div>
+          <div class="track"><div id="p_comp" class="fill c-comp"></div></div>
+          <div class="mono" id="p_comp_txt">0.00</div>
+        </div>
+      </div>
+
+      <h3 style="margin:12px 0 6px 0;">Quick plots</h3>
+      <div class="row">
+        <div>
+          <div class="muted" style="margin-bottom:6px;"><b>dE/dx(model)</b> vs Energy</div>
+          <canvas id="plotDedx" class="plot" width="800" height="260"></canvas>
+        </div>
+        <div>
+          <div class="muted" style="margin-bottom:6px;"><b>θ(b)</b> vs b/b<sub>max</sub></div>
+          <canvas id="plotTheta" class="plot" width="800" height="260"></canvas>
+        </div>
+      </div>
+    </div>
+  </div>
+
+<script>
+/* -----------------------------
+   Utility
+------------------------------ */
+function clamp(x,a,b){ return Math.max(a, Math.min(b,x)); }
+function sigmoid(x){ return 1/(1+Math.exp(-x)); }
+function gauss(x, mu, s){ const z=(x-mu)/s; return Math.exp(-0.5*z*z); }
+
+function roundRectPath(ctx, x, y, w, h, r){
+  r = Math.min(r, w/2, h/2);
+  ctx.beginPath();
+  ctx.moveTo(x+r, y);
+  ctx.arcTo(x+w, y, x+w, y+h, r);
+  ctx.arcTo(x+w, y+h, x, y+h, r);
+  ctx.arcTo(x, y+h, x, y, r);
+  ctx.arcTo(x, y, x+w, y, r);
+  ctx.closePath();
+}
+
+/* -----------------------------
+   Physics models (offline teaching)
+------------------------------ */
+const r0 = 1.2; // fm
+
+function projA(proj){
+  if(proj==="p") return 1;
+  if(proj==="a") return 4;
+  return 40; // generic heavy ion
+}
+function projZ(proj){
+  if(proj==="p") return 1;
+  if(proj==="a") return 2;
+  return 18; // generic heavy ion (example)
+}
+
+function nuclearRadius(Ap, At){
+  return r0 * (Math.cbrt(Ap) + Math.cbrt(At));
+}
+function coulombBarrier(Zp, Zt, R){
+  return 1.44 * Zp * Zt / Math.max(R, 1e-6); // MeV
+}
+
+// Rutherford-like deflection (concept)
+function thetaRutherfordDeg(E, Zp, Zt, bfm){
+  const k = 1.44 * Zp * Zt; // MeV·fm
+  const b = Math.max(bfm, 1e-6);
+  const arg = k / (2 * Math.max(E, 1e-6) * b);
+  const theta = 2 * Math.atan(arg);
+  return theta * 180/Math.PI;
+}
+
+// Simple offline dE/dx model (mass stopping power)
+function dedxModel(E, Zp, Zt, Ap){
+  const Ee = Math.max(E, 1e-3);
+  const Zscale = Math.sqrt(Zp*Zt);
+  const Ascale = Math.sqrt(Ap);
+
+  const electronic = (8.0 * Zscale * Ascale) / (Math.sqrt(Ee) + 0.8) * (1 + 0.08*Math.log(1+Ee));
+  const nuclear = (3.5 * Zscale) / (Ee + 4.0);
+  const total = electronic + nuclear;
+
+  return {electronic, nuclear, total};
+}
+
+// Mechanism classifier (aligned with your earlier logic style)
+function classifyReaction(bn, E, Zp, Zt, Ap, At, projKind){
+  const R = nuclearRadius(Ap, At);
+  const Vc = coulombBarrier(Zp, Zt, R);
+
+  let label="", cls, text="";
+
+  if(bn > 0.88){
+    label="Elastic scattering (distant / Coulomb-dominated)";
+    cls="good";
+    text=`<p><b>Distant:</b> large b → mostly Coulomb deflection → elastic scattering.</p>
+          <p><b>Cue:</b> “direction changes, identities don’t.”</p>`;
+  } else if(bn > 0.72){
+    label="Inelastic / Coulomb excitation (peripheral)";
+    cls="warn";
+    text=`<p><b>Peripheral:</b> Coulomb field excites the nucleus (little/no overlap).</p>
+          <p><b>Outcome:</b> same particles out but with excitation energy.</p>`;
+  } else if(bn > 0.52){
+    label="Direct reactions (grazing / surface interaction)";
+    cls="warn";
+    text=`<p><b>Grazing:</b> surface interaction with one/few nucleons.</p>
+          <p><b>Examples:</b> transfer, knockout, inelastic scattering.</p>`;
+  } else if(bn > 0.28){
+    if(projKind==="hi"){
+      label="Deep-inelastic / dissipative collision (partial overlap)";
+      cls="warn";
+      text=`<p><b>Heavy ions:</b> partial overlap → strong dissipation + nucleon exchange.</p>`;
+    } else {
+      label="Strong inelastic / nuclear excitation likely";
+      cls="warn";
+      text=`<p><b>Moderate overlap:</b> nuclear forces contribute strongly → inelastic channels likely.</p>`;
+    }
+  } else {
+    if(E >= 0.7*Vc){
+      label="Compound nucleus / capture / fusion-like (close collision)";
+      cls="bad";
+      text=`<p><b>Close:</b> strong overlap → excited composite (compound nucleus).</p>
+            <p>Barrier estimate: <b>Vc ≈ ${Vc.toFixed(1)} MeV</b>; capture becomes plausible near/above this.</p>`;
+    } else {
+      label="Close approach but below barrier (fusion suppressed)";
+      cls="warn";
+      text=`<p><b>Close geometry</b> but energy is below barrier estimate (Vc ≈ ${Vc.toFixed(1)} MeV).</p>`;
+    }
+  }
+
+  return {label, cls, text, R, Vc};
+}
+
+// Conceptual channel probabilities vs b (normalized)
+function channelProbabilities(bn, projKind, E, Vc){
+  const pel   = sigmoid((bn - 0.84)/0.07);     // large b
+  const pinel = gauss(bn, 0.76, 0.07);         // peripheral excitation window
+  const pdir  = gauss(bn, 0.62, 0.10);         // grazing
+  const gate  = sigmoid((E - 0.7*Vc)/6.0);     // barrier gate
+  const pcomp = gauss(bn, 0.10, 0.10) * (0.25 + 0.75*gate);
+  const pdeep = (projKind==="hi") ? gauss(bn, 0.35, 0.12) : 0.02*gauss(bn, 0.35, 0.12);
+
+  let s = pel + pinel + pdir + pdeep + pcomp;
+  if(s < 1e-9) s = 1;
+  return { elastic:pel/s, inelastic:pinel/s, direct:pdir/s, deep:pdeep/s, compound:pcomp/s };
+}
+
+/* -----------------------------
+   Same-image highlight overlay + animation
+------------------------------ */
+const overlay = { img:null, canvas:null, ctx:null, ready:false, ro:null };
+let animT = 0;
+
+const regionsBand = [
+  { key:"Elastic scattering",  fill:"rgba(0,160,90,0.22)",  stroke:"rgba(0,160,90,0.95)",  rects:[[0.03,0.06,0.94,0.17]] },
+  { key:"Inelastic / Coulomb excitation", fill:"rgba(255,193,7,0.22)", stroke:"rgba(255,193,7,0.95)", rects:[[0.03,0.26,0.94,0.17]] },
+  { key:"Direct reactions",    fill:"rgba(255,140,0,0.20)", stroke:"rgba(255,140,0,0.95)", rects:[[0.03,0.46,0.94,0.17]] },
+  { key:"Deep-inelastic",      fill:"rgba(128,0,128,0.18)", stroke:"rgba(128,0,128,0.95)", rects:[[0.03,0.64,0.94,0.14]] },
+  { key:"Compound nucleus",    fill:"rgba(220,53,69,0.20)", stroke:"rgba(220,53,69,0.95)", rects:[[0.03,0.80,0.94,0.16]] },
+  { key:"Close approach",      fill:"rgba(220,53,69,0.16)", stroke:"rgba(220,53,69,0.90)", rects:[[0.03,0.80,0.94,0.16]] }
+];
+
+const regionsTight = [
+  { key:"Elastic scattering",  fill:"rgba(0,160,90,0.18)",  stroke:"rgba(0,160,90,0.95)",  rects:[[0.08,0.07,0.84,0.12]] },
+  { key:"Inelastic / Coulomb excitation", fill:"rgba(255,193,7,0.18)", stroke:"rgba(255,193,7,0.95)", rects:[[0.08,0.28,0.84,0.12]] },
+  { key:"Direct reactions",    fill:"rgba(255,140,0,0.16)", stroke:"rgba(255,140,0,0.95)", rects:[[0.08,0.49,0.84,0.12]] },
+  { key:"Deep-inelastic",      fill:"rgba(128,0,128,0.14)", stroke:"rgba(128,0,128,0.95)", rects:[[0.08,0.66,0.84,0.10]] },
+  { key:"Compound nucleus",    fill:"rgba(220,53,69,0.18)", stroke:"rgba(220,53,69,0.95)", rects:[[0.08,0.82,0.84,0.12]] },
+  { key:"Close approach",      fill:"rgba(220,53,69,0.14)", stroke:"rgba(220,53,69,0.90)", rects:[[0.08,0.82,0.84,0.12]] }
+];
+
+function regionSet(){
+  return (document.getElementById("hlStyle").value==="tight") ? regionsTight : regionsBand;
+}
+function pickRegion(label){
+  const set = regionSet();
+  for(const r of set){
+    if(label.includes(r.key)) return r;
+  }
+  return null;
+}
+
+function initOverlay(){
+  overlay.img = document.getElementById("mechImg");
+  overlay.canvas = document.getElementById("mechOverlay");
+  overlay.ctx = overlay.canvas.getContext("2d");
+
+  function sync(){
+    const rect = overlay.img.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    overlay.canvas.width  = Math.max(1, Math.round(rect.width  * dpr));
+    overlay.canvas.height = Math.max(1, Math.round(rect.height * dpr));
+    overlay.ctx.setTransform(dpr,0,0,dpr,0,0);  // draw in CSS pixels
+    overlay.ready = true;
+  }
+
+  if(overlay.img.complete) sync();
+  overlay.img.addEventListener("load", sync);
+
+  if(window.ResizeObserver){
+    overlay.ro = new ResizeObserver(sync);
+    overlay.ro.observe(overlay.img);
+  } else {
+    window.addEventListener("resize", sync);
+  }
+}
+
+// Draw highlight + also draw projectile/target schematic markers to make it feel interactive
+function drawOverlay(label, bn, projLabel, targetLabel){
+  if(!overlay.ready) return;
+
+  const mode = document.getElementById("hlStyle").value;
+  const animMode = document.getElementById("animMode").value;
+
+  const ctx = overlay.ctx;
+  const w = overlay.canvas.getBoundingClientRect().width;
+  const h = overlay.canvas.getBoundingClientRect().height;
+
+  ctx.clearRect(0,0,w,h);
+
+  // --- highlight region on the same image ---
+  if(mode !== "none"){
+    const region = pickRegion(label);
+    if(region){
+      ctx.save();
+      ctx.fillStyle = region.fill;
+      ctx.strokeStyle = region.stroke;
+      ctx.lineWidth = 2;
+      for(const [x,y,rw,rh] of region.rects){
+        const X=x*w, Y=y*h, RW=rw*w, RH=rh*h;
+        roundRectPath(ctx, X, Y, RW, RH, 12);
+        ctx.fill();
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+  }
+
+  // --- Add clear "incoming projectile" and "target nucleus" markers ---
+  // We'll draw a simple target nucleus marker near the center-right and a projectile track from left.
+  const targetX = 0.68*w;
+  const targetY = 0.52*h;
+
+  // impact parameter line is an offset (bn mapped to +/- range)
+  const y0 = targetY + (0.5 - bn) * 0.50*h; // bn=1 -> above, bn=0 -> below
+
+  // draw incoming path
+  ctx.save();
+  ctx.strokeStyle = "rgba(20,20,20,0.75)";
+  ctx.lineWidth = 2;
+  ctx.setLineDash([6,4]);
+  ctx.beginPath();
+  ctx.moveTo(0.08*w, y0);
+  ctx.lineTo(targetX-26, y0);
+  ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.restore();
+
+  // draw target nucleus (circle)
+  ctx.save();
+  ctx.fillStyle = "rgba(0,0,0,0.25)";
+  ctx.strokeStyle = "rgba(0,0,0,0.85)";
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(targetX, targetY, 22, 0, Math.PI*2);
+  ctx.fill();
+  ctx.stroke();
+  ctx.restore();
+
+  // labels
+  ctx.save();
+  ctx.font = "13px system-ui,Segoe UI,Arial";
+  ctx.fillStyle = "rgba(0,0,0,0.85)";
+  // projectile label near left
+  ctx.fillText(`Incoming projectile: ${projLabel}`, 0.06*w, clamp(y0-10, 18, h-12));
+  // target label near target
+  ctx.fillText(`Target nucleus: ${targetLabel}`, clamp(targetX-60, 10, w-220), clamp(targetY+44, 18, h-12));
+  ctx.restore();
+
+  // b marker tag
+  ctx.save();
+  ctx.fillStyle = "rgba(255,255,255,0.9)";
+  ctx.strokeStyle = "rgba(20,20,20,0.6)";
+  ctx.lineWidth = 1.5;
+  roundRectPath(ctx, 10, 10, 120, 26, 10);
+  ctx.fill(); ctx.stroke();
+  ctx.fillStyle = "rgba(0,0,0,0.85)";
+  ctx.font = "12px system-ui,Segoe UI,Arial";
+  ctx.fillText(`b/bmax = ${bn.toFixed(2)}`, 18, 28);
+  ctx.restore();
+
+  // animation: moving projectile dot along incoming line (optional)
+  if(animMode==="on"){
+    ctx.save();
+    const speed = 0.22; // visual speed
+    const t = (animT*speed) % 1.0;
+    const px = (0.08 + (0.60*t))*w;
+    const py = y0;
+    ctx.fillStyle = "rgba(42,111,219,0.95)";
+    ctx.beginPath();
+    ctx.arc(px, py, 6, 0, Math.PI*2);
+    ctx.fill();
+    ctx.restore();
+  }
+}
+
+/* -----------------------------
+   Plotting
+------------------------------ */
+function plotCurve(canvasId, xs, ys, opts){
+  const c = document.getElementById(canvasId);
+  const ctx = c.getContext("2d");
+  ctx.clearRect(0,0,c.width,c.height);
+
+  const padL=56, padB=30, padT=12, padR=10;
+
+  // axes
+  ctx.strokeStyle="#bbb"; ctx.lineWidth=1;
+  ctx.beginPath();
+  ctx.moveTo(padL, padT);
+  ctx.lineTo(padL, c.height-padB);
+  ctx.lineTo(c.width-padR, c.height-padB);
+  ctx.stroke();
+
+  let xmin=Math.min(...xs), xmax=Math.max(...xs);
+  let ymin=Math.min(...ys), ymax=Math.max(...ys);
+  if(Math.abs(ymax-ymin)<1e-9){ ymax=ymin+1; }
+
+  const X = (x)=> padL + (x-xmin)/(xmax-xmin)*(c.width-padL-padR);
+  const Y = (y)=> (c.height-padB) - (y-ymin)/(ymax-ymin)*(c.height-padT-padB);
+
+  ctx.strokeStyle=opts.color || "#2a6fdb";
+  ctx.lineWidth=2;
+  ctx.beginPath();
+  ctx.moveTo(X(xs[0]), Y(ys[0]));
+  for(let i=1;i<xs.length;i++) ctx.lineTo(X(xs[i]), Y(ys[i]));
+  ctx.stroke();
+
+  if(opts.marker){
+    const {x,y,color} = opts.marker;
+    ctx.fillStyle = color || "#d33";
+    ctx.beginPath();
+    ctx.arc(X(x), Y(y), 4, 0, Math.PI*2);
+    ctx.fill();
+  }
+
+  ctx.fillStyle="#333";
+  ctx.font="12px system-ui,Segoe UI,Arial";
+  if(opts.yLabel) ctx.fillText(opts.yLabel, padL+6, 16);
+  if(opts.xLabel) ctx.fillText(opts.xLabel, c.width-140, c.height-10);
+}
+
+/* -----------------------------
+   UI update
+------------------------------ */
+function setTargetPreset(){
+  const p = document.getElementById("targetPreset").value;
+  const Zt = document.getElementById("Zt");
+  const At = document.getElementById("At");
+  const map = {
+    C12:{Z:6,A:12}, Al27:{Z:13,A:27}, Fe56:{Z:26,A:56}, Au197:{Z:79,A:197}, Pb208:{Z:82,A:208}
+  };
+  if(p !== "custom" && map[p]){
+    Zt.value = map[p].Z;
+    At.value = map[p].A;
+  }
+}
+
+function updateBars(P){
+  function set(idFill,idTxt,val){
+    document.getElementById(idFill).style.width = (val*100).toFixed(0)+"%";
+    document.getElementById(idTxt).textContent = val.toFixed(2);
+  }
+  set("p_el","p_el_txt",P.elastic);
+  set("p_inel","p_inel_txt",P.inelastic);
+  set("p_dir","p_dir_txt",P.direct);
+  set("p_deep","p_deep_txt",P.deep);
+  set("p_comp","p_comp_txt",P.compound);
+}
+
+function updatePlots(E, Zp, Zt, Ap, bnorm, bfm){
+  // dE/dx plot
+  const comp = document.getElementById("dedxComp").value;
+  const xsE=[], ysE=[];
+  for(let e=1;e<=200;e+=2){
+    xsE.push(e);
+    ysE.push(dedxModel(e, Zp, Zt, Ap)[comp]);
+  }
+  const dcur = dedxModel(E, Zp, Zt, Ap)[comp];
+  plotCurve("plotDedx", xsE, ysE, {
+    color:getComputedStyle(document.documentElement).getPropertyValue('--blue').trim() || "#2a6fdb",
+    xLabel:"Energy (MeV)",
+    yLabel:"dE/dx (model)",
+    marker:{x:E,y:dcur,color:"#d33"}
+  });
+
+  // theta(b) plot
+  const xsB=[], ysT=[];
+  const bmax = bfm / Math.max(bnorm, 1e-6);
+  for(let bn=0.02; bn<=1.00; bn+=0.02){
+    const b = bn * bmax;
+    xsB.push(bn);
+    ysT.push(clamp(thetaRutherfordDeg(E, Zp, Zt, b), 0, 179.9));
+  }
+  const thcur = clamp(thetaRutherfordDeg(E, Zp, Zt, bfm), 0, 179.9);
+  plotCurve("plotTheta", xsB, ysT, {
+    color:getComputedStyle(document.documentElement).getPropertyValue('--purple').trim() || "#6f42c1",
+    xLabel:"b / bmax",
+    yLabel:"θ (deg)",
+    marker:{x:bnorm,y:thcur,color:"#d33"}
+  });
+}
+
+function updateAll(){
+  const proj = document.getElementById("proj").value;
+  const E = parseFloat(document.getElementById("E").value);
+  const Zt = parseFloat(document.getElementById("Zt").value);
+  const At = parseFloat(document.getElementById("At").value);
+  const bn = parseFloat(document.getElementById("b").value);
+  const areal_mg = parseFloat(document.getElementById("areal").value);
+
+  document.getElementById("Eout").textContent = E.toFixed(0);
+  document.getElementById("bout").textContent = bn.toFixed(2);
+
+  const Ap = projA(proj), Zp = projZ(proj);
+  const info = classifyReaction(bn, E, Zp, Zt, Ap, At, proj);
+
+  // choose bmax ≈ R (teaching)
+  const bmax = info.R;
+  const bfm = bn * bmax;
+  document.getElementById("bfm").textContent = bfm.toFixed(2);
+
+  // size + barrier
+  document.getElementById("Rout").textContent = info.R.toFixed(1);
+  document.getElementById("VcOut").textContent = info.Vc.toFixed(1);
+
+  // mechanism box
+  const box = document.getElementById("classBox");
+  box.className = "pill " + info.cls;
+  box.textContent = info.label;
+  document.getElementById("explain").innerHTML = info.text;
+
+  // overlay draw (interactive feel)
+  const projLabel = (proj==="p") ? "p" : (proj==="a") ? "α" : "heavy ion";
+  const targetLabel = `Z=${Zt}, A=${At}`;
+  drawOverlay(info.label, bn, projLabel, targetLabel);
+
+  // cross-section
+  const sigmaFm2 = Math.PI * bfm * bfm;
+  const sigmaBarn = sigmaFm2 / 100.0;
+  document.getElementById("sigmaFm2").textContent = sigmaFm2.toFixed(2);
+  document.getElementById("sigmaBarn").textContent = sigmaBarn.toFixed(3);
+
+  // theta
+  const theta = clamp(thetaRutherfordDeg(E, Zp, Zt, bfm), 0, 179.9);
+  document.getElementById("thetaOut").textContent = theta.toFixed(1);
+
+  // dE/dx model and ΔE
+  const d = dedxModel(E, Zp, Zt, Ap);
+  const areal_g = (Number.isFinite(areal_mg)?areal_mg:0)/1000.0;
+  const dE = d.total * areal_g;
+  document.getElementById("dedxOut").textContent = d.total.toFixed(3);
+  document.getElementById("dEOut").textContent = dE.toFixed(3);
+
+  // probabilities
+  const P = channelProbabilities(bn, proj, E, info.Vc);
+  updateBars(P);
+
+  // plots
+  updatePlots(E, Zp, Zt, Ap, bn, bfm);
+}
+
+/* -----------------------------
+   Image upload (offline)
+------------------------------ */
+function wireImageUpload(){
+  const input = document.getElementById("imgFile");
+  const img = document.getElementById("mechImg");
+  input.addEventListener("change", ()=>{
+    const f = input.files && input.files[0];
+    if(!f) return;
+    const url = URL.createObjectURL(f);
+    img.src = url;
+  });
+}
+
+/* -----------------------------
+   Animation loop (for interactivity)
+------------------------------ */
+function tick(){
+  animT += 0.016;
+  // redraw overlay only (fast) when animation is ON
+  if(document.getElementById("animMode").value === "on"){
+    updateAll();
+  }
+  requestAnimationFrame(tick);
+}
+
+/* -----------------------------
+   Init
+------------------------------ */
+window.addEventListener("DOMContentLoaded", ()=>{
+  initOverlay();
+  wireImageUpload();
+
+  document.getElementById("targetPreset").addEventListener("change", ()=>{
+    setTargetPreset();
+    updateAll();
+  });
+
+  ["proj","E","Zt","At","b","areal","dedxComp","hlStyle","animMode"].forEach(id=>{
+    const el = document.getElementById(id);
+    const evt = (el.type==="range") ? "input" : "change";
+    el.addEventListener(evt, updateAll);
+  });
+
+  // Initial
+  updateAll();
+  requestAnimationFrame(tick);
+});
+</script>
+
+</body>
+</html>

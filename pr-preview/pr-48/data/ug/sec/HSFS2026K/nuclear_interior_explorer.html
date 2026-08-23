@@ -1,0 +1,748 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>UPES Nuclear Physics Lab - Interior & Binding Energy Explorer</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;600;700&display=swap" rel="stylesheet">
+  <style>
+    body {
+      font-family: 'Inter', sans-serif;
+      background-color: #070a12;
+      color: #f3f4f6;
+    }
+    .font-mono {
+      font-family: 'JetBrains Mono', monospace;
+    }
+    .upes-card {
+      background: linear-gradient(135deg, rgba(17, 24, 39, 0.95) 0%, rgba(11, 15, 25, 0.98) 100%);
+      border: 1px solid #1f293d;
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.6);
+    }
+    .upes-logo-bg {
+      background: #ffffff;
+      border-radius: 8px;
+      padding: 6px 14px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      box-shadow: 0 4px 14px rgba(0, 0, 0, 0.25);
+    }
+    input[type="range"] {
+      accent-color: #3b82f6;
+    }
+    .pulse-glow {
+      box-shadow: 0 0 15px rgba(244, 63, 94, 0.5);
+    }
+  </style>
+</head>
+<body class="min-h-screen p-3 md:p-6 flex flex-col items-center">
+
+  <header class="w-full max-w-7xl mb-5 flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-xl upes-card">
+    <div class="flex items-center gap-4">
+      <!-- UPES Logo with Fallback -->
+      <div class="upes-logo-bg">
+        <img 
+          src="https://upload.wikimedia.org/wikipedia/commons/thumb/d/d1/UPES-New-Logo.png/800px-UPES-New-Logo.png" 
+          alt="UPES Logo" 
+          class="h-10 md:h-12 w-auto object-contain"
+          onerror="this.onerror=null; this.src='https://placehold.co/180x50/ffffff/00448b?text=UPES';"
+        />
+      </div>
+      <div>
+        <h1 class="text-lg md:text-2xl font-extrabold text-white tracking-tight flex items-center gap-2">
+          <span>Nuclear Physics Interactive Explorer</span>
+        </h1>
+        <p class="text-xs md:text-sm text-slate-400">Department of Physics • School of Advanced Engineering</p>
+      </div>
+    </div>
+    
+    <div class="flex items-center gap-3">
+      <div class="bg-slate-900/90 px-3 py-1.5 rounded-lg border border-slate-800 text-xs font-mono text-cyan-400 flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-cyan-400 animate-pulse"></span>
+        VIRTUAL LAB SIMULATION
+      </div>
+    </div>
+  </header>
+
+  <main class="w-full max-w-7xl grid grid-cols-1 lg:grid-cols-12 gap-5">
+
+    <!-- Left Controls Panel (4 cols) -->
+    <section class="lg:col-span-4 flex flex-col gap-4">
+      
+      <!-- Particle Controls Card -->
+      <div class="p-4 rounded-xl upes-card flex flex-col gap-3">
+        <h2 class="text-sm font-semibold text-slate-200 border-b border-slate-800 pb-2 flex justify-between items-center">
+          <span>Nuclide Selection</span>
+          <span class="text-xs text-slate-400 font-normal">Z & N Adjuster</span>
+        </h2>
+
+        <!-- Proton Slider -->
+        <div class="flex flex-col gap-1">
+          <div class="flex justify-between text-xs font-medium">
+            <span class="text-red-400 flex items-center gap-1.5 font-semibold">
+              <span class="w-2.5 h-2.5 rounded-full bg-red-500 inline-block"></span> Protons (Z)
+            </span>
+            <span id="z-val" class="font-mono text-red-400 font-bold">26</span>
+          </div>
+          <input type="range" id="z-slider" min="1" max="100" value="26" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+        </div>
+
+        <!-- Neutron Slider -->
+        <div class="flex flex-col gap-1">
+          <div class="flex justify-between text-xs font-medium">
+            <span class="text-blue-400 flex items-center gap-1.5 font-semibold">
+              <span class="w-2.5 h-2.5 rounded-full bg-blue-500 inline-block"></span> Neutrons (N)
+            </span>
+            <span id="n-val" class="font-mono text-blue-400 font-bold">30</span>
+          </div>
+          <input type="range" id="n-slider" min="0" max="150" value="30" class="w-full h-2 bg-slate-800 rounded-lg appearance-none cursor-pointer">
+        </div>
+
+        <!-- Presets -->
+        <div>
+          <label class="text-[10px] font-semibold text-slate-400 uppercase tracking-wider block mb-1.5">Benchmark Nuclides</label>
+          <div class="grid grid-cols-2 gap-1.5">
+            <button onclick="setNuclide(1, 1)" class="px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 transition flex justify-between"><span>²H (Deuterium)</span><span class="text-slate-500">1.1 MeV</span></button>
+            <button onclick="setNuclide(2, 2)" class="px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 transition flex justify-between"><span>⁴He (Helium)</span><span class="text-slate-500">7.1 MeV</span></button>
+            <button onclick="setNuclide(6, 6)" class="px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 transition flex justify-between"><span>¹²C (Carbon)</span><span class="text-slate-500">7.7 MeV</span></button>
+            <button onclick="setNuclide(8, 8)" class="px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 transition flex justify-between"><span>¹⁶O (Oxygen)</span><span class="text-slate-500">8.0 MeV</span></button>
+            <button onclick="setNuclide(26, 30)" class="px-2 py-1 text-xs bg-cyan-900/50 hover:bg-cyan-800/50 text-cyan-200 rounded border border-cyan-700/60 transition flex justify-between font-medium"><span>⁵⁶Fe (Peak Iron)</span><span class="text-emerald-400">8.79 MeV</span></button>
+            <button onclick="setNuclide(82, 126)" class="px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 transition flex justify-between"><span>²⁰⁸Pb (Lead)</span><span class="text-slate-500">7.8 MeV</span></button>
+            <button onclick="setNuclide(92, 143)" class="px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 transition flex justify-between"><span>²³⁵U (Uranium)</span><span class="text-slate-500">7.6 MeV</span></button>
+            <button onclick="setNuclide(92, 146)" class="px-2 py-1 text-xs bg-slate-800 hover:bg-slate-700 text-slate-200 rounded border border-slate-700 transition flex justify-between"><span>²³⁸U (Uranium)</span><span class="text-slate-500">7.5 MeV</span></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Readout Stats Grid -->
+      <div class="grid grid-cols-2 gap-2.5">
+        <div class="p-3 rounded-xl upes-card flex flex-col">
+          <span class="text-[11px] text-slate-400 font-medium">Mass Number (A)</span>
+          <span id="a-readout" class="text-lg font-bold font-mono text-white">56</span>
+          <span class="text-[10px] text-slate-500">A = Z + N</span>
+        </div>
+        <div class="p-3 rounded-xl upes-card flex flex-col">
+          <span class="text-[11px] text-slate-400 font-medium">Nuclear Radius</span>
+          <span id="r-readout" class="text-lg font-bold font-mono text-cyan-400">4.59 fm</span>
+          <span class="text-[10px] text-slate-500">R = R₀ A¹ᐟ³</span>
+        </div>
+        <div class="p-3 rounded-xl upes-card flex flex-col">
+          <span class="text-[11px] text-slate-400 font-medium">Binding Energy / A</span>
+          <span id="be-readout" class="text-lg font-bold font-mono text-emerald-400">8.79 MeV</span>
+          <span class="text-[10px] text-slate-500">E_b / Nucleon</span>
+        </div>
+        <div class="p-3 rounded-xl upes-card flex flex-col">
+          <span class="text-[11px] text-slate-400 font-medium">Nuclear Stability</span>
+          <span id="status-readout" class="text-xs font-bold text-emerald-400 mt-1">Stable Nuclide</span>
+          <span id="status-sub" class="text-[10px] text-slate-500">Valley of Stability</span>
+        </div>
+      </div>
+
+      <!-- Liquid Drop SEMF Terms Breakdown -->
+      <div class="p-4 rounded-xl upes-card flex flex-col gap-2.5">
+        <h3 class="text-xs font-semibold text-slate-300 border-b border-slate-800 pb-1.5 flex justify-between">
+          <span>Semi-Empirical Mass Formula (SEMF)</span>
+          <span class="text-[10px] font-mono text-slate-500">Liquid Drop</span>
+        </h3>
+        <div class="space-y-2 text-xs">
+          <div>
+            <div class="flex justify-between mb-0.5 text-slate-300 text-[11px]">
+              <span>Volume Energy (+a_v · A)</span>
+              <span id="term-vol" class="font-mono text-emerald-400">+885 MeV</span>
+            </div>
+            <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden border border-slate-800">
+              <div id="bar-vol" class="bg-emerald-500 h-full w-3/4 transition-all duration-300"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between mb-0.5 text-slate-300 text-[11px]">
+              <span>Surface Energy (-a_s · A²ᐟ³)</span>
+              <span id="term-surf" class="font-mono text-rose-400">-268 MeV</span>
+            </div>
+            <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden border border-slate-800">
+              <div id="bar-surf" class="bg-rose-500 h-full w-1/3 transition-all duration-300"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between mb-0.5 text-slate-300 text-[11px]">
+              <span>Coulomb Repulsion (-a_c · Z²/A¹ᐟ³)</span>
+              <span id="term-coul" class="font-mono text-amber-400">-121 MeV</span>
+            </div>
+            <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden border border-slate-800">
+              <div id="bar-coul" class="bg-amber-500 h-full w-1/4 transition-all duration-300"></div>
+            </div>
+          </div>
+          <div>
+            <div class="flex justify-between mb-0.5 text-slate-300 text-[11px]">
+              <span>Asymmetry Energy (-a_a · (N-Z)²/A)</span>
+              <span id="term-asym" class="font-mono text-purple-400">-6.6 MeV</span>
+            </div>
+            <div class="w-full bg-slate-900 h-1.5 rounded-full overflow-hidden border border-slate-800">
+              <div id="bar-asym" class="bg-purple-500 h-full w-1/12 transition-all duration-300"></div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </section>
+
+    <!-- Right Viewport Panel (8 cols) -->
+    <section class="lg:col-span-8 flex flex-col gap-4">
+      
+      <!-- Top Row: Nucleus Simulation Canvas -->
+      <div class="p-4 rounded-xl upes-card flex flex-col items-center justify-center relative">
+        <div class="w-full flex items-center justify-between mb-2 text-xs text-slate-400">
+          <span class="font-semibold text-slate-200 flex items-center gap-2">
+            <span class="w-2 h-2 rounded-full bg-red-500"></span> Nucleus Interior Cross Section
+          </span>
+          <div class="flex items-center gap-3 text-[11px]">
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-red-500"></span> Protons</span>
+            <span class="flex items-center gap-1"><span class="w-2.5 h-2.5 rounded-full bg-blue-500"></span> Neutrons</span>
+          </div>
+        </div>
+
+        <canvas id="nucleusCanvas" width="560" height="280" class="w-full bg-slate-950 rounded-lg border border-slate-800/80 cursor-crosshair"></canvas>
+
+        <div class="w-full flex flex-wrap items-center justify-between gap-2 mt-2 text-xs text-slate-400">
+          <label class="flex items-center gap-2 cursor-pointer select-none hover:text-slate-200">
+            <input type="checkbox" id="vectors-toggle" class="rounded bg-slate-800 border-slate-700 text-blue-500 focus:ring-0">
+            <span>Show Force Vectors (Strong Attraction vs. Coulomb Repulsion)</span>
+          </label>
+          <label class="flex items-center gap-2 cursor-pointer select-none hover:text-slate-200">
+            <input type="checkbox" id="motion-toggle" checked class="rounded bg-slate-800 border-slate-700 text-blue-500 focus:ring-0">
+            <span>Quantum Jitter</span>
+          </label>
+        </div>
+      </div>
+
+      <!-- BOTTOM ROW: FEATURED HIGHLIGHTED BINDING ENERGY CURVE CHART -->
+      <div class="p-4 rounded-xl upes-card flex flex-col gap-2 relative border-2 border-slate-800/90">
+        
+        <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-800 pb-2">
+          <div>
+            <h3 class="text-sm font-bold text-white flex items-center gap-2">
+              <span class="inline-block w-2.5 h-2.5 bg-rose-500 rounded-full animate-ping"></span>
+              <span>Binding Energy per Nucleon Curve ($E_b/A$ vs $A$)</span>
+            </h3>
+            <p class="text-[11px] text-slate-400">Click anywhere on the curve to jump directly to that mass number ($A$)</p>
+          </div>
+
+          <!-- Fusion / Fission Quick Indicators -->
+          <div class="flex items-center gap-2 text-[10px] font-semibold">
+            <span class="px-2 py-0.5 rounded bg-emerald-950/80 text-emerald-400 border border-emerald-800">
+              FUSION ZONE (A &lt; 56)
+            </span>
+            <span class="px-2 py-0.5 rounded bg-amber-950/80 text-amber-400 border border-amber-800">
+              FISSION ZONE (A &gt; 56)
+            </span>
+          </div>
+        </div>
+
+        <!-- Binding Energy Canvas -->
+        <div class="relative w-full">
+          <canvas id="curveCanvas" width="600" height="240" class="w-full bg-slate-950 rounded-lg border border-slate-800/90 cursor-pointer"></canvas>
+          
+          <!-- Floating Info Overlay on top of canvas -->
+          <div id="curve-tooltip" class="absolute hidden bg-slate-900/95 border border-cyan-500/50 text-slate-200 text-xs px-2.5 py-1.5 rounded-md shadow-xl pointer-events-none font-mono"></div>
+        </div>
+
+        <!-- Explanatory Footer Bar for the Binding Energy Curve -->
+        <div class="grid grid-cols-1 sm:grid-cols-3 gap-2 mt-1 text-[11px] text-slate-400 bg-slate-900/60 p-2.5 rounded-lg border border-slate-800">
+          <div class="flex flex-col">
+            <span class="font-semibold text-emerald-400 flex items-center gap-1">
+              <span>⚡</span> Nuclear Fusion
+            </span>
+            <span>Light nuclei ($A &lt; 56$) release energy when fusing into heavier, more tightly bound nuclei toward Iron ($^{56}\text{Fe}$).</span>
+          </div>
+          <div class="flex flex-col border-t sm:border-t-0 sm:border-l border-slate-800 pt-1 sm:pt-0 sm:pl-2.5">
+            <span class="font-semibold text-cyan-300 flex items-center gap-1">
+              <span>👑</span> Peak Stability Peak
+            </span>
+            <span>$^{56}\text{Fe}$ and $^{62}\text{Ni}$ sit at the maximum ($\approx 8.79\text{ MeV/nucleon}$), where binding energy per nucleon is highest.</span>
+          </div>
+          <div class="flex flex-col border-t sm:border-t-0 sm:border-l border-slate-800 pt-1 sm:pt-0 sm:pl-2.5">
+            <span class="font-semibold text-amber-400 flex items-center gap-1">
+              <span>💥</span> Nuclear Fission
+            </span>
+            <span>Heavy nuclei ($A &gt; 56$) release energy by splitting into lighter fragments with higher binding energy per nucleon.</span>
+          </div>
+        </div>
+
+      </div>
+
+    </section>
+
+  </main>
+
+  <script>
+    const zSlider = document.getElementById('z-slider');
+    const nSlider = document.getElementById('n-slider');
+    const zVal = document.getElementById('z-val');
+    const nVal = document.getElementById('n-val');
+    const aReadout = document.getElementById('a-readout');
+    const rReadout = document.getElementById('r-readout');
+    const beReadout = document.getElementById('be-readout');
+    const statusReadout = document.getElementById('status-readout');
+    const statusSub = document.getElementById('status-sub');
+    const vectorsToggle = document.getElementById('vectors-toggle');
+    const motionToggle = document.getElementById('motion-toggle');
+
+    const termVol = document.getElementById('term-vol');
+    const termSurf = document.getElementById('term-surf');
+    const termCoul = document.getElementById('term-coul');
+    const termAsym = document.getElementById('term-asym');
+    const barVol = document.getElementById('bar-vol');
+    const barSurf = document.getElementById('bar-surf');
+    const barCoul = document.getElementById('bar-coul');
+    const barAsym = document.getElementById('bar-asym');
+
+    const canvas = document.getElementById('nucleusCanvas');
+    const ctx = canvas.getContext('2d');
+    const curveCanvas = document.getElementById('curveCanvas');
+    const curveCtx = curveCanvas.getContext('2d');
+    const tooltip = document.getElementById('curve-tooltip');
+
+    let particles = [];
+    
+    // SEMF Constants (MeV)
+    const aV = 15.8, aS = 18.3, aC = 0.714, aA = 23.2, aP = 12.0;
+
+    function calculateNuclearProperties(Z, N) {
+      const A = Z + N;
+      if (A === 0) return { radius: 0, bindingPerA: 0, stable: false, terms: {vol:0, surf:0, coul:0, asym:0} };
+
+      // Radius formula R = R0 * A^(1/3)
+      const R = 1.2 * Math.cbrt(A);
+      
+      // Semi-Empirical Mass Formula (SEMF)
+      const vol = aV * A;
+      const surf = aS * Math.pow(A, 2/3);
+      const coul = aC * (Z * (Z - 1)) / Math.cbrt(A || 1);
+      const asym = aA * Math.pow(A - 2 * Z, 2) / (A || 1);
+
+      // Pairing term
+      let pairing = 0;
+      if (Z % 2 === 0 && N % 2 === 0) pairing = aP / Math.sqrt(A);
+      else if (Z % 2 !== 0 && N % 2 !== 0) pairing = -aP / Math.sqrt(A);
+      
+      let totalBE = vol - surf - coul - asym + pairing;
+      if (totalBE < 0) totalBE = 0;
+      
+      const bePerA = totalBE / A;
+
+      // Basic Stability check
+      const ratio = N / (Z || 1);
+      let stable = true;
+      let reason = "Valley of Stability";
+
+      if (A > 209) {
+        stable = false;
+        reason = "Alpha Decay / Fission Unstable";
+      } else if (Z <= 20 && Math.abs(N - Z) > 4) {
+        stable = false;
+        reason = N > Z ? "Beta-Minus Unstable" : "Beta-Plus / EC Unstable";
+      } else if (Z > 20 && (ratio < 1.05 || ratio > 1.62)) {
+        stable = false;
+        reason = ratio > 1.62 ? "Neutron Excess (Beta Decay)" : "Proton Excess (Beta/EC Decay)";
+      }
+
+      return {
+        radius: R,
+        bindingPerA: bePerA,
+        stable: stable,
+        reason: reason,
+        terms: { vol, surf, coul, asym }
+      };
+    }
+
+    function generateParticlePositions(Z, N, R_fm) {
+      const A = Z + N;
+      const newParticles = [];
+      const particleRadius = 6.5;
+      
+      // Scaling for canvas visualization
+      const displayRadius = Math.min(110, Math.max(20, R_fm * 20));
+
+      let types = [];
+      for (let i = 0; i < Z; i++) types.push('p');
+      for (let i = 0; i < N; i++) types.push('n');
+      
+      // Interleave/shuffle for homogeneous mixing
+      types.sort(() => Math.random() - 0.5);
+
+      for (let i = 0; i < A; i++) {
+        // Spiral lattice placement
+        const theta = i * 2.39996; 
+        const r = (displayRadius - particleRadius) * Math.sqrt(i / (A || 1));
+        
+        const x = canvas.width / 2 + r * Math.cos(theta);
+        const y = canvas.height / 2 + r * Math.sin(theta);
+
+        newParticles.push({
+          x: x,
+          y: y,
+          type: types[i],
+          phase: Math.random() * Math.PI * 2
+        });
+      }
+      return newParticles;
+    }
+
+    function update() {
+      const Z = parseInt(zSlider.value);
+      const N = parseInt(nSlider.value);
+      const A = Z + N;
+
+      zVal.textContent = Z;
+      nVal.textContent = N;
+      aReadout.textContent = A;
+
+      const props = calculateNuclearProperties(Z, N);
+      rReadout.textContent = props.radius.toFixed(2) + " fm";
+      beReadout.textContent = props.bindingPerA.toFixed(2) + " MeV";
+
+      if (props.stable) {
+        statusReadout.textContent = "Stable Nuclide";
+        statusReadout.className = "text-xs font-bold text-emerald-400 mt-1";
+      } else {
+        statusReadout.textContent = "Unstable / Radioactive";
+        statusReadout.className = "text-xs font-bold text-rose-400 mt-1";
+      }
+      statusSub.textContent = props.reason;
+
+      // SEMF terms breakdown
+      termVol.textContent = "+" + Math.round(props.terms.vol) + " MeV";
+      termSurf.textContent = "-" + Math.round(props.terms.surf) + " MeV";
+      termCoul.textContent = "-" + Math.round(props.terms.coul) + " MeV";
+      termAsym.textContent = "-" + Math.round(props.terms.asym) + " MeV";
+
+      const maxTerm = Math.max(props.terms.vol, 1);
+      barVol.style.width = Math.min(100, (props.terms.vol / maxTerm) * 100) + "%";
+      barSurf.style.width = Math.min(100, (props.terms.surf / maxTerm) * 100) + "%";
+      barCoul.style.width = Math.min(100, (props.terms.coul / maxTerm) * 100) + "%";
+      barAsym.style.width = Math.min(100, (props.terms.asym / maxTerm) * 100) + "%";
+
+      particles = generateParticlePositions(Z, N, props.radius);
+      drawCurveChart(A, props.bindingPerA, Z);
+    }
+
+    function drawNucleus() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const Z = parseInt(zSlider.value);
+      const N = parseInt(nSlider.value);
+      const props = calculateNuclearProperties(Z, N);
+      const displayRadius = Math.min(110, Math.max(20, props.radius * 20));
+      const centerX = canvas.width / 2;
+      const centerY = canvas.height / 2;
+
+      // Draw nuclear boundary liquid drop surface
+      ctx.beginPath();
+      ctx.arc(centerX, centerY, displayRadius + 8, 0, Math.PI * 2);
+      ctx.fillStyle = "rgba(15, 23, 42, 0.7)";
+      ctx.fill();
+      ctx.strokeStyle = props.stable ? "rgba(52, 211, 153, 0.5)" : "rgba(248, 113, 113, 0.5)";
+      ctx.lineWidth = 2;
+      ctx.stroke();
+
+      const time = Date.now() * 0.003;
+      const isMotion = motionToggle.checked;
+
+      // Render Nucleons
+      particles.forEach(p => {
+        const jitterX = isMotion ? Math.sin(time + p.phase) * 1.1 : 0;
+        const jitterY = isMotion ? Math.cos(time + p.phase) * 1.1 : 0;
+        const drawX = p.x + jitterX;
+        const drawY = p.y + jitterY;
+
+        ctx.beginPath();
+        ctx.arc(drawX, drawY, 6, 0, Math.PI * 2);
+        
+        if (p.type === 'p') {
+          ctx.fillStyle = '#ef4444'; // Proton Red
+        } else {
+          ctx.fillStyle = '#3b82f6'; // Neutron Blue
+        }
+        ctx.fill();
+        ctx.strokeStyle = '#05070d';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        // Optional Force Vectors
+        if (vectorsToggle.checked) {
+          const angle = Math.atan2(drawY - centerY, drawX - centerX);
+          
+          if (p.type === 'p') {
+            // Outward Coulomb Repulsion vector (red arrow)
+            ctx.beginPath();
+            ctx.moveTo(drawX, drawY);
+            ctx.lineTo(drawX + Math.cos(angle) * 10, drawY + Math.sin(angle) * 10);
+            ctx.strokeStyle = '#fca5a5';
+            ctx.lineWidth = 1.5;
+            ctx.stroke();
+          }
+
+          // Inward Strong Nuclear Force vector (green arrow)
+          ctx.beginPath();
+          ctx.moveTo(drawX, drawY);
+          ctx.lineTo(drawX - Math.cos(angle) * 7, drawY - Math.sin(angle) * 7);
+          ctx.strokeStyle = '#4ade80';
+          ctx.lineWidth = 1.5;
+          ctx.stroke();
+        }
+      });
+
+      requestAnimationFrame(drawNucleus);
+    }
+
+    function drawCurveChart(currentA, currentBE, currentZ) {
+      curveCtx.clearRect(0, 0, curveCanvas.width, curveCanvas.height);
+
+      const w = curveCanvas.width;
+      const h = curveCanvas.height;
+      const paddingLeft = 45;
+      const paddingBottom = 30;
+      const paddingTop = 25;
+      const paddingRight = 20;
+
+      const plotW = w - paddingLeft - paddingRight;
+      const plotH = h - paddingTop - paddingBottom;
+
+      const maxA = 260;
+      const maxBE = 10; // MeV
+
+      // 1. Draw Fusion & Fission Background Regions
+      const ironX = paddingLeft + (56 / maxA) * plotW;
+
+      // Fusion Shading (Greenish)
+      curveCtx.fillStyle = "rgba(16, 185, 129, 0.08)";
+      curveCtx.fillRect(paddingLeft, paddingTop, ironX - paddingLeft, plotH);
+
+      // Fission Shading (Amber/Orange)
+      curveCtx.fillStyle = "rgba(245, 158, 11, 0.08)";
+      curveCtx.fillRect(ironX, paddingTop, plotW - (ironX - paddingLeft), plotH);
+
+      // 2. Draw Grid Lines & Axes
+      curveCtx.strokeStyle = '#1e293b';
+      curveCtx.lineWidth = 1;
+      
+      // Y Grid (MeV)
+      for (let be = 2; be <= 8; be += 2) {
+        let y = (h - paddingBottom) - (be / maxBE) * plotH;
+        curveCtx.beginPath();
+        curveCtx.moveTo(paddingLeft, y);
+        curveCtx.lineTo(w - paddingRight, y);
+        curveCtx.stroke();
+
+        curveCtx.fillStyle = '#64748b';
+        curveCtx.font = '10px JetBrains Mono';
+        curveCtx.textAlign = 'right';
+        curveCtx.fillText(be + " MeV", paddingLeft - 6, y + 3);
+      }
+
+      // X Grid (Mass Number A)
+      const aTicks = [20, 56, 100, 150, 200, 240];
+      aTicks.forEach(a => {
+        let x = paddingLeft + (a / maxA) * plotW;
+        curveCtx.beginPath();
+        curveCtx.moveTo(x, paddingTop);
+        curveCtx.lineTo(x, h - paddingBottom);
+        curveCtx.stroke();
+
+        curveCtx.fillStyle = '#64748b';
+        curveCtx.font = '10px JetBrains Mono';
+        curveCtx.textAlign = 'center';
+        curveCtx.fillText("A=" + a, x, h - paddingBottom + 16);
+      });
+
+      // Axis Borders
+      curveCtx.strokeStyle = '#334155';
+      curveCtx.lineWidth = 1.5;
+      curveCtx.beginPath();
+      curveCtx.moveTo(paddingLeft, paddingTop);
+      curveCtx.lineTo(paddingLeft, h - paddingBottom);
+      curveCtx.lineTo(w - paddingRight, h - paddingBottom);
+      curveCtx.stroke();
+
+      // 3. Draw Continuous Binding Energy Curve
+      curveCtx.beginPath();
+      curveCtx.strokeStyle = '#38bdf8'; // Cyan curve line
+      curveCtx.lineWidth = 2.5;
+
+      for (let a = 1; a <= maxA; a++) {
+        let z = Math.round(a / (1 + 0.0077 * Math.pow(a, 2/3)));
+        let res = calculateNuclearProperties(z, a - z);
+        
+        let x = paddingLeft + (a / maxA) * plotW;
+        let y = (h - paddingBottom) - (res.bindingPerA / maxBE) * plotH;
+
+        if (a === 1) curveCtx.moveTo(x, y);
+        else curveCtx.lineTo(x, y);
+      }
+      curveCtx.stroke();
+
+      // Fill area under curve
+      const lastX = paddingLeft + plotW;
+      const bottomY = h - paddingBottom;
+      curveCtx.lineTo(lastX, bottomY);
+      curveCtx.lineTo(paddingLeft, bottomY);
+      curveCtx.closePath();
+      const grad = curveCtx.createLinearGradient(0, paddingTop, 0, bottomY);
+      grad.addColorStop(0, 'rgba(56, 189, 248, 0.15)');
+      grad.addColorStop(1, 'rgba(56, 189, 248, 0.0)');
+      curveCtx.fillStyle = grad;
+      curveCtx.fill();
+
+      // 4. Plot Landmark Isotopes Nodes (2H, 4He, 12C, 16O, 56Fe, 208Pb, 238U)
+      const landmarks = [
+        { z: 1, n: 1, label: '²H' },
+        { z: 2, n: 2, label: '⁴He' },
+        { z: 6, n: 6, label: '¹²C' },
+        { z: 8, n: 8, label: '¹⁶O' },
+        { z: 26, n: 30, label: '⁵⁶Fe (Peak)' },
+        { z: 82, n: 126, label: '²⁰⁸Pb' },
+        { z: 92, n: 146, label: '²³⁸U' }
+      ];
+
+      landmarks.forEach(lm => {
+        let a = lm.z + lm.n;
+        let res = calculateNuclearProperties(lm.z, lm.n);
+        let x = paddingLeft + (a / maxA) * plotW;
+        let y = (h - paddingBottom) - (res.bindingPerA / maxBE) * plotH;
+
+        curveCtx.beginPath();
+        curveCtx.arc(x, y, 3.5, 0, Math.PI * 2);
+        curveCtx.fillStyle = lm.z === 26 ? '#4ade80' : '#cbd5e1';
+        curveCtx.fill();
+
+        // Label
+        curveCtx.fillStyle = lm.z === 26 ? '#4ade80' : '#94a3b8';
+        curveCtx.font = lm.z === 26 ? 'bold 10px Inter' : '9px Inter';
+        curveCtx.textAlign = 'center';
+        
+        // Stagger labels to avoid overlapping
+        let offsetY = (lm.z === 2 || lm.z === 8) ? -10 : -12;
+        if (lm.z === 1) offsetY = 14;
+        curveCtx.fillText(lm.label, x, y + offsetY);
+      });
+
+      // 5. HIGHLIGHT CURRENT ACTIVE ISOTOPE
+      if (currentA > 0) {
+        let currX = paddingLeft + (currentA / maxA) * plotW;
+        let currY = (h - paddingBottom) - (currentBE / maxBE) * plotH;
+
+        // Draw Crosshair lines
+        curveCtx.setLineDash([3, 3]);
+        curveCtx.strokeStyle = 'rgba(244, 63, 94, 0.7)';
+        curveCtx.lineWidth = 1;
+
+        // Vertical line to X axis
+        curveCtx.beginPath();
+        curveCtx.moveTo(currX, currY);
+        curveCtx.lineTo(currX, h - paddingBottom);
+        curveCtx.stroke();
+
+        // Horizontal line to Y axis
+        curveCtx.beginPath();
+        curveCtx.moveTo(currX, currY);
+        curveCtx.lineTo(paddingLeft, currY);
+        curveCtx.stroke();
+
+        curveCtx.setLineDash([]); // Reset dash
+
+        // Glowing outer pulse ring
+        curveCtx.beginPath();
+        curveCtx.arc(currX, currY, 9, 0, Math.PI * 2);
+        curveCtx.fillStyle = 'rgba(244, 63, 94, 0.25)';
+        curveCtx.fill();
+
+        // Core dot
+        curveCtx.beginPath();
+        curveCtx.arc(currX, currY, 5, 0, Math.PI * 2);
+        curveCtx.fillStyle = '#f43f5e'; // Bright Rose/Red
+        curveCtx.fill();
+        curveCtx.strokeStyle = '#ffffff';
+        curveCtx.lineWidth = 2;
+        curveCtx.stroke();
+
+        // Current Active Tag Text on Graph
+        curveCtx.fillStyle = '#ffffff';
+        curveCtx.font = 'bold 10px JetBrains Mono';
+        curveCtx.textAlign = currX > w - 100 ? 'right' : 'left';
+        let tagX = currX > w - 100 ? currX - 12 : currX + 12;
+        curveCtx.fillText(`A=${currentA} (${currentBE.toFixed(2)} MeV)`, tagX, currY - 4);
+      }
+    }
+
+    curveCanvas.addEventListener('mousemove', (e) => {
+      const rect = curveCanvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const y = e.clientY - rect.top;
+
+      const w = curveCanvas.width;
+      const h = curveCanvas.height;
+      const paddingLeft = 45;
+      const paddingRight = 20;
+      const paddingTop = 25;
+      const paddingBottom = 30;
+
+      const plotW = w - paddingLeft - paddingRight;
+
+      if (x >= paddingLeft && x <= w - paddingRight && y >= paddingTop && y <= h - paddingBottom) {
+        const hoverA = Math.round(((x - paddingLeft) / plotW) * 260);
+        if (hoverA >= 1 && hoverA <= 260) {
+          let approxZ = Math.round(hoverA / (1 + 0.0077 * Math.pow(hoverA, 2/3)));
+          let res = calculateNuclearProperties(approxZ, hoverA - approxZ);
+
+          tooltip.style.display = 'block';
+          tooltip.style.left = (x + 10) + 'px';
+          tooltip.style.top = (y - 30) + 'px';
+          tooltip.innerHTML = `<strong>A = ${hoverA}</strong> (${approxZ}p, ${hoverA - approxZ}n)<br/>BE/A: ${res.bindingPerA.toFixed(2)} MeV`;
+          return;
+        }
+      }
+      tooltip.style.display = 'none';
+    });
+
+    curveCanvas.addEventListener('mouseleave', () => {
+      tooltip.style.display = 'none';
+    });
+
+    // Click on curve to select nearest mass A nuclide
+    curveCanvas.addEventListener('click', (e) => {
+      const rect = curveCanvas.getBoundingClientRect();
+      const x = e.clientX - rect.left;
+      const w = curveCanvas.width;
+      const paddingLeft = 45;
+      const paddingRight = 20;
+      const plotW = w - paddingLeft - paddingRight;
+
+      if (x >= paddingLeft && x <= w - paddingRight) {
+        const targetA = Math.round(((x - paddingLeft) / plotW) * 260);
+        if (targetA >= 1) {
+          let z = Math.max(1, Math.round(targetA / (1 + 0.0077 * Math.pow(targetA, 2/3))));
+          let n = Math.max(0, targetA - z);
+          setNuclide(z, n);
+        }
+      }
+    });
+
+    function setNuclide(z, n) {
+      zSlider.value = z;
+      nSlider.value = n;
+      update();
+    }
+
+    // Event listeners
+    zSlider.addEventListener('input', update);
+    nSlider.addEventListener('input', update);
+    vectorsToggle.addEventListener('change', update);
+    motionToggle.addEventListener('change', update);
+
+    update();
+    drawNucleus();
+  </script>
+</body>
+</html>

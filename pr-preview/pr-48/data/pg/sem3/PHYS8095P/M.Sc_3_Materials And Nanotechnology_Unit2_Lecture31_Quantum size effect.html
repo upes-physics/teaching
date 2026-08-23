@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quantum Confinement Explorer v5.0</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root { --accent: #0088cc; --bg: #f5f5f7; --text: #1d1d1f; --panel: rgba(255, 255, 255, 0.9); --grid: #d2d2d7; }
+        body { margin: 0; background: var(--bg); color: var(--text); font-family: 'Segoe UI', sans-serif; overflow: hidden; }
+        
+        #ui-layer { position: absolute; z-index: 100; width: 100%; height: 100%; pointer-events: none; }
+        .interactive { pointer-events: auto; }
+
+        /* Panels */
+        #controls { position: absolute; top: 20px; right: 20px; width: 300px; background: var(--panel); padding: 20px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); backdrop-filter: blur(10px); }
+        
+        /* Visualization Column (Left) */
+        #viz-column { position: absolute; bottom: 20px; left: 20px; width: 380px; display: flex; flex-direction: column; gap: 15px; }
+        
+        .panel-box { background: var(--panel); padding: 15px; border-radius: 12px; box-shadow: 0 4px 12px rgba(0,0,0,0.1); border: 1px solid rgba(0,0,0,0.05); }
+        
+        /* Band Diagram Styling */
+        #band-container { height: 180px; position: relative; overflow: hidden; display: flex; justify-content: center; align-items: center; }
+        .band { position: absolute; width: 60%; height: 40px; border-radius: 4px; display: flex; align-items: center; justify-content: center; font-weight: bold; color: white; font-size: 0.8rem; transition: transform 0.3s ease-out; }
+        #cb { background: linear-gradient(to bottom, #4fc3f7, #0088cc); top: 20px; border: 1px solid #005f99; }
+        #vb { background: linear-gradient(to bottom, #ff5252, #b71c1c); bottom: 20px; border: 1px solid #7f0000; }
+        .band-label { position: absolute; left: 10px; font-size: 0.7rem; color: #86868b; font-weight: bold; }
+
+        /* Theory Tab */
+        #theory-panel { position: absolute; top: 0; left: -450px; width: 400px; height: 100%; background: white; box-shadow: 5px 0 15px rgba(0,0,0,0.05); padding: 40px; transition: left 0.5s ease; overflow-y: auto; z-index: 200; border-right: 1px solid var(--grid); }
+        #theory-panel.open { left: 0; }
+        #theory-toggle { position: absolute; top: 20px; left: 20px; background: var(--accent); color: white; border: none; padding: 10px 20px; border-radius: 20px; cursor: pointer; font-weight: bold; z-index: 201; pointer-events: auto; }
+        
+        .math { font-family: "Times New Roman", serif; background: #f9f9f9; padding: 10px; border-radius: 5px; display: block; margin: 10px 0; border-left: 3px solid var(--accent); }
+
+        /* Stats */
+        .stat-row { display: flex; justify-content: space-between; margin: 10px 0; border-bottom: 1px solid var(--grid); padding-bottom: 5px; }
+        .stat-label { color: #86868b; font-size: 0.8rem; text-transform: uppercase; }
+        .stat-value { color: var(--text); font-family: monospace; font-weight: bold; }
+
+        input[type=range] { width: 100%; accent-color: var(--accent); cursor: pointer; margin: 15px 0; }
+        select { width: 100%; background: #fff; border: 1px solid var(--grid); padding: 8px; border-radius: 8px; outline: none; }
+
+        h1, h2, h3 { margin: 0 0 10px 0; color: var(--text); text-transform: uppercase; }
+        h1 { font-size: 1.1rem; }
+        h3 { font-size: 0.7rem; color: #86868b; letter-spacing: 1px; }
+        p { font-size: 0.9rem; line-height: 1.5; color: #3a3a3c; }
+    </style>
+</head>
+<body>
+
+<button id="theory-toggle" onclick="toggleTheory()">Physics Theory</button>
+
+<div id="theory-panel" class="interactive">
+    <h2>Quantum Confinement</h2>
+    <p>As a semiconductor particle's size decreases below its <b>Exciton Bohr Radius</b>, electrons and holes become spatially confined, much like a particle in a box.</p>
+    
+    <h2>The Brus Equation</h2>
+    <div class="math">
+        E_{gap} = E_{bulk} + \frac{h^2}{8R^2} \left( \frac{1}{m_e^*} + \frac{1}{m_h^*} \right)
+    </div>
+    <p>This explains the blue-shift in emission spectra as the dot radius (R) gets smaller.</p>
+</div>
+
+<div id="ui-layer">
+    <div id="viz-column">
+        <div class="panel-box interactive">
+            <h3>Band Diagram (Energy vs Momentum space)</h3>
+            <div id="band-container">
+                <span class="band-label" style="top: 10px;">CONDUCTION BAND (E<sub>c</sub>)</span>
+                <div id="cb" class="band">Unoccupied</div>
+                <div id="vb" class="band">Occupied</div>
+                <span class="band-label" style="bottom: 10px;">VALENCE BAND (E<sub>v</sub>)</span>
+            </div>
+        </div>
+        
+        <div class="panel-box interactive">
+            <h3>Energy Gap vs. Size</h3>
+            <div style="height: 180px;">
+                <canvas id="egChart"></canvas>
+            </div>
+        </div>
+    </div>
+
+    <div id="controls" class="interactive">
+        <h1>QD Simulation</h1>
+        <label class="stat-label">Semiconductor</label>
+        <select id="matSelect" onchange="update()">
+            <option value="CdSe">CdSe (Cadmium Selenide)</option>
+            <option value="InP">InP (Indium Phosphide)</option>
+            <option value="PbS">Lead Sulfide (PbS)</option>
+            <option value="ZnO">Zinc Oxide (ZnO)</option>
+        </select>
+
+        <div style="margin-top:20px">
+            <label class="stat-label">Diameter: <span id="d-label" style="color:var(--accent)">5.0</span> nm</label>
+            <input type="range" id="radiusSlider" min="1.5" max="15" step="0.1" value="5" oninput="update()">
+        </div>
+
+        <div class="stat-row"><span class="stat-label">Bandgap</span><span id="eg-val" class="stat-value">--</span></div>
+        <div class="stat-row"><span class="stat-label">Emission λ</span><span id="wl-val" class="stat-value">--</span></div>
+    </div>
+</div>
+
+<script>
+/** 1. DATA & PHYSICS **/
+const MAT_DATA = {
+    'CdSe': { eg: 1.74, me: 0.13, mh: 0.45, bohr: 5.6 },
+    'InP':  { eg: 1.35, me: 0.07, mh: 0.60, bohr: 15.0 },
+    'PbS':  { eg: 0.41, me: 0.08, mh: 0.08, bohr: 18.0 },
+    'ZnO':  { eg: 3.37, me: 0.24, mh: 0.59, bohr: 2.3 }
+};
+
+const h = 6.626e-34, e = 1.602e-19, m0 = 9.11e-31;
+
+function getPhysics(D_nm, matKey) {
+    const m = MAT_DATA[matKey];
+    const R_m = (D_nm / 2) * 1e-9;
+    const invM_eff = (1/(m.me * m0) + 1/(m.mh * m0));
+    const confinement = (Math.pow(h, 2) / (8 * Math.pow(R_m, 2)) * (invM_eff)) / e;
+    const totalEg = m.eg + confinement;
+    return { 
+        eg: totalEg, 
+        conf: confinement, 
+        wl: 1240 / totalEg, 
+        color: wlToHex(1240 / totalEg) 
+    };
+}
+
+function wlToHex(wl) {
+    if (wl < 440) return '#4b0082'; if (wl < 490) return '#0000ff';
+    if (wl < 550) return '#00aa00'; if (wl < 590) return '#ffcc00';
+    if (wl < 650) return '#ff8c00'; return '#ff0000';
+}
+
+function toggleTheory() {
+    document.getElementById('theory-panel').classList.toggle('open');
+}
+
+/** 2. THREE.JS SCENE **/
+const scene = new THREE.Scene();
+scene.background = new THREE.Color(0xf5f5f7);
+const camera = new THREE.PerspectiveCamera(45, window.innerWidth/window.innerHeight, 0.1, 1000);
+const renderer = new THREE.WebGLRenderer({ antialias: true });
+renderer.setSize(window.innerWidth, window.innerHeight);
+document.body.appendChild(renderer.domElement);
+
+const ambient = new THREE.AmbientLight(0xffffff, 1.2);
+scene.add(ambient);
+const directional = new THREE.DirectionalLight(0xffffff, 2);
+directional.position.set(5, 10, 7);
+scene.add(directional);
+
+const qdGroup = new THREE.Group();
+scene.add(qdGroup);
+
+const core = new THREE.Mesh(new THREE.SphereGeometry(1, 64, 64), new THREE.MeshStandardMaterial({ color: 0x333333, roughness: 0.8 }));
+const glow = new THREE.Mesh(new THREE.SphereGeometry(1.05, 32, 32), new THREE.MeshBasicMaterial({ color: 0x0088cc, transparent: true, opacity: 0.4, wireframe: true }));
+qdGroup.add(core, glow);
+
+/** 3. CHART & BAND DIAGRAM **/
+let egChart;
+const trackerPoint = { x: 5, y: 0 };
+
+function initChart() {
+    const ctx = document.getElementById('egChart').getContext('2d');
+    const pointTrackerPlugin = {
+        id: 'pointTracker',
+        afterDatasetsDraw(chart) {
+            const { ctx, scales: { x, y } } = chart;
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(x.getPixelForValue(trackerPoint.x), y.getPixelForValue(trackerPoint.y), 6, 0, 2 * Math.PI);
+            ctx.fillStyle = '#ff3b30';
+            ctx.fill();
+            ctx.stroke();
+            ctx.restore();
+        }
+    };
+
+    egChart = new Chart(ctx, {
+        type: 'line',
+        data: { labels: [], datasets: [{ data: [], borderColor: '#0088cc', pointRadius: 0, fill: false, tension: 0.3 }] },
+        options: { 
+            responsive: true, maintainAspectRatio: false, 
+            scales: { 
+                y: { ticks: { color: '#86868b' }, title: {display: true, text: 'Energy (eV)'} }, 
+                x: { ticks: { color: '#86868b' }, title: {display: true, text: 'D (nm)'} } 
+            },
+            plugins: { legend: { display: false } }
+        },
+        plugins: [pointTrackerPlugin]
+    });
+}
+
+function update() {
+    const dVal = parseFloat(document.getElementById('radiusSlider').value);
+    const mat = document.getElementById('matSelect').value;
+    const phys = getPhysics(dVal, mat);
+
+    // Labels
+    document.getElementById('d-label').innerText = dVal.toFixed(1);
+    document.getElementById('eg-val').innerText = phys.eg.toFixed(2) + " eV";
+    document.getElementById('wl-val').innerText = Math.round(phys.wl) + " nm";
+
+    // 3D Scale
+    const scale = dVal / 4;
+    gsap.to(qdGroup.scale, { x: scale, y: scale, z: scale, duration: 0.3 });
+    glow.material.color.set(phys.color);
+
+    // Band Diagram Animation
+    const cbShift = -(phys.conf * 15); // Scale energy to pixels
+    const vbShift = (phys.conf * 15);
+    document.getElementById('cb').style.transform = `translateY(${cbShift}px)`;
+    document.getElementById('vb').style.transform = `translateY(${vbShift}px)`;
+
+    // Chart Update
+    trackerPoint.x = dVal;
+    trackerPoint.y = phys.eg;
+    const dRange = Array.from({length: 30}, (_, i) => 1.5 + i * 0.5);
+    egChart.data.labels = dRange;
+    egChart.data.datasets[0].data = dRange.map(d => getPhysics(d, mat).eg);
+    egChart.update('none');
+}
+
+/** 4. INTERACTION **/
+window.addEventListener('mousedown', () => {
+    const phys = getPhysics(parseFloat(document.getElementById('radiusSlider').value), document.getElementById('matSelect').value);
+    for(let i=0; i<6; i++) {
+        const photon = new THREE.Mesh(new THREE.SphereGeometry(0.1, 8, 8), new THREE.MeshBasicMaterial({ color: phys.color }));
+        scene.add(photon);
+        gsap.to(photon.position, {
+            x: (Math.random() - 0.5) * 15, y: (Math.random() - 0.5) * 15, z: (Math.random() - 0.5) * 15,
+            duration: 1, onComplete: () => scene.remove(photon)
+        });
+    }
+});
+
+window.addEventListener('resize', () => {
+    camera.aspect = window.innerWidth / window.innerHeight;
+    camera.updateProjectionMatrix();
+    renderer.setSize(window.innerWidth, window.innerHeight);
+});
+
+camera.position.set(0, 2, 12);
+initChart();
+update();
+
+function animate() {
+    requestAnimationFrame(animate);
+    qdGroup.rotation.y += 0.005;
+    renderer.render(scene, camera);
+}
+animate();
+</script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+{
+  "courseCode": "PHYS XXXX",
+  "courseName": "Optics",
+  "stream": "BSc Physics",
+  "semester": "1",
+  "faculty": {
+    "name": "Dr. Debosmita Banerjee",
+    "email": "debosmita.banerjee@ddn.upes.ac.in"
+  },
+  "simulators": [
+    {
+      "name": "Interference",
+      "desc": "Standalone simulator for Interference",
+      "link": "BSc I_Optics_Unit 1_Interference_simulator.html",
+      "uploadFileLink": "BSc I_Optics_Unit 1_Interference_simulator.html"
+    },
+    {
+      "name": "Michelson Interferometer",
+      "desc": "Standalone simulator for Michelson Interferometer",
+      "link": "BSc I_Optics_Unit 1_Michelson Interferometer_simulator.html",
+      "uploadFileLink": "BSc I_Optics_Unit 1_Michelson Interferometer_simulator.html"
+    },
+    {
+      "name": "Newton's Ring",
+      "desc": "Standalone simulator for Newton's Ring",
+      "link": "BSc I_Optics_Unit 1_Newton's Ring_simulator.html",
+      "uploadFileLink": "BSc I_Optics_Unit 1_Newton's Ring_simulator.html"
+    },
+    {
+      "name": "Polarization",
+      "desc": "Standalone simulator for Polarization",
+      "link": "BSc I_Optics_Unit 1_Polarization_simulator.html",
+      "uploadFileLink": "BSc I_Optics_Unit 1_Polarization_simulator.html"
+    },
+    {
+      "name": "Young's Double Slit",
+      "desc": "Standalone simulator for Young's Double Slit Experiment",
+      "link": "BSc I_Optics_Unit 1_Young's Double Slit_simulator.html",
+      "uploadFileLink": "BSc I_Optics_Unit 1_Young's Double Slit_simulator.html"
+    },
+    {
+      "name": "Fraunhofer Diffraction",
+      "desc": "Standalone simulator for Fraunhofer Diffraction",
+      "link": "BSc I_Optics_Unit 2_Fraunhofer Diffraction_simulator.html",
+      "uploadFileLink": "BSc I_Optics_Unit 2_Fraunhofer Diffraction_simulator.html"
+    },
+    {
+      "name": "Laurent's Half Shade Polarimeter",
+      "desc": "Standalone simulator for Laurent's Half Shade Polarimeter",
+      "link": "BSc I_Optics_Unit 3_Laurent's Half Shade Polarimeter_simulator.html",
+      "uploadFileLink": "BSc I_Optics_Unit 3_Laurent's Half Shade Polarimeter_simulator.html"
+    },
+    {
+      "name": "Malus's Law",
+      "desc": "Standalone simulator for Malus's Law",
+      "link": "BSc I_Optics_Unit 3_Malus Law Polarization_simulator.html",
+      "uploadFileLink": "BSc I_Optics_Unit 3_Malus Law Polarization_simulator.html"
+    },
+    {
+      "name": "Fibre Optics Acceptance Cone",
+      "desc": "Standalone simulator for Fibre Optics Acceptance Cone",
+      "link": "BSc I_Optics_Unit 4_Fibre Optics Acceptance Cone_simulator.html",
+      "uploadFileLink": "BSc I_Optics_Unit 4_Fibre Optics Acceptance Cone_simulator.html"
+    },
+    {
+      "name": "Ruby Laser",
+      "desc": "Standalone simulator for Ruby Laser",
+      "link": "BSc I_Optics_Unit 4_Ruby Laser_simulator.html",
+      "uploadFileLink": "BSc I_Optics_Unit 4_Ruby Laser_simulator.html"
+    }
+  ]
+}
