@@ -17,7 +17,7 @@
     {
       "name": "Damped Harmonic Oscillator",
       "desc": "Solver for second order differential equation with variable frequencies and damping factors.",
-      "link": "",
+      "link": "damped_oscillator_animate.html",
       "uploadFileLink": "damped_oscillator_animate.html"
     },
     {
