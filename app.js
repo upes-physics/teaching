@@ -39,7 +39,8 @@ const catalog = {
 	description: "Move beyond the fundamentals through advanced theory, computation, and research-led study.",
 	coursesBySemester: {
 	    1: [
-		{ code: "", name: "Electrodynamics", description: "", dataCard: "data/pg/sem1/electrodynamics/datacard.json" }
+		{ code: "", name: "Electrodynamics", description: "", dataCard: "data/pg/sem1/electrodynamics/datacard.json" },
+		{ code: "CLM7001", name: "Classical Mechanics", description: "", dataCard: "data/pg/sem1/classicalmechanics/datacard.json" }
 	    ],
 	    2: [],
 	    3: [
