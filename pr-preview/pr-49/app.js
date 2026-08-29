@@ -40,7 +40,7 @@ const catalog = {
 	coursesBySemester: {
 	    1: [
 		{ code: "", name: "Electrodynamics", description: "", dataCard: "data/pg/sem1/electrodynamics/datacard.json" },
-		{ code: "", name: "Classical Mechanics", description: "", dataCard: "data/pg/sem1/classicalmechanics/datacard.json" }
+		{ code: "CLM7001", name: "Classical Mechanics", description: "", dataCard: "data/pg/sem1/classicalmechanics/datacard.json" }
 	    ],
 	    2: [],
 	    3: [
