@@ -21,7 +21,7 @@ const catalog = {
 	    ],
 	    5: [
 		{id : "qmbsc", code: "PHYS3058", name: "Quantum Mechanics and Application", description: "", dataCard: "data/ug/sem5/phys3058/datacard.json"},
-		{id : "qmbsc", code: "PHYS3059", name: "Atomic and Molecular Physics", description: "", dataCard: "data/ug/sem5/phys3059/datacard.json"}
+		{id : "atomicbsc", code: "PHYS3059", name: "Atomic and Molecular Physics", description: "", dataCard: "data/ug/sem5/phys3059/datacard.json"}
 	    ],
 	    6: [],
 	    7: [
