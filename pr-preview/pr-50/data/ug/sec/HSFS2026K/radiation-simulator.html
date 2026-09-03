@@ -1,0 +1,293 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>RadSim Explorer - Radiation Simulator</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.6.0/css/all.min.css">
+  <style>
+    body { font-family: 'Segoe UI', system-ui, sans-serif; }
+    canvas { image-rendering: crisp-edges; }
+  </style>
+</head>
+<body class="bg-gray-950 text-gray-100 min-h-screen">
+  <div class="max-w-7xl mx-auto p-4">
+    <header class="flex justify-between items-center mb-6">
+      <h1 class="text-3xl font-bold text-cyan-400">RadSim Explorer</h1>
+      <div class="flex gap-3">
+        <button onclick="resetSimulation()" 
+                class="px-4 py-2 bg-gray-800 hover:bg-gray-700 rounded-lg flex items-center gap-2">
+          <i class="fas fa-redo"></i> Reset
+        </button>
+      </div>
+    </header>
+
+    <div class="grid grid-cols-12 gap-6">
+      <!-- Left Sidebar: Radiation Types -->
+      <div class="col-span-3 bg-gray-900 rounded-2xl p-5">
+        <h2 class="text-lg font-semibold mb-4 text-cyan-300">Radiation Type</h2>
+        <div class="space-y-3" id="radiation-list"></div>
+      </div>
+
+      <!-- Main Visualizer -->
+      <div class="col-span-6 bg-gray-900 rounded-2xl p-6">
+        <div class="flex justify-between mb-4">
+          <h2 class="text-xl font-semibold" id="current-radiation">Alpha Particles</h2>
+          <div class="text-sm text-gray-400">Interactive Simulation</div>
+        </div>
+        
+        <canvas id="canvas" width="700" height="380" 
+                class="bg-black border border-gray-700 rounded-xl"></canvas>
+
+        <!-- Controls -->
+        <div class="mt-6 grid grid-cols-2 gap-6">
+          <div>
+            <label class="block text-sm mb-2">Energy (MeV)</label>
+            <input type="range" id="energy-slider" min="1" max="10" step="0.1" value="5"
+                   class="w-full accent-cyan-500">
+            <div class="flex justify-between text-xs text-gray-400">
+              <span>1</span><span id="energy-value">5.0</span><span>10</span>
+            </div>
+          </div>
+          <div>
+            <label class="block text-sm mb-2">Material Thickness (cm)</label>
+            <input type="range" id="thickness-slider" min="0.1" max="20" step="0.1" value="5"
+                   class="w-full accent-cyan-500">
+            <div class="flex justify-between text-xs text-gray-400">
+              <span>0.1</span><span id="thickness-value">5.0</span><span>20</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Right Panel: Information -->
+      <div class="col-span-3 bg-gray-900 rounded-2xl p-6 space-y-6">
+        <div>
+          <h3 class="text-lg font-semibold mb-3 text-cyan-300">Properties</h3>
+          <div id="properties" class="space-y-4 text-sm"></div>
+        </div>
+
+        <div>
+          <h3 class="text-lg font-semibold mb-3 text-cyan-300">Safety Measures</h3>
+          <div id="safety" class="text-sm text-amber-300"></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    // Radiation Data
+    const radiationData = {
+      alpha: {
+        name: "Alpha Particles",
+        color: "#f87171",
+        icon: "⚡",
+        range: { air: "4-8 cm", paper: "0.05 mm", tissue: "< 0.1 mm" },
+        energyLoss: "Extremely High",
+        mechanism: "Coulomb Ionization",
+        safety: "External: Stopped by skin/paper. Internal exposure is highly dangerous."
+      },
+      beta: {
+        name: "Beta Particles",
+        color: "#60a5fa",
+        icon: "⚡",
+        range: { air: "1-10 m", plastic: "2-5 mm", aluminum: "1-3 mm" },
+        energyLoss: "Medium",
+        mechanism: "Ionization + Bremsstrahlung",
+        safety: "Use plastic/acrylic shielding. Avoid lead alone (produces X-rays)."
+      },
+      gamma: {
+        name: "Gamma Rays",
+        color: "#c084fc",
+        icon: "🌊",
+        range: { air: "Hundreds of meters", concrete: "5-10 cm", lead: "0.5-1 cm" },
+        energyLoss: "Low (per cm)",
+        mechanism: "Photoelectric, Compton, Pair Production",
+        safety: "Time, Distance, Shielding (Lead/Concrete). Use dosimeter."
+      },
+      neutron: {
+        name: "Neutrons",
+        color: "#4ade80",
+        icon: "🟢",
+        range: { water: "Good moderator", concrete: "Moderate", boron: "Excellent absorber" },
+        energyLoss: "High biological damage",
+        mechanism: "Elastic scattering + Capture",
+        safety: "Water + Boron/Cadmium shielding. Special neutron dosimeters required."
+      }
+    };
+
+    let currentRadiation = 'alpha';
+    let animationFrame;
+
+    // Canvas Setup
+    const canvas = document.getElementById('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // Tailwind script already loaded
+    function initRadiationButtons() {
+      const container = document.getElementById('radiation-list');
+      Object.keys(radiationData).forEach(key => {
+        const rad = radiationData[key];
+        const btn = document.createElement('button');
+        btn.className = `w-full p-4 rounded-xl flex items-center gap-4 hover:bg-gray-800 transition-all ${key === currentRadiation ? 'bg-gray-800 ring-2 ring-cyan-400' : ''}`;
+        btn.innerHTML = `
+          <span class="text-3xl">${rad.icon}</span>
+          <div class="text-left">
+            <div class="font-medium">${rad.name}</div>
+            <div class="text-xs text-gray-400">${rad.mechanism}</div>
+          </div>
+        `;
+        btn.onclick = () => {
+          currentRadiation = key;
+          initRadiationButtons();
+          updateUI();
+          startSimulation();
+        };
+        container.appendChild(btn);
+      });
+    }
+
+    function updateUI() {
+      const rad = radiationData[currentRadiation];
+      document.getElementById('current-radiation').textContent = rad.name;
+      document.getElementById('current-radiation').style.color = rad.color;
+
+      // Properties
+      const propsHTML = `
+        <div class="grid grid-cols-2 gap-3 text-xs">
+          <div class="bg-gray-800 p-3 rounded-lg">
+            <div class="text-gray-400">Mechanism</div>
+            <div>${rad.mechanism}</div>
+          </div>
+          <div class="bg-gray-800 p-3 rounded-lg">
+            <div class="text-gray-400">Energy Loss</div>
+            <div>${rad.energyLoss}</div>
+          </div>
+        </div>
+        <div class="bg-gray-800 p-4 rounded-xl">
+          <div class="text-gray-400 mb-2">Approximate Range</div>
+          <div class="space-y-1">
+            ${Object.entries(rad.range).map(([mat, rng]) => `
+              <div class="flex justify-between">
+                <span class="capitalize">${mat}</span>
+                <span class="font-mono">${rng}</span>
+              </div>
+            `).join('')}
+          </div>
+        </div>
+      `;
+      document.getElementById('properties').innerHTML = propsHTML;
+
+      // Safety
+      document.getElementById('safety').innerHTML = `
+        <div class="bg-amber-950 border border-amber-800 p-4 rounded-xl">
+          ${rad.safety}
+        </div>
+      `;
+    }
+
+    // Simple Particle Simulation
+    let particles = [];
+
+    function startSimulation() {
+      if (animationFrame) cancelAnimationFrame(animationFrame);
+      particles = [];
+      animate();
+    }
+
+    function animate() {
+      ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+      const rad = radiationData[currentRadiation];
+      const energy = parseFloat(document.getElementById('energy-slider').value);
+      const thickness = parseFloat(document.getElementById('thickness-slider').value);
+
+      // Draw Material Slab
+      const slabX = canvas.width * 0.55;
+      const slabWidth = Math.min(thickness * 8, 180);
+      ctx.fillStyle = '#334155';
+      ctx.fillRect(slabX, 80, slabWidth, 220);
+
+      ctx.strokeStyle = '#64748b';
+      ctx.lineWidth = 3;
+      ctx.strokeRect(slabX, 80, slabWidth, 220);
+
+      // Spawn new particles
+      if (Math.random() < 0.4) {
+        particles.push({
+          x: 80,
+          y: 100 + Math.random() * 200,
+          vx: 3.5 + Math.random() * 2,
+          life: 1.0,
+          color: rad.color
+        });
+      }
+
+      // Update and draw particles
+      for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx;
+        p.life -= 0.008;
+
+        // Interaction with material
+        if (p.x > slabX && p.x < slabX + slabWidth) {
+          p.vx *= 0.85; // slow down
+          if (Math.random() < 0.3) p.life -= 0.05; // ionization
+        }
+
+        if (p.life <= 0) {
+          particles.splice(i, 1);
+          continue;
+        }
+
+        // Draw particle trail
+        ctx.strokeStyle = p.color;
+        ctx.lineWidth = currentRadiation === 'alpha' ? 6 : 3;
+        ctx.globalAlpha = p.life;
+        ctx.beginPath();
+        ctx.moveTo(p.x - 15, p.y);
+        ctx.lineTo(p.x, p.y);
+        ctx.stroke();
+
+        // Particle head
+        ctx.fillStyle = p.color;
+        ctx.globalAlpha = 1;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, currentRadiation === 'alpha' ? 5 : 3, 0, Math.PI * 2);
+        ctx.fill();
+      }
+
+      animationFrame = requestAnimationFrame(animate);
+    }
+
+    function resetSimulation() {
+      document.getElementById('energy-slider').value = 5;
+      document.getElementById('thickness-slider').value = 5;
+      updateSliders();
+      startSimulation();
+    }
+
+    function updateSliders() {
+      document.getElementById('energy-value').textContent = parseFloat(document.getElementById('energy-slider').value).toFixed(1);
+      document.getElementById('thickness-value').textContent = parseFloat(document.getElementById('thickness-slider').value).toFixed(1);
+    }
+
+    // Event Listeners
+    document.getElementById('energy-slider').addEventListener('input', () => {
+      updateSliders();
+    });
+    document.getElementById('thickness-slider').addEventListener('input', () => {
+      updateSliders();
+    });
+
+    // Initialize
+    window.onload = () => {
+      initRadiationButtons();
+      updateUI();
+      updateSliders();
+      startSimulation();
+    };
+  </script>
+</body>
+</html>

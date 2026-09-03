@@ -1,0 +1,609 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Anharmonic Oscillator & Energy Levels</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* Tailwind slate-900 */
+            color: #f8fafc;
+            overflow-x: hidden;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            /* Subtle glow effect behind canvas */
+            box-shadow: inset 0 0 50px rgba(0, 0, 0, 0.5);
+            border-radius: 0.75rem;
+        }
+
+        /* Custom Scrollbar for energy list */
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.1); 
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #475569; 
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #64748b; 
+        }
+
+        /* Range Slider Styling */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #38bdf8;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 0 10px rgba(56, 189, 248, 0.5);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #334155;
+            border-radius: 2px;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col p-4 md:p-6 lg:p-8">
+
+    <header class="mb-6 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+        <div>
+            <h1 class="text-3xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-sky-400 to-indigo-400">
+                Anharmonic Oscillator
+            </h1>
+            <p class="text-slate-400 mt-1 max-w-2xl text-sm">
+                Simulation of a particle in a Morse Potential well. Notice how the energy levels get closer together as energy increases, unlike the uniform spacing of a simple harmonic oscillator.
+            </p>
+        </div>
+        <div class="flex gap-3">
+            <button id="toggleHarmonicBtn" class="px-4 py-2 text-sm rounded-lg glass-panel hover:bg-slate-700 transition-colors border border-slate-600 flex items-center gap-2">
+                <i class="fa-solid fa-eye"></i> Show Harmonic
+            </button>
+        </div>
+    </header>
+
+    <main class="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Canvas Container -->
+        <div class="lg:col-span-2 glass-panel rounded-xl relative min-h-[400px] lg:min-h-[500px] flex flex-col">
+            <div class="absolute top-4 left-4 z-10 flex gap-2">
+                <div class="bg-slate-800/80 px-3 py-1 rounded text-xs font-mono text-sky-400 border border-slate-700 shadow-sm">
+                    Morse Potential: V(x) = D(1 - e<sup>-αx</sup>)²
+                </div>
+            </div>
+            
+            <div class="flex-1 relative p-2">
+                <canvas id="simCanvas"></canvas>
+            </div>
+
+            <!-- Playback Controls -->
+            <div class="p-4 border-t border-slate-700/50 flex items-center justify-between bg-slate-800/30 rounded-b-xl">
+                <div class="flex items-center gap-4 w-full max-w-md">
+                    <button id="playPauseBtn" class="w-10 h-10 flex items-center justify-center rounded-full bg-sky-500 hover:bg-sky-400 text-white shadow-lg shadow-sky-500/30 transition-all">
+                        <i class="fa-solid fa-pause"></i>
+                    </button>
+                    <button id="resetBtn" class="w-10 h-10 flex items-center justify-center rounded-full glass-panel hover:bg-slate-700 transition-all text-slate-300">
+                        <i class="fa-solid fa-rotate-left"></i>
+                    </button>
+                    <div class="flex-1 flex flex-col gap-1">
+                        <div class="flex justify-between text-xs font-medium text-slate-300">
+                            <span>Quantum State (n)</span>
+                            <span id="nStateVal" class="text-sky-400 font-mono">0</span>
+                        </div>
+                        <input type="range" id="nStateSlider" min="0" max="10" step="1" value="0">
+                    </div>
+                </div>
+                
+                <div class="hidden sm:block text-right text-xs text-slate-400 font-mono">
+                    System Energy: <span id="sysEnergyVal" class="text-white">0.00</span>
+                </div>
+            </div>
+        </div>
+
+        <!-- Controls & Info Panel -->
+        <div class="flex flex-col gap-6">
+            
+            <!-- Parameters -->
+            <div class="glass-panel rounded-xl p-5">
+                <h2 class="text-lg font-semibold mb-4 text-slate-200 border-b border-slate-700 pb-2">Parameters</h2>
+                
+                <div class="space-y-5">
+                    <!-- Dissociation Energy -->
+                    <div class="flex flex-col gap-1">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-slate-300" title="Well depth">Dissociation Energy (D)</span>
+                            <span id="D_val" class="font-mono text-sky-300">100</span>
+                        </div>
+                        <input type="range" id="D_slider" min="20" max="200" step="1" value="100">
+                    </div>
+
+                    <!-- Width Parameter -->
+                    <div class="flex flex-col gap-1">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-slate-300" title="Controls well width">Width Parameter (α)</span>
+                            <span id="alpha_val" class="font-mono text-sky-300">0.50</span>
+                        </div>
+                        <input type="range" id="alpha_slider" min="0.2" max="1.0" step="0.05" value="0.5">
+                    </div>
+
+                    <!-- Mass -->
+                    <div class="flex flex-col gap-1">
+                        <div class="flex justify-between text-sm">
+                            <span class="text-slate-300">Particle Mass (m)</span>
+                            <span id="m_val" class="font-mono text-sky-300">1.0</span>
+                        </div>
+                        <input type="range" id="m_slider" min="0.1" max="5.0" step="0.1" value="1.0">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Energy Levels List -->
+            <div class="glass-panel rounded-xl p-5 flex-1 flex flex-col min-h-[250px] max-h-[400px]">
+                <h2 class="text-lg font-semibold mb-3 text-slate-200 border-b border-slate-700 pb-2 flex justify-between">
+                    <span>Energy Levels</span>
+                    <span class="text-xs font-normal text-slate-400 self-end mb-1">E<sub>n</sub> / ΔE</span>
+                </h2>
+                
+                <div class="flex-1 overflow-y-auto custom-scrollbar pr-2 space-y-2" id="energyList">
+                    <!-- Energy items injected via JS -->
+                </div>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+
+        // Physics Parameters
+        let D = 100;      // Dissociation energy
+        let alpha = 0.5;  // Width parameter
+        let m = 1.0;      // Mass
+        let n_state = 0;  // Current quantum state
+        let max_n = 0;    // Max bound states
+        
+        // Simulation State
+        let isPlaying = true;
+        let p_x = 0;      // Particle position
+        let p_v = 0;      // Particle velocity
+        let showHarmonic = false;
+
+        // Viewport config (fixed coordinate system for stability)
+        const v_xMin = -3;
+        const v_xMax = 18;
+        const v_yMin = -10;
+        const v_yMax = 220;
+
+        // DOM Elements
+        const D_slider = document.getElementById('D_slider');
+        const D_val = document.getElementById('D_val');
+        const alpha_slider = document.getElementById('alpha_slider');
+        const alpha_val = document.getElementById('alpha_val');
+        const m_slider = document.getElementById('m_slider');
+        const m_val = document.getElementById('m_val');
+        const nStateSlider = document.getElementById('nStateSlider');
+        const nStateVal = document.getElementById('nStateVal');
+        const sysEnergyVal = document.getElementById('sysEnergyVal');
+        const energyList = document.getElementById('energyList');
+        const playPauseBtn = document.getElementById('playPauseBtn');
+        const resetBtn = document.getElementById('resetBtn');
+        const toggleHarmonicBtn = document.getElementById('toggleHarmonicBtn');
+
+        // Physics Helper Functions
+        function getOmega() {
+            // omega = alpha * sqrt(2 * D / m)
+            return alpha * Math.sqrt(2 * D / m);
+        }
+
+        function getEnergy(n) {
+            let w = getOmega();
+            // En = w(n + 0.5) - [w^2 / 4D] * (n + 0.5)^2   (assuming hbar = 1)
+            let term1 = w * (n + 0.5);
+            let term2 = ((w * w) / (4 * D)) * Math.pow(n + 0.5, 2);
+            return term1 - term2;
+        }
+
+        function getHarmonicEnergy(n) {
+            let w = getOmega();
+            return w * (n + 0.5);
+        }
+
+        function calculateMaxN() {
+            let w = getOmega();
+            // Limit is when dEn/dn = 0 --> n = (2D/w) - 0.5
+            let maxNFloat = (2 * D / w) - 0.5;
+            return Math.max(0, Math.floor(maxNFloat));
+        }
+
+        function getMorsePotential(x) {
+            let expTerm = Math.exp(-alpha * x);
+            return D * Math.pow(1 - expTerm, 2);
+        }
+
+        function getHarmonicPotential(x) {
+            // V = 1/2 k x^2, where k = m w^2 = 2 D alpha^2
+            return D * alpha * alpha * x * x;
+        }
+
+        function getForce(x) {
+            // F = -dV/dx = -2 * D * alpha * exp(-alpha*x) * (1 - exp(-alpha*x))
+            let expTerm = Math.exp(-alpha * x);
+            return -2 * D * alpha * expTerm * (1 - expTerm);
+        }
+
+        function getTurningPoints(E) {
+            // Solves D(1 - e^-ax)^2 = E
+            if (E >= D) E = D - 0.001; // Avoid NaN if exactly at dissociation limit
+            let sqrtTerm = Math.sqrt(E / D);
+            let xLeft = -Math.log(1 + sqrtTerm) / alpha;
+            let xRight = -Math.log(1 - sqrtTerm) / alpha;
+            return [xLeft, xRight];
+        }
+
+        function updateUIState() {
+            max_n = calculateMaxN();
+            
+            // Adjust slider max
+            nStateSlider.max = max_n;
+            
+            // Clamp current state if parameters changed drastically
+            if (n_state > max_n) {
+                n_state = max_n;
+                nStateSlider.value = n_state;
+            }
+            nStateVal.innerText = n_state;
+            
+            // Update parameter displays
+            D_val.innerText = D.toFixed(0);
+            alpha_val.innerText = alpha.toFixed(2);
+            m_val.innerText = m.toFixed(1);
+
+            let currentE = getEnergy(n_state);
+            sysEnergyVal.innerText = currentE.toFixed(2);
+
+            updateEnergyList();
+        }
+
+        function updateEnergyList() {
+            energyList.innerHTML = '';
+            let prevE = 0;
+            
+            for (let i = 0; i <= max_n; i++) {
+                let E = getEnergy(i);
+                let deltaE = i === 0 ? E : E - prevE;
+                
+                let isCurrent = (i === n_state);
+                
+                let item = document.createElement('div');
+                item.className = `p-2 rounded flex justify-between items-center cursor-pointer transition-colors border ${isCurrent ? 'bg-sky-900/40 border-sky-500/50 text-white' : 'hover:bg-slate-700/50 border-transparent text-slate-300'}`;
+                item.onclick = () => {
+                    nStateSlider.value = i;
+                    n_state = i;
+                    resetParticle();
+                    updateUIState();
+                };
+
+                let nBadge = `<span class="inline-block w-6 text-center rounded bg-slate-800 text-xs py-0.5 mr-2 font-mono ${isCurrent?'text-sky-400':'text-slate-400'}">n${i}</span>`;
+                
+                item.innerHTML = `
+                    <div class="flex items-center">
+                        ${nBadge}
+                        <span class="font-mono text-sm">${E.toFixed(1)}</span>
+                    </div>
+                    <div class="text-xs font-mono ${isCurrent ? 'text-sky-300' : 'text-slate-500'}">
+                        Δ ${deltaE.toFixed(1)}
+                    </div>
+                `;
+                energyList.appendChild(item);
+                
+                // Auto-scroll to selected
+                if (isCurrent) {
+                    item.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+                }
+
+                prevE = E;
+            }
+        }
+
+        function resetParticle() {
+            let E = getEnergy(n_state);
+            let tps = getTurningPoints(E);
+            p_x = tps[1]; // Start at right turning point
+            p_v = 0;
+        }
+
+        // Event Listeners
+        D_slider.addEventListener('input', (e) => { D = parseFloat(e.target.value); updateUIState(); resetParticle(); });
+        alpha_slider.addEventListener('input', (e) => { alpha = parseFloat(e.target.value); updateUIState(); resetParticle(); });
+        m_slider.addEventListener('input', (e) => { m = parseFloat(e.target.value); updateUIState(); resetParticle(); });
+        
+        nStateSlider.addEventListener('input', (e) => { 
+            n_state = parseInt(e.target.value); 
+            updateUIState(); 
+            resetParticle();
+        });
+
+        playPauseBtn.addEventListener('click', () => {
+            isPlaying = !isPlaying;
+            playPauseBtn.innerHTML = isPlaying ? '<i class="fa-solid fa-pause"></i>' : '<i class="fa-solid fa-play ml-1"></i>';
+            playPauseBtn.className = isPlaying 
+                ? "w-10 h-10 flex items-center justify-center rounded-full bg-sky-500 hover:bg-sky-400 text-white shadow-lg shadow-sky-500/30 transition-all"
+                : "w-10 h-10 flex items-center justify-center rounded-full bg-emerald-500 hover:bg-emerald-400 text-white shadow-lg shadow-emerald-500/30 transition-all";
+        });
+
+        resetBtn.addEventListener('click', resetParticle);
+
+        toggleHarmonicBtn.addEventListener('click', () => {
+            showHarmonic = !showHarmonic;
+            toggleHarmonicBtn.classList.toggle('text-sky-400', showHarmonic);
+            toggleHarmonicBtn.classList.toggle('border-sky-500', showHarmonic);
+        });
+
+        function resizeCanvas() {
+            // Handle high DPI displays for crisp rendering
+            const rect = canvas.parentElement.getBoundingClientRect();
+            canvas.width = rect.width * window.devicePixelRatio;
+            canvas.height = rect.height * window.devicePixelRatio;
+            ctx.scale(window.devicePixelRatio, window.devicePixelRatio);
+            canvas.style.width = rect.width + 'px';
+            canvas.style.height = rect.height + 'px';
+        }
+        window.addEventListener('resize', resizeCanvas);
+
+        // Coordinate mapping mappings
+        function getCanvasRect() {
+            return { w: canvas.width / window.devicePixelRatio, h: canvas.height / window.devicePixelRatio };
+        }
+
+        function toPx(x) {
+            const { w } = getCanvasRect();
+            return ((x - v_xMin) / (v_xMax - v_xMin)) * w;
+        }
+
+        function toPy(y) {
+            const { h } = getCanvasRect();
+            // Flip Y axis
+            return h - ((y - v_yMin) / (v_yMax - v_yMin)) * h;
+        }
+
+        function drawGrid() {
+            const { w, h } = getCanvasRect();
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.05)';
+            ctx.lineWidth = 1;
+
+            ctx.beginPath();
+            // Vertical lines
+            for (let x = Math.ceil(v_xMin); x <= v_xMax; x++) {
+                let px = toPx(x);
+                ctx.moveTo(px, 0);
+                ctx.lineTo(px, h);
+            }
+            // Horizontal lines (every 20 units)
+            for (let y = 0; y <= v_yMax; y += 20) {
+                let py = toPy(y);
+                ctx.moveTo(0, py);
+                ctx.lineTo(w, py);
+            }
+            ctx.stroke();
+
+            // Draw Axes
+            ctx.strokeStyle = 'rgba(255, 255, 255, 0.2)';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            
+            // X Axis (y=0)
+            let y0 = toPy(0);
+            ctx.moveTo(0, y0);
+            ctx.lineTo(w, y0);
+            
+            // Y Axis (x=0)
+            let x0 = toPx(0);
+            ctx.moveTo(x0, 0);
+            ctx.lineTo(x0, h);
+            
+            ctx.stroke();
+            
+            // Axis labels
+            ctx.fillStyle = 'rgba(255,255,255,0.4)';
+            ctx.font = '12px Inter';
+            ctx.fillText('x (Distance)', w - 70, y0 + 15);
+            ctx.fillText('V(x) Energy', x0 + 10, 20);
+        }
+
+        function simulate(dt) {
+            if (!isPlaying) return;
+            
+            // Sub-stepping for numerical stability using Velocity Verlet
+            const subSteps = 20;
+            const stepDt = dt / subSteps;
+            
+            for (let i = 0; i < subSteps; i++) {
+                let a1 = getForce(p_x) / m;
+                p_x += p_v * stepDt + 0.5 * a1 * stepDt * stepDt;
+                let a2 = getForce(p_x) / m;
+                p_v += 0.5 * (a1 + a2) * stepDt;
+            }
+        }
+
+        function render() {
+            const { w, h } = getCanvasRect();
+            ctx.clearRect(0, 0, w, h);
+
+            drawGrid();
+
+            // 1. Draw Harmonic Potential (Optional)
+            if (showHarmonic) {
+                ctx.beginPath();
+                ctx.strokeStyle = 'rgba(148, 163, 184, 0.3)'; // Slate 400
+                ctx.lineWidth = 2;
+                ctx.setLineDash([5, 5]);
+                for (let px = 0; px <= w; px += 2) {
+                    let x = v_xMin + (px / w) * (v_xMax - v_xMin);
+                    let y = getHarmonicPotential(x);
+                    let py = toPy(y);
+                    if (px === 0) ctx.moveTo(px, py);
+                    else ctx.lineTo(px, py);
+                }
+                ctx.stroke();
+                ctx.setLineDash([]);
+            }
+
+            // 2. Draw Morse Potential
+            ctx.beginPath();
+            ctx.strokeStyle = '#38bdf8'; // Sky 400
+            ctx.lineWidth = 3;
+            // Add subtle glow
+            ctx.shadowColor = '#38bdf8';
+            ctx.shadowBlur = 10;
+
+            for (let px = 0; px <= w; px += 2) {
+                let x = v_xMin + (px / w) * (v_xMax - v_xMin);
+                let y = getMorsePotential(x);
+                let py = toPy(y);
+                if (px === 0) ctx.moveTo(px, py);
+                else ctx.lineTo(px, py);
+            }
+            ctx.stroke();
+            
+            // Reset shadow
+            ctx.shadowBlur = 0;
+
+            // Draw Dissociation Energy Line (D)
+            ctx.beginPath();
+            ctx.strokeStyle = 'rgba(239, 68, 68, 0.5)'; // Red for dissociation limit
+            ctx.lineWidth = 1;
+            ctx.setLineDash([10, 5]);
+            let pyD = toPy(D);
+            ctx.moveTo(0, pyD);
+            ctx.lineTo(w, pyD);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.fillStyle = 'rgba(239, 68, 68, 0.8)';
+            ctx.fillText('Dissociation Limit (D)', 10, pyD - 5);
+
+            // 3. Draw Energy Levels
+            for (let i = 0; i <= max_n; i++) {
+                let E = getEnergy(i);
+                let py = toPy(E);
+                let tps = getTurningPoints(E);
+                
+                let pxLeft = toPx(tps[0]);
+                let pxRight = toPx(tps[1]);
+
+                ctx.beginPath();
+                if (i === n_state) {
+                    ctx.strokeStyle = '#facc15'; // Yellow for active state
+                    ctx.lineWidth = 2;
+                    ctx.shadowColor = '#facc15';
+                    ctx.shadowBlur = 5;
+                } else {
+                    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)';
+                    ctx.lineWidth = 1;
+                }
+                
+                // Keep lines within canvas bounds logically
+                pxLeft = Math.max(0, pxLeft);
+                pxRight = Math.min(w, pxRight);
+
+                ctx.moveTo(pxLeft, py);
+                ctx.lineTo(pxRight, py);
+                ctx.stroke();
+                ctx.shadowBlur = 0;
+
+                // Draw harmonic energy levels if enabled
+                if (showHarmonic) {
+                    let hE = getHarmonicEnergy(i);
+                    // Harmonic turning points: 1/2 k x^2 = E => x = sqrt(2E/k)
+                    let k = 2 * D * alpha * alpha;
+                    let hX = Math.sqrt(2 * hE / k);
+                    let hPy = toPy(hE);
+                    
+                    ctx.beginPath();
+                    ctx.strokeStyle = 'rgba(148, 163, 184, 0.4)';
+                    ctx.lineWidth = 1;
+                    ctx.moveTo(toPx(-hX), hPy);
+                    ctx.lineTo(toPx(hX), hPy);
+                    ctx.stroke();
+                }
+            }
+
+            // 4. Draw Particle
+            let currentE = getEnergy(n_state);
+            let particlePy = toPy(currentE);
+            let particlePx = toPx(p_x);
+
+            // Trail or force vector could go here, but simple sphere is elegant
+            ctx.beginPath();
+            ctx.fillStyle = '#fde047'; // Bright yellow
+            ctx.arc(particlePx, particlePy, 8, 0, Math.PI * 2);
+            ctx.shadowColor = '#fde047';
+            ctx.shadowBlur = 15;
+            ctx.fill();
+            
+            // Particle outline
+            ctx.lineWidth = 2;
+            ctx.strokeStyle = '#fff';
+            ctx.stroke();
+            ctx.shadowBlur = 0;
+        }
+
+        // Main Loop
+        let lastTime = 0;
+        function loop(timestamp) {
+            if (!lastTime) lastTime = timestamp;
+            let dt = (timestamp - lastTime) / 1000; // seconds
+            lastTime = timestamp;
+            
+            // Cap dt to prevent huge jumps if tab is inactive
+            if (dt > 0.05) dt = 0.016; 
+
+            // Simulation timescale multiplier
+            simulate(dt * 3.0); 
+            render();
+            
+            requestAnimationFrame(loop);
+        }
+
+        // Initialization
+        window.onload = () => {
+            resizeCanvas();
+            updateUIState();
+            resetParticle();
+            requestAnimationFrame(loop);
+        };
+
+    </script>
+</body>
+</html>

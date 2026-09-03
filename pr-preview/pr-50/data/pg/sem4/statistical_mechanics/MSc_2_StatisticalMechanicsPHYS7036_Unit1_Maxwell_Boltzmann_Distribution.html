@@ -1,0 +1,544 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Maxwell-Boltzmann Distribution Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/d3/7.8.5/d3.min.js"></script>
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.0/dist/contrib/auto-render.min.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f8fafc; color: #1e293b; }
+        .line-mp { stroke: #ef4444; stroke-dasharray: 4; stroke-width: 2; }
+        .line-avg { stroke: #f59e0b; stroke-dasharray: 4; stroke-width: 2; }
+        .line-rms { stroke: #10b981; stroke-dasharray: 4; stroke-width: 2; }
+        .curve { stroke: #1e293b; stroke-width: 2.5; fill: rgba(30, 41, 59, 0.05); }
+        .slider-thumb::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #3b82f6;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+        .math-block {
+            background: #f1f5f9;
+            padding: 8px 12px;
+            border-radius: 8px;
+            border: 1px solid #e2e8f0;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-7xl mx-auto space-y-6">
+        <header class="mb-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-sm space-y-4">
+            <div>
+                <div class="text-xs font-bold text-blue-600 tracking-wider uppercase mb-1">Title: Maxwell-Boltzmann Speed Distribution Simulator</div>
+                <h1 class="text-3xl md:text-4xl font-bold text-slate-800">
+                    Maxwell-Boltzmann Distribution
+                </h1>
+                <p class="text-slate-500 text-sm mt-1">MSc Physics/Chemistry Interactive Simulation & Theoretical Framework Interface</p>
+            </div>
+
+            <!-- Attached Concept Section -->
+            <div class="p-4 rounded-xl bg-blue-50/60 border border-blue-100 text-slate-700 space-y-2 text-sm leading-relaxed">
+                <h2 class="font-bold text-blue-900 text-base flex items-center gap-2">
+                    <svg class="w-5 h-5 text-blue-600 inline-block" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                    </svg>
+                    Concept: Maxwell–Boltzmann Speed Distribution
+                </h2>
+                <p>
+                    The Maxwell–Boltzmann distribution describes the range of molecular speeds in a classical ideal gas at thermal equilibrium. The distribution depends on both temperature ($T$) and molar mass ($M$): increasing temperature shifts the distribution toward higher speeds, while increasing molecular mass shifts it toward lower speeds. The distribution is characterized by three different speeds—the most probable speed ($v_{mp}$), average speed ($v_{avg}$), and RMS speed ($v_{rms}$)—which satisfy ($v_{mp} &lt v_{avg} &lt v_{rms}$). These speeds scale as ($\sqrt{T/M}$), providing a direct connection between microscopic molecular motion and macroscopic thermodynamic temperature.
+                </p>
+            </div>
+        </header>
+
+        <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+            
+            <!-- Controls & Formulas Panel -->
+            <aside class="lg:col-span-4 space-y-6">
+                
+                <!-- Controls Card -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-5">
+                    <h2 class="text-lg font-bold text-slate-800 border-b border-slate-100 pb-2 flex items-center gap-2">
+                        <svg class="w-5 h-5 text-blue-500" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"></path></svg>
+                        Simulation Controls
+                    </h2>
+
+                    <div>
+                        <div class="flex justify-between text-sm font-semibold text-slate-700 mb-2">
+                            <label>Temperature ($T$)</label>
+                            <span id="tempValue" class="font-bold text-blue-600">300 K</span>
+                        </div>
+                        <input type="range" id="tempRange" min="50" max="2000" value="300" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider-thumb">
+                        <div class="flex justify-between text-[11px] mt-1 text-slate-400">
+                            <span>50 K</span>
+                            <span>2000 K</span>
+                        </div>
+                    </div>
+
+                    <div>
+                        <div class="flex justify-between text-sm font-semibold text-slate-700 mb-2">
+                            <label>Molar Mass ($M$)</label>
+                            <span id="massValue" class="font-bold text-blue-600">28 g/mol</span>
+                        </div>
+                        <input type="range" id="massRange" min="2" max="250" value="28" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer slider-thumb">
+                        <div class="flex justify-between text-[11px] mt-1 text-slate-400">
+                            <span>2 g/mol (H₂)</span>
+                            <span>250 g/mol</span>
+                        </div>
+                    </div>
+
+                    <div class="pt-3 border-t border-slate-100">
+                        <p class="text-xs font-bold text-slate-400 uppercase mb-3 tracking-wider">Quick Presets</p>
+                        <div class="grid grid-cols-2 gap-2">
+                            <button onclick="setGas(4, 298)" class="text-xs py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition font-medium">Helium (298K)</button>
+                            <button onclick="setGas(28, 300)" class="text-xs py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition font-medium">Nitrogen (300K)</button>
+                            <button onclick="setGas(131, 300)" class="text-xs py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition font-medium">Xenon (300K)</button>
+                            <button onclick="setGas(32, 1000)" class="text-xs py-2 px-3 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-lg transition font-medium">Oxygen (1000K)</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Theory and Formulas Panel -->
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-4">
+                    <h2 class="text-lg font-bold text-slate-800 border-b border-slate-100 pb-2">Formulas & Equations Used</h2>
+                    
+                    <div class="space-y-3 text-xs text-slate-600">
+                        <div>
+                            <p class="font-bold text-slate-700 mb-1">1. Maxwell-Boltzmann Speed Distribution $f(v)$</p>
+                            <div id="eq-mb" class="math-block overflow-x-auto"></div>
+                        </div>
+
+                        <div>
+                            <p class="font-bold text-slate-700 mb-1">2. Most Probable Speed ($v_{mp}$)</p>
+                            <div id="eq-vmp" class="math-block overflow-x-auto"></div>
+                        </div>
+
+                        <div>
+                            <p class="font-bold text-slate-700 mb-1">3. Average / Mean Speed ($v_{avg}$)</p>
+                            <div id="eq-vavg" class="math-block overflow-x-auto"></div>
+                        </div>
+
+                        <div>
+                            <p class="font-bold text-slate-700 mb-1">4. Root Mean Square Speed ($v_{rms}$)</p>
+                            <div id="eq-vrms" class="math-block overflow-x-auto"></div>
+                        </div>
+                    </div>
+
+                    <!-- Physical Constants and Units Reference -->
+                    <div class="mt-4 p-3 rounded-xl bg-slate-50 border border-slate-200 text-xs space-y-1.5">
+                        <p class="font-bold text-blue-700 border-b border-slate-200 pb-1 uppercase tracking-wider">Physical Constants & Units</p>
+                        <div class="grid grid-cols-2 gap-y-1 gap-x-2 text-slate-600">
+                            <span><strong class="text-slate-800">$R$</strong> (Universal Gas Const.):</span>
+                            <span class="text-right font-mono text-blue-600">$8.3145 \text{ J/(mol}\cdot\text{K)}$</span>
+                            
+                            <span><strong class="text-slate-800">$T$</strong> (Absolute Temp.):</span>
+                            <span class="text-right font-mono text-blue-600">$\text{K}$ (Kelvin)</span>
+
+                            <span><strong class="text-slate-800">$M$</strong> (Molar Mass):</span>
+                            <span class="text-right font-mono text-blue-600">$\text{g/mol} \rightarrow \text{kg/mol}$</span>
+
+                            <span><strong class="text-slate-800">$v$</strong> (Molecular Speed):</span>
+                            <span class="text-right font-mono text-blue-600">$\text{m/s}$</span>
+
+                            <span><strong class="text-slate-800">$f(v)$</strong> (Probability Density):</span>
+                            <span class="text-right font-mono text-blue-600">$\text{s/m} \text{ (or } (\text{m/s})^{-1}\text{)}$</span>
+                        </div>
+                    </div>
+                </div>
+            </aside>
+
+            <!-- Main Plot View -->
+            <main class="lg:col-span-8 flex flex-col justify-between space-y-6">
+                <div class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
+                    <div id="plot" class="w-full h-[450px]"></div>
+                    
+                    <!-- Legend and Markers -->
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-6">
+                        <div class="flex items-center space-x-3 p-3 rounded-xl border border-red-200 bg-red-50/50">
+                            <div class="w-4 h-0.5 bg-red-500 border-t-2 border-dashed"></div>
+                            <div>
+                                <p class="text-[10px] uppercase font-bold text-red-600">Most Probable ($v_{mp}$)</p>
+                                <p id="val-mp" class="text-sm font-semibold text-slate-800">0 m/s</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3 p-3 rounded-xl border border-amber-200 bg-amber-50/50">
+                            <div class="w-4 h-0.5 bg-amber-500 border-t-2 border-dashed"></div>
+                            <div>
+                                <p class="text-[10px] uppercase font-bold text-amber-600">Average ($v_{avg}$)</p>
+                                <p id="val-avg" class="text-sm font-semibold text-slate-800">0 m/s</p>
+                            </div>
+                        </div>
+                        <div class="flex items-center space-x-3 p-3 rounded-xl border border-emerald-200 bg-emerald-50/50">
+                            <div class="w-4 h-0.5 bg-emerald-500 border-t-2 border-dashed"></div>
+                            <div>
+                                <p class="text-[10px] uppercase font-bold text-emerald-600">RMS ($v_{rms}$)</p>
+                                <p id="val-rms" class="text-sm font-semibold text-slate-800">0 m/s</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Quiz Section -->
+                <section class="bg-white p-6 rounded-2xl shadow-sm border border-slate-200 space-y-6">
+                    <div class="border-b border-slate-100 pb-3 flex items-center justify-between">
+                        <div>
+                            <h2 class="text-xl font-bold text-slate-800 flex items-center gap-2">
+                                <svg class="w-5 h-5 text-blue-600" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"></path></svg>
+                                Concept Verification & Practice MCQs
+                            </h2>
+                            <p class="text-slate-500 text-xs mt-0.5">Test your understanding using the interactive simulator parameters above.</p>
+                        </div>
+                        <span class="text-xs font-semibold px-2.5 py-1 bg-blue-50 text-blue-700 rounded-full border border-blue-200">5 Questions</span>
+                    </div>
+
+                    <div class="space-y-6">
+                        <!-- Q1 -->
+                        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
+                            <h3 class="font-bold text-slate-800 text-sm">Q1. Effect of Temperature</h3>
+                            <p class="text-xs text-slate-600">Set the molar mass to $M = 28\text{ g/mol}$. Run the simulator at $T = 300\text{ K}$ and then at $T = 1200\text{ K}$. What happens to the Maxwell–Boltzmann speed distribution when the temperature is increased by a factor of 4?</p>
+                            
+                            <div class="space-y-2 text-xs">
+                                <label class="flex items-center space-x-2.5 p-2 rounded-lg bg-white border border-slate-200 hover:border-blue-300 cursor-pointer transition">
+                                    <input type="radio" name="q1" value="A" onclick="checkAnswer('q1', 'A', 'A')" class="text-blue-600">
+                                    <span><strong>A)</strong> It shifts toward higher speeds and becomes broader.</span>
+                                </label>
+                                <label class="flex items-center space-x-2.5 p-2 rounded-lg bg-white border border-slate-200 hover:border-blue-300 cursor-pointer transition">
+                                    <input type="radio" name="q1" value="B" onclick="checkAnswer('q1', 'B', 'A')" class="text-blue-600">
+                                    <span><strong>B)</strong> It shifts toward lower speeds and becomes narrower.</span>
+                                </label>
+                                <label class="flex items-center space-x-2.5 p-2 rounded-lg bg-white border border-slate-200 hover:border-blue-300 cursor-pointer transition">
+                                    <input type="radio" name="q1" value="C" onclick="checkAnswer('q1', 'C', 'A')" class="text-blue-600">
+                                    <span><strong>C)</strong> Its peak remains at the same speed but becomes taller.</span>
+                                </label>
+                                <label class="flex items-center space-x-2.5 p-2 rounded-lg bg-white border border-slate-200 hover:border-blue-300 cursor-pointer transition">
+                                    <input type="radio" name="q1" value="D" onclick="checkAnswer('q1', 'D', 'A')" class="text-blue-600">
+                                    <span><strong>D)</strong> Its shape becomes independent of the molar mass.</span>
+                                </label>
+                            </div>
+                            <div id="q1-feedback" class="hidden text-xs p-2.5 rounded-lg font-medium"></div>
+                        </div>
+
+                        <!-- Q2 -->
+                        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
+                            <h3 class="font-bold text-slate-800 text-sm">Q2. Effect of Molecular Mass</h3>
+                            <p class="text-xs text-slate-600">Set the temperature to $T = 300\text{ K}$. Compare $M = 4\text{ g/mol}$ and $M = 131\text{ g/mol}$ using the simulator. Which observation is correct?</p>
+                            
+                            <div class="space-y-2 text-xs">
+                                <label class="flex items-center space-x-2.5 p-2 rounded-lg bg-white border border-slate-200 hover:border-blue-300 cursor-pointer transition">
+                                    <input type="radio" name="q2" value="A" onclick="checkAnswer('q2', 'A', 'A')" class="text-blue-600">
+                                    <span><strong>A)</strong> The lighter gas has its distribution shifted toward higher speeds.</span>
+                                </label>
+                                <label class="flex items-center space-x-2.5 p-2 rounded-lg bg-white border border-slate-200 hover:border-blue-300 cursor-pointer transition">
+                                    <input type="radio" name="q2" value="B" onclick="checkAnswer('q2', 'B', 'A')" class="text-blue-600">
+                                    <span><strong>B)</strong> The heavier gas has its distribution shifted toward higher speeds.</span>
+                                </label>
+                                <label class="flex items-center space-x-2.5 p-2 rounded-lg bg-white border border-slate-200 hover:border-blue-300 cursor-pointer transition">
+                                    <input type="radio" name="q2" value="C" onclick="checkAnswer('q2', 'C', 'A')" class="text-blue-600">
+                                    <span><strong>C)</strong> Both gases have the same characteristic speeds.</span>
+                                </label>
+                                <label class="flex items-center space-x-2.5 p-2 rounded-lg bg-white border border-slate-200 hover:border-blue-300 cursor-pointer transition">
+                                    <input type="radio" name="q2" value="D" onclick="checkAnswer('q2', 'D', 'A')" class="text-blue-600">
+                                    <span><strong>D)</strong> The lighter gas has a distribution peaked at zero speed.</span>
+                                </label>
+                            </div>
+                            <div id="q2-feedback" class="hidden text-xs p-2.5 rounded-lg font-medium"></div>
+                        </div>
+
+                        <!-- Q3 -->
+                        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
+                            <h3 class="font-bold text-slate-800 text-sm">Q3. Most Probable, Average and RMS Speeds</h3>
+                            <p class="text-xs text-slate-600">Choose any fixed temperature and molar mass and examine the three vertical markers displayed by the simulator. What ordering of the characteristic speeds do you observe from left to right along the speed axis?</p>
+                            
+                            <div class="space-y-2 text-xs">
+                                <label class="flex items-center space-x-2.5 p-2 rounded-lg bg-white border border-slate-200 hover:border-blue-300 cursor-pointer transition">
+                                    <input type="radio" name="q3" value="A" onclick="checkAnswer('q3', 'A', 'A')" class="text-blue-600">
+                                    <span><strong>A)</strong> $v_{mp} &lt v_{avg} &lt v_{rms}$</span>
+                                </label>
+                                <label class="flex items-center space-x-2.5 p-2 rounded-lg bg-white border border-slate-200 hover:border-blue-300 cursor-pointer transition">
+                                    <input type="radio" name="q3" value="B" onclick="checkAnswer('q3', 'B', 'A')" class="text-blue-600">
+                                    <span><strong>B)</strong> $v_{rms} &lt v_{avg} &lt v_{mp}$</span>
+                                </label>
+                                <label class="flex items-center space-x-2.5 p-2 rounded-lg bg-white border border-slate-200 hover:border-blue-300 cursor-pointer transition">
+                                    <input type="radio" name="q3" value="C" onclick="checkAnswer('q3', 'C', 'A')" class="text-blue-600">
+                                    <span><strong>C)</strong> $v_{avg} &lt v_{mp} &lt v_{rms}$</span>
+                                </label>
+                                <label class="flex items-center space-x-2.5 p-2 rounded-lg bg-white border border-slate-200 hover:border-blue-300 cursor-pointer transition">
+                                    <input type="radio" name="q3" value="D" onclick="checkAnswer('q3', 'D', 'A')" class="text-blue-600">
+                                    <span><strong>D)</strong> $v_{mp} = v_{avg} = v_{rms}$</span>
+                                </label>
+                            </div>
+                            <div id="q3-feedback" class="hidden text-xs p-2.5 rounded-lg font-medium"></div>
+                        </div>
+
+                        <!-- Q4 -->
+                        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
+                            <h3 class="font-bold text-slate-800 text-sm">Q4. Comparing Different Gases</h3>
+                            <p class="text-xs text-slate-600">Use the simulator's <strong>Helium</strong> and <strong>Nitrogen</strong> presets, corresponding to approximately $T = 298\text{ K}, M = 4\text{ g/mol}$ and $T = 300\text{ K}, M = 28\text{ g/mol}$, respectively. Which gas has the larger most probable speed?</p>
+                            
+                            <div class="space-y-2 text-xs">
+                                <label class="flex items-center space-x-2.5 p-2 rounded-lg bg-white border border-slate-200 hover:border-blue-300 cursor-pointer transition">
+                                    <input type="radio" name="q4" value="A" onclick="checkAnswer('q4', 'A', 'A')" class="text-blue-600">
+                                    <span><strong>A)</strong> Helium</span>
+                                </label>
+                                <label class="flex items-center space-x-2.5 p-2 rounded-lg bg-white border border-slate-200 hover:border-blue-300 cursor-pointer transition">
+                                    <input type="radio" name="q4" value="B" onclick="checkAnswer('q4', 'B', 'A')" class="text-blue-600">
+                                    <span><strong>B)</strong> Nitrogen</span>
+                                </label>
+                                <label class="flex items-center space-x-2.5 p-2 rounded-lg bg-white border border-slate-200 hover:border-blue-300 cursor-pointer transition">
+                                    <input type="radio" name="q4" value="C" onclick="checkAnswer('q4', 'C', 'A')" class="text-blue-600">
+                                    <span><strong>C)</strong> Both gases have the same most probable speed.</span>
+                                </label>
+                                <label class="flex items-center space-x-2.5 p-2 rounded-lg bg-white border border-slate-200 hover:border-blue-300 cursor-pointer transition">
+                                    <input type="radio" name="q4" value="D" onclick="checkAnswer('q4', 'D', 'A')" class="text-blue-600">
+                                    <span><strong>D)</strong> The result cannot be determined from the distribution.</span>
+                                </label>
+                            </div>
+                            <div id="q4-feedback" class="hidden text-xs p-2.5 rounded-lg font-medium"></div>
+                        </div>
+
+                        <!-- Q5 -->
+                        <div class="p-4 rounded-xl border border-slate-200 bg-slate-50/50 space-y-3">
+                            <h3 class="font-bold text-slate-800 text-sm">Q5. Scaling of Molecular Speed with Temperature</h3>
+                            <p class="text-xs text-slate-600">Keep $M = 28\text{ g/mol}$ fixed and compare $T = 300\text{ K}$ with $T = 1200\text{ K}$. By approximately what factor does each of $v_{mp}$, $v_{avg}$, and $v_{rms}$ increase?</p>
+                            
+                            <div class="space-y-2 text-xs">
+                                <label class="flex items-center space-x-2.5 p-2 rounded-lg bg-white border border-slate-200 hover:border-blue-300 cursor-pointer transition">
+                                    <input type="radio" name="q5" value="A" onclick="checkAnswer('q5', 'A', 'A')" class="text-blue-600">
+                                    <span><strong>A)</strong> A factor of 2</span>
+                                </label>
+                                <label class="flex items-center space-x-2.5 p-2 rounded-lg bg-white border border-slate-200 hover:border-blue-300 cursor-pointer transition">
+                                    <input type="radio" name="q5" value="B" onclick="checkAnswer('q5', 'B', 'A')" class="text-blue-600">
+                                    <span><strong>B)</strong> A factor of 4</span>
+                                </label>
+                                <label class="flex items-center space-x-2.5 p-2 rounded-lg bg-white border border-slate-200 hover:border-blue-300 cursor-pointer transition">
+                                    <input type="radio" name="q5" value="C" onclick="checkAnswer('q5', 'C', 'A')" class="text-blue-600">
+                                    <span><strong>C)</strong> A factor of 1/2</span>
+                                </label>
+                                <label class="flex items-center space-x-2.5 p-2 rounded-lg bg-white border border-slate-200 hover:border-blue-300 cursor-pointer transition">
+                                    <input type="radio" name="q5" value="D" onclick="checkAnswer('q5', 'D', 'A')" class="text-blue-600">
+                                    <span><strong>D)</strong> A factor of 16</span>
+                                </label>
+                            </div>
+                            <div id="q5-feedback" class="hidden text-xs p-2.5 rounded-lg font-medium"></div>
+                        </div>
+                    </div>
+
+                    <!-- Summary Note -->
+                    <div class="mt-6 p-4 rounded-xl bg-slate-100 border border-slate-200 text-xs text-slate-700 leading-relaxed">
+                        <p>
+                            These five questions form a structured conceptual progression: 
+                            <strong>temperature effect</strong> &rarr; 
+                            <strong>mass effect</strong> &rarr; 
+                            <strong>three characteristic speeds</strong> &rarr; 
+                            <strong>comparison of gases</strong> &rarr; 
+                            <strong>quantitative $\sqrt{T/M}$ scaling</strong>. 
+                            The simulator directly provides the temperature/mass controls and the three speed markers needed for these observations.
+                        </p>
+                    </div>
+                </section>
+            </main>
+        </div>
+    </div>
+
+    <script>
+        const R = 8.314462618; // Universal gas constant J/(mol·K)
+        const margin = {top: 40, right: 30, bottom: 50, left: 60};
+        let width, height, svg, x, y;
+
+        const tempInput = document.getElementById('tempRange');
+        const massInput = document.getElementById('massRange');
+        const tempValDisplay = document.getElementById('tempValue');
+        const massValDisplay = document.getElementById('massValue');
+
+        function calculateMB(v, T, M_g) {
+            const M = M_g / 1000; // Convert g/mol to kg/mol
+            const term1 = Math.pow(M / (2 * Math.PI * R * T), 1.5);
+            const term2 = 4 * Math.PI * Math.pow(v, 2);
+            const term3 = Math.exp(-(M * v * v) / (2 * R * T));
+            return term1 * term2 * term3;
+        }
+
+        function getSpeeds(T, M_g) {
+            const M = M_g / 1000; // Convert g/mol to kg/mol
+            return {
+                mp: Math.sqrt((2 * R * T) / M),
+                avg: Math.sqrt((8 * R * T) / (Math.PI * M)),
+                rms: Math.sqrt((3 * R * T) / M)
+            };
+        }
+
+        function initChart() {
+            const container = document.getElementById('plot');
+            width = container.clientWidth - margin.left - margin.right;
+            height = container.clientHeight - margin.top - margin.bottom;
+
+            d3.select("#plot").selectAll("*").remove();
+
+            svg = d3.select("#plot")
+                .append("svg")
+                .attr("width", width + margin.left + margin.right)
+                .attr("height", height + margin.top + margin.bottom)
+                .append("g")
+                .attr("transform", `translate(${margin.left},${margin.top})`);
+
+            x = d3.scaleLinear().domain([0, 3000]).range([0, width]);
+            y = d3.scaleLinear().domain([0, 0.005]).range([height, 0]);
+
+            // Axes
+            svg.append("g")
+                .attr("transform", `translate(0,${height})`)
+                .call(d3.axisBottom(x).ticks(10))
+                .attr("class", "text-slate-400");
+
+            svg.append("g")
+                .call(d3.axisLeft(y).ticks(5).tickFormat(d3.format(".1e")))
+                .attr("class", "text-slate-400");
+
+            // Labels
+            svg.append("text")
+                .attr("x", width/2)
+                .attr("y", height + 40)
+                .attr("text-anchor", "middle")
+                .attr("class", "text-xs fill-slate-500 font-medium")
+                .text("Molecular Speed v (m/s)");
+
+            svg.append("text")
+                .attr("transform", "rotate(-90)")
+                .attr("y", -50)
+                .attr("x", -height/2)
+                .attr("text-anchor", "middle")
+                .attr("class", "text-xs fill-slate-500 font-medium")
+                .text("Probability Density f(v) in s/m");
+
+            // The Curve Path
+            svg.append("path")
+                .attr("class", "curve")
+                .attr("id", "mb-path");
+
+            // Marker Lines
+            const markers = ["mp", "avg", "rms"];
+            markers.forEach(m => {
+                svg.append("line")
+                    .attr("id", `line-${m}`)
+                    .attr("class", `line-${m}`)
+                    .attr("y1", 0)
+                    .attr("y2", height);
+                
+                svg.append("text")
+                    .attr("id", `text-${m}`)
+                    .attr("class", "text-[10px] font-bold")
+                    .attr("dy", -10)
+                    .attr("text-anchor", "middle");
+            });
+        }
+
+        function update() {
+            const T = parseFloat(tempInput.value);
+            const M = parseFloat(massInput.value);
+
+            tempValDisplay.innerText = `${T} K`;
+            massValDisplay.innerText = `${M} g/mol`;
+
+            const speeds = getSpeeds(T, M);
+            
+            // Update Text Displays
+            document.getElementById('val-mp').innerText = `${Math.round(speeds.mp)} m/s`;
+            document.getElementById('val-avg').innerText = `${Math.round(speeds.avg)} m/s`;
+            document.getElementById('val-rms').innerText = `${Math.round(speeds.rms)} m/s`;
+
+            // Data Points for Curve
+            const data = [];
+            for (let v = 0; v <= 3000; v += 10) {
+                data.push({v: v, p: calculateMB(v, T, M)});
+            }
+
+            // Dynamically scale Y axis based on peak for clear visualization
+            const maxP = d3.max(data, d => d.p);
+            y.domain([0, Math.max(0.002, maxP * 1.1)]);
+            svg.select(".text-slate-400").transition().duration(200).call(d3.axisLeft(y).ticks(5).tickFormat(d3.format(".1e")));
+
+            const lineGen = d3.line()
+                .x(d => x(d.v))
+                .y(d => y(d.p))
+                .curve(d3.curveBasis);
+
+            svg.select("#mb-path")
+                .datum(data)
+                .attr("d", lineGen);
+
+            // Update Vertical Marker Lines
+            const markers = [
+                { id: "mp", val: speeds.mp, color: "#ef4444" },
+                { id: "avg", val: speeds.avg, color: "#f59e0b" },
+                { id: "rms", val: speeds.rms, color: "#10b981" }
+            ];
+
+            markers.forEach(m => {
+                svg.select(`#line-${m.id}`)
+                    .attr("x1", x(m.val))
+                    .attr("x2", x(m.val))
+                    .attr("y1", height)
+                    .attr("y2", y(calculateMB(m.val, T, M)));
+            });
+        }
+
+        function setGas(m, t) {
+            massInput.value = m;
+            tempInput.value = t;
+            update();
+        }
+
+        function checkAnswer(qId, selected, correct) {
+            const feedbackEl = document.getElementById(`${qId}-feedback`);
+            feedbackEl.classList.remove('hidden', 'bg-emerald-50', 'text-emerald-700', 'border-emerald-200', 'bg-red-50', 'text-red-700', 'border-red-200');
+            feedbackEl.classList.add('border');
+
+            if (selected === correct) {
+                feedbackEl.classList.add('bg-emerald-50', 'text-emerald-700', 'border-emerald-200');
+                feedbackEl.innerHTML = `✓ <strong>Correct!</strong> Option ${correct} is the right answer.`;
+            } else {
+                feedbackEl.classList.add('bg-red-50', 'text-red-700', 'border-red-200');
+                feedbackEl.innerHTML = `✗ <strong>Incorrect.</strong> Option ${selected} is not correct. Try again or check the simulator settings!`;
+            }
+        }
+
+        window.addEventListener('resize', () => {
+            initChart();
+            update();
+        });
+
+        tempInput.addEventListener('input', update);
+        massInput.addEventListener('input', update);
+
+        window.onload = () => {
+            // Render Math Equations using KaTeX
+            katex.render("f(v) = 4\\pi \\left(\\frac{M}{2\\pi R T}\\right)^{3/2} v^2 \\exp\\left(-\\frac{M v^2}{2 R T}\\right)", document.getElementById('eq-mb'), { throwOnError: false });
+            katex.render("v_{mp} = \\sqrt{\\frac{2 R T}{M}}", document.getElementById('eq-vmp'), { throwOnError: false });
+            katex.render("v_{avg} = \\sqrt{\\frac{8 R T}{\\pi M}}", document.getElementById('eq-vavg'), { throwOnError: false });
+            katex.render("v_{rms} = \\sqrt{\\frac{3 R T}{M}}", document.getElementById('eq-vrms'), { throwOnError: false });
+
+            // Automatically render inline LaTeX math ($...$) across the page
+            if (window.renderMathInElement) {
+                renderMathInElement(document.body, {
+                    delimiters: [
+                        {left: '$$', right: '$$', display: true},
+                        {left: '$', right: '$', display: false}
+                    ],
+                    throwOnError: false
+                });
+            }
+
+            initChart();
+            update();
+        };
+    </script>
+</body>
+</html>

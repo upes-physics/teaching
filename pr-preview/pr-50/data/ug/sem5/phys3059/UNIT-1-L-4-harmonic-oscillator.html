@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>1D Quantum Harmonic Oscillator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+        }
+        .container {
+            max-width: 1200px;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+        }
+        input[type=range]::-moz-range-thumb {
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="text-slate-800 p-4 md:p-8">
+
+<div class="container mx-auto bg-white rounded-xl shadow-lg p-6 md:p-10">
+    <header class="mb-8 border-b pb-4">
+        <h1 class="text-3xl md:text-4xl font-bold text-slate-900 mb-2 text-center">1D Quantum Harmonic Oscillator</h1>
+        <p class="text-slate-600 text-center">Interactive Simulation and Theory</p>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Theory Section -->
+        <div class="col-span-1 lg:col-span-1 space-y-6">
+            <section class="bg-slate-50 p-5 rounded-lg border border-slate-200">
+                <h2 class="text-xl font-semibold mb-3 border-b border-slate-300 pb-2">Theory</h2>
+                <p class="text-sm text-slate-700 mb-3">
+                    The quantum harmonic oscillator is the quantum-mechanical analog of the classical harmonic oscillator. It is one of the most important model systems in quantum mechanics because many complex potentials can be approximated by a harmonic potential near their equilibrium points.
+                </p>
+                <div class="text-sm overflow-x-auto mb-3">
+                    <strong>Potential Energy:</strong>
+                    $$ V(x) = \frac{1}{2} m \omega^2 x^2 $$
+                </div>
+                <div class="text-sm overflow-x-auto mb-3">
+                    <strong>Energy Levels:</strong>
+                    $$ E_n = \hbar \omega \left( n + \frac{1}{2} \right) $$
+                    <span class="text-xs text-slate-500">where \( n = 0, 1, 2, \dots \)</span>
+                </div>
+                <div class="text-sm overflow-x-auto">
+                    <strong>Wavefunctions:</strong>
+                    $$ \psi_n(x) = \left( \frac{m\omega}{\pi\hbar} \right)^{1/4} \frac{1}{\sqrt{2^n n!}} H_n\left(\sqrt{\frac{m\omega}{\hbar}}x\right) e^{-\frac{m\omega}{2\hbar}x^2} $$
+                    <span class="text-xs text-slate-500">where \( H_n \) are Hermite polynomials.</span>
+                </div>
+            </section>
+
+            <!-- Controls Section -->
+            <section class="bg-blue-50 p-5 rounded-lg border border-blue-200 shadow-sm">
+                <h2 class="text-xl font-semibold mb-4 text-blue-900 border-b border-blue-200 pb-2">Parameters</h2>
+                
+                <div class="space-y-5">
+                    <!-- Quantum Number (n) -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label for="n-slider" class="text-sm font-medium text-slate-700">Quantum Number (\( n \)):</label>
+                            <span id="n-value" class="text-sm font-bold text-blue-600 bg-white px-2 py-1 rounded shadow-sm">0</span>
+                        </div>
+                        <input type="range" id="n-slider" min="0" max="10" value="0" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                        <p class="text-xs text-slate-500 mt-1">Determines the energy state.</p>
+                    </div>
+
+                    <!-- Mass (m) -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label for="mass-slider" class="text-sm font-medium text-slate-700">Mass (\( m \)):</label>
+                            <span id="mass-value" class="text-sm font-bold text-blue-600 bg-white px-2 py-1 rounded shadow-sm">1.0</span>
+                        </div>
+                        <input type="range" id="mass-slider" min="0.1" max="5.0" step="0.1" value="1.0" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                        <p class="text-xs text-slate-500 mt-1">Affects the spread of the wavefunction.</p>
+                    </div>
+
+                    <!-- Angular Frequency (omega) -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label for="omega-slider" class="text-sm font-medium text-slate-700">Frequency (\( \omega \)):</label>
+                            <span id="omega-value" class="text-sm font-bold text-blue-600 bg-white px-2 py-1 rounded shadow-sm">1.0</span>
+                        </div>
+                        <input type="range" id="omega-slider" min="0.5" max="3.0" step="0.1" value="1.0" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer">
+                        <p class="text-xs text-slate-500 mt-1">Affects energy spacing and spread.</p>
+                    </div>
+                </div>
+
+                <div class="mt-6 p-3 bg-white rounded border border-slate-200">
+                    <h3 class="text-sm font-semibold text-slate-700 mb-1">Current State Energy</h3>
+                    <div id="energy-display" class="text-xl font-bold text-emerald-600 text-center py-2">
+                        E₀ = 0.50 ħω
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Visualization Section -->
+        <div class="col-span-1 lg:col-span-2 space-y-6">
+            <!-- Wavefunction Chart -->
+            <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm relative h-[350px]">
+                <h2 class="text-lg font-semibold mb-2 absolute top-4 left-4 z-10 bg-white/80 px-2 py-1 rounded">Wavefunction \( \psi_n(x) \)</h2>
+                <canvas id="wavefunctionChart"></canvas>
+            </div>
+
+            <!-- Probability Density Chart -->
+            <div class="bg-white p-4 rounded-lg border border-slate-200 shadow-sm relative h-[350px]">
+                <h2 class="text-lg font-semibold mb-2 absolute top-4 left-4 z-10 bg-white/80 px-2 py-1 rounded">Probability Density \( |\psi_n(x)|^2 \)</h2>
+                <canvas id="probabilityChart"></canvas>
+            </div>
+            
+            <!-- Energy Levels Visualization (Simplified) -->
+             <div class="bg-slate-50 p-4 rounded-lg border border-slate-200 shadow-sm">
+                <h2 class="text-lg font-semibold mb-3">Energy Levels Diagram</h2>
+                <div id="energy-levels-container" class="relative h-48 w-full border-l-2 border-b-2 border-slate-400 pl-4 pb-2">
+                    <div class="absolute bottom-0 -left-6 text-xs font-bold text-slate-500">0</div>
+                    <div class="absolute top-0 -left-8 text-xs font-bold text-slate-500">Energy</div>
+                    <!-- Levels injected via JS -->
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    // --- Constants & Helper Functions ---
+    // Using atomic units where hbar = 1 for simplicity in visualization calculations
+    const hbar = 1; 
+
+    // Compute Hermite Polynomial H_n(x)
+    // Using recurrence relation: H_{n+1}(x) = 2xH_n(x) - 2nH_{n-1}(x)
+    function hermite(n, x) {
+        if (n === 0) return 1;
+        if (n === 1) return 2 * x;
+        
+        let h0 = 1;
+        let h1 = 2 * x;
+        let hn = h1;
+        
+        for (let i = 1; i < n; i++) {
+            hn = 2 * x * h1 - 2 * i * h0;
+            h0 = h1;
+            h1 = hn;
+        }
+        return hn;
+    }
+
+    // Compute factorial n!
+    function factorial(n) {
+        if (n === 0 || n === 1) return 1;
+        let result = 1;
+        for (let i = 2; i <= n; i++) {
+            result *= i;
+        }
+        return result;
+    }
+
+    // Calculate normalization constant
+    function normalization(n, m, omega) {
+        const alpha = Math.sqrt((m * omega) / hbar);
+        const term1 = Math.pow(alpha / Math.PI, 0.25);
+        const term2 = 1 / Math.sqrt(Math.pow(2, n) * factorial(n));
+        return term1 * term2;
+    }
+
+    // Calculate wavefunction value at x
+    function wavefunction(x, n, m, omega) {
+        const alpha = Math.sqrt((m * omega) / hbar);
+        const xi = alpha * x;
+        const norm = normalization(n, m, omega);
+        const hermiteVal = hermite(n, xi);
+        const exponential = Math.exp(-0.5 * xi * xi);
+        
+        return norm * hermiteVal * exponential;
+    }
+
+    // Calculate potential energy V(x)
+    function potentialEnergy(x, m, omega) {
+        return 0.5 * m * Math.pow(omega, 2) * Math.pow(x, 2);
+    }
+
+    // Generate x values for plotting
+    function generateXValues(min, max, steps) {
+        const xValues = [];
+        const stepSize = (max - min) / steps;
+        for (let i = 0; i <= steps; i++) {
+            xValues.push(min + i * stepSize);
+        }
+        return xValues;
+    }
+
+    // --- State Variables ---
+    let currentState = {
+        n: 0,
+        m: 1.0,
+        omega: 1.0
+    };
+
+    // Plotting range
+    const xMin = -6;
+    const xMax = 6;
+    const numPoints = 200;
+    const xLabels = generateXValues(xMin, xMax, numPoints);
+
+    // Chart instances
+    let wfChart = null;
+    let probChart = null;
+
+    function initCharts() {
+        const wfCtx = document.getElementById('wavefunctionChart').getContext('2d');
+        const probCtx = document.getElementById('probabilityChart').getContext('2d');
+
+        // Common Chart Options
+        const commonOptions = {
+            responsive: true,
+            maintainAspectRatio: false,
+            animation: {
+                duration: 400,
+                easing: 'easeOutQuart'
+            },
+            scales: {
+                x: {
+                    type: 'linear',
+                    title: { display: true, text: 'Position (x)' },
+                    min: xMin,
+                    max: xMax,
+                    grid: { color: '#f1f5f9' }
+                },
+                y: {
+                    title: { display: true },
+                    grid: { color: '#f1f5f9' }
+                }
+            },
+            plugins: {
+                legend: { position: 'top', align: 'end' },
+                tooltip: { enabled: false }
+            },
+            elements: {
+                point: { radius: 0 } // Hide points for smooth line
+            }
+        };
+
+        // Wavefunction Chart
+        wfChart = new Chart(wfCtx, {
+            type: 'line',
+            data: {
+                labels: xLabels,
+                datasets: [
+                    {
+                        label: 'ψ(x)',
+                        data: [],
+                        borderColor: '#3b82f6', // blue-500
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)'
+                    },
+                    {
+                        label: 'V(x) [scaled]',
+                        data: [],
+                        borderColor: '#94a3b8', // slate-400
+                        borderWidth: 1,
+                        borderDash: [5, 5],
+                        tension: 0.4,
+                        fill: false
+                    }
+                ]
+            },
+            options: {
+                ...commonOptions,
+                scales: {
+                    ...commonOptions.scales,
+                    y: { ...commonOptions.scales.y, title: { text: 'Amplitude' }, suggestedMin: -1, suggestedMax: 1 }
+                }
+            }
+        });
+
+        // Probability Chart
+        probChart = new Chart(probCtx, {
+            type: 'line',
+            data: {
+                labels: xLabels,
+                datasets: [
+                    {
+                        label: '|ψ(x)|²',
+                        data: [],
+                        borderColor: '#10b981', // emerald-500
+                        borderWidth: 2,
+                        tension: 0.4,
+                        fill: true,
+                        backgroundColor: 'rgba(16, 185, 129, 0.2)'
+                    }
+                ]
+            },
+            options: {
+                ...commonOptions,
+                scales: {
+                    ...commonOptions.scales,
+                    y: { ...commonOptions.scales.y, title: { text: 'Probability Density' }, min: 0, suggestedMax: 1 }
+                }
+            }
+        });
+    }
+
+    function updateSimulation() {
+        const { n, m, omega } = currentState;
+        
+        // Calculate Energy E_n = hbar * omega * (n + 1/2)
+        const energy = hbar * omega * (n + 0.5);
+        
+        // Update UI Text
+        document.getElementById('n-value').innerText = n;
+        document.getElementById('mass-value').innerText = m.toFixed(1);
+        document.getElementById('omega-value').innerText = omega.toFixed(1);
+        document.getElementById('energy-display').innerHTML = `E<sub>${n}</sub> = ${energy.toFixed(2)} ħω`;
+
+        // Calculate data arrays
+        const wfData = [];
+        const probData = [];
+        const potData = [];
+        
+        // Determine dynamic Y-axis scaling based on n to keep plots visible
+        // Higher states spread out more and have lower peak amplitudes
+        const maxExpectedAmp = normalization(0, m, omega); 
+        const yMaxScale = Math.max(0.5, maxExpectedAmp * 1.5);
+        
+        // Scale potential energy for visualization purposes so it fits on the same plot
+        const potScaleFactor = yMaxScale / potentialEnergy(3, 1, 1);
+
+        for (let i = 0; i < xLabels.length; i++) {
+            const x = xLabels[i];
+            const psi = wavefunction(x, n, m, omega);
+            const prob = psi * psi;
+            
+            // Add slight damping to potential at edges for cleaner plot looks if needed, 
+            // but pure quadratic is fine. We limit it to avoid breaking the y-axis scale.
+            let pot = potentialEnergy(x, m, omega) * potScaleFactor;
+            if(pot > yMaxScale * 2) pot = null; // Don't draw potential infinitely high
+
+            wfData.push({x: x, y: psi});
+            probData.push({x: x, y: prob});
+            potData.push({x: x, y: pot});
+        }
+
+        // Update Wavefunction Chart
+        wfChart.data.datasets[0].data = wfData;
+        wfChart.data.datasets[1].data = potData;
+        
+        // Dynamically adjust Y scale to keep wavefunction visible as n increases
+        let maxPsi = Math.max(...wfData.map(d => Math.abs(d.y)));
+        if (maxPsi < 0.1) maxPsi = 0.5; // fallback
+        const pad = maxPsi * 0.2;
+        wfChart.options.scales.y.min = -(maxPsi + pad);
+        wfChart.options.scales.y.max = maxPsi + pad;
+        wfChart.update();
+
+        // Update Probability Chart
+        probChart.data.datasets[0].data = probData;
+        let maxProb = Math.max(...probData.map(d => d.y));
+        probChart.options.scales.y.max = maxProb + (maxProb * 0.2);
+        probChart.update();
+
+        // Update Energy Levels Diagram
+        updateEnergyLevelsDiagram(n, omega);
+    }
+
+    function updateEnergyLevelsDiagram(currentN, omega) {
+        const container = document.getElementById('energy-levels-container');
+        // Clear previous levels except the axes placeholders
+        const axesHtml = `
+            <div class="absolute bottom-0 -left-6 text-xs font-bold text-slate-500">0</div>
+            <div class="absolute top-0 -left-8 text-xs font-bold text-slate-500">Energy</div>
+            <div class="absolute top-1/2 -left-[60px] -rotate-90 text-xs font-medium text-slate-400">E_n = ħω(n+½)</div>
+        `;
+        container.innerHTML = axesHtml;
+
+        const maxLevelsToShow = 10;
+        const containerHeight = container.clientHeight;
+        
+        // Base max energy on omega to scale visual spacing
+        const maxE = hbar * 3.0 * (maxLevelsToShow + 0.5); // Max omega * max n
+
+        for (let i = 0; i <= maxLevelsToShow; i++) {
+            const E_i = hbar * omega * (i + 0.5);
+            
+            // Calculate percentage from bottom
+            let bottomPercent = (E_i / maxE) * 100;
+            // Cap at 95% so it doesn't go over the top
+            if(bottomPercent > 95) bottomPercent = 95; 
+            
+            const isCurrent = i === currentN;
+            const colorClass = isCurrent ? 'bg-emerald-500 shadow-[0_0_8px_rgba(16,185,129,0.6)]' : 'bg-slate-300';
+            const heightClass = isCurrent ? 'h-1' : 'h-px';
+            const widthClass = isCurrent ? 'w-full z-10' : 'w-5/6 opacity-70';
+            const labelColor = isCurrent ? 'text-emerald-700 font-bold' : 'text-slate-400';
+
+            const levelHtml = `
+                <div class="absolute left-4 ${widthClass} ${heightClass} ${colorClass} rounded transition-all duration-300" style="bottom: ${bottomPercent}%;">
+                    <span class="absolute -right-12 -top-2 text-xs ${labelColor}">n=${i}</span>
+                </div>
+            `;
+            container.insertAdjacentHTML('beforeend', levelHtml);
+        }
+    }
+
+    // Event Listeners setup
+    document.addEventListener('DOMContentLoaded', () => {
+        initCharts();
+        updateSimulation();
+
+        // Inputs
+        const nSlider = document.getElementById('n-slider');
+        const massSlider = document.getElementById('mass-slider');
+        const omegaSlider = document.getElementById('omega-slider');
+
+        nSlider.addEventListener('input', (e) => {
+            currentState.n = parseInt(e.target.value);
+            updateSimulation();
+            // Re-render mathjax if needed, though simple text updates are handled via DOM
+        });
+
+        massSlider.addEventListener('input', (e) => {
+            currentState.m = parseFloat(e.target.value);
+            updateSimulation();
+        });
+
+        omegaSlider.addEventListener('input', (e) => {
+            currentState.omega = parseFloat(e.target.value);
+            updateSimulation();
+        });
+    });
+
+</script>
+</body>
+</html>
