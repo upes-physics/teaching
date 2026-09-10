@@ -104,7 +104,24 @@ function analyze(G){
  const E=G.E,closure=G.tab.flat().every(x=>E.includes(x));
  const identity=E.find(e=>E.every(a=>product(G,e,a)===a&&product(G,a,e)===a))||null;
  const inverses=!!identity&&E.every(a=>E.some(b=>product(G,a,b)===identity&&product(G,b,a)===identity));
- let assoc=true,badTriple=null;for(const a of E)for(const b of E)for(const c of E){if(product(G,product(G,a,b),c)!==product(G,a,product(G,b,c))){assoc=false;badTriple=[a,b,c];break}if(!assoc)break;if(!assoc)break}
+let assoc = true;
+let badTriple = null;
+
+associationCheck:
+for (const a of E) {
+    for (const b of E) {
+        for (const c of E) {
+            if (
+                product(G, product(G, a, b), c) !==
+                product(G, a, product(G, b, c))
+            ) {
+                assoc = false;
+                badTriple = [a, b, c];
+                break associationCheck;
+            }
+        }
+    }
+}
  const abelian=E.every(a=>E.every(b=>product(G,a,b)===product(G,b,a)));
  return{closure,identity,inverses,assoc,badTriple,abelian,isGroup:closure&&identity&&inverses&&assoc}
 }
