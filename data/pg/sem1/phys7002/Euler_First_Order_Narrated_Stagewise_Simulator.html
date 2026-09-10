@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B.Tech Mathematics - Euler Method Stagewise Simulator</title>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+:root{--navy:#123a7a;--navy2:#0b2c5e;--cyan:#29b6e8;--orange:#e8720c;--pink:#c2185b;--green:#0a8f4a;--red:#b51d4b;--bg:#eef2f7;--card:#fff;--border:#d9e1ea;--ink:#1c2733;--muted:#5d6b7b}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Times New Roman",Georgia,serif;font-size:12pt;line-height:1.55}
+h1,h2,h3,h4{color:var(--navy);margin:0 0 .55em}
+h1{font-size:23pt}h2{font-size:17pt;border-bottom:2px solid var(--border);padding-bottom:.25em;margin-top:1.35em}h3{font-size:14pt}h4{font-size:10pt;text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+p{margin:.55em 0}
+header{position:sticky;top:0;z-index:1000;background:#fff;border-bottom:3px solid var(--cyan);box-shadow:0 1px 5px #123a7a14;padding:.65em 1.2em;display:flex;justify-content:space-between;align-items:center;gap:1em;flex-wrap:wrap}
+.brand{font-weight:bold;color:var(--navy);font-size:14pt}.brand span{font-size:10.5pt;color:var(--muted);font-style:italic;font-weight:normal}
+nav,.appnav{display:flex;gap:.35em;flex-wrap:wrap}
+nav button,.appnav button{border:1px solid var(--border);background:#eef1f4;color:var(--navy);padding:.5em .85em;border-radius:4px;font-family:Georgia,serif;font-weight:bold;cursor:pointer;font-size:9.5pt}
+nav button.active,.appnav button.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+main{max-width:1200px;margin:auto;padding:1.4em 1.5em 4em}
+.page,.apppage{display:none}.page.active,.apppage.active{display:block}
+.eyebrow{font-size:9pt;letter-spacing:.15em;text-transform:uppercase;color:var(--orange);font-weight:bold}
+.panel,.card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1.1em 1.3em;margin:1em 0;box-shadow:0 1px 4px #123a7a0d}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1em}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:1em}
+@media(max-width:900px){.grid2,.grid3{grid-template-columns:1fr}}
+.opcard{border-top:4px solid var(--cyan)}.opcard:nth-child(2){border-top-color:var(--orange)}.opcard:nth-child(3){border-top-color:var(--pink)}
+.op{font-size:22pt;color:var(--navy);font-weight:bold}.badge{display:inline-block;padding:.2em .55em;border-radius:12px;background:#eef1f4;border:1px solid var(--border);font-size:8pt;font-weight:bold;color:var(--navy)}
+.eq{background:#f4f7fb;border-left:4px solid var(--pink);padding:.65em .9em;overflow:auto;margin:.7em 0}
+.callout{background:#eaf6fc;border-left:4px solid var(--cyan);padding:.75em .9em;border-radius:4px}.warning{background:#fff2f4;border-left:4px solid var(--pink);padding:.8em .9em;border-radius:4px}.success-note{background:#eaf7ef;border-left:4px solid var(--green);padding:.8em .9em;border-radius:4px}
+table{width:100%;border-collapse:collapse;margin:.8em 0;font-size:10.2pt}th,td{border:1px solid var(--border);padding:.5em;text-align:left;vertical-align:top}th{background:var(--navy);color:#fff}tr:nth-child(even) td{background:#f7f9fc}
+.simgrid{display:grid;grid-template-columns:.82fr 2fr .9fr;gap:1em}.simcol{background:#fff;border:1px solid var(--border);border-radius:8px;overflow:hidden}.simcol:nth-child(1){border-top:4px solid var(--cyan)}.simcol:nth-child(2){border-top:4px solid var(--navy)}.simcol:nth-child(3){border-top:4px solid var(--orange)}
+.colhead{font-weight:bold;color:var(--navy);padding:.75em 1em;border-bottom:1px solid var(--border)}.colbody{padding:1em}
+label{font-size:9.5pt;color:var(--muted);font-weight:bold;display:block;margin:.65em 0 .25em}
+select,input[type=range]{width:100%;padding:.45em;border:1px solid var(--border);border-radius:4px;background:#fff;color:var(--ink);font-family:Georgia,serif}input[type=range]{padding:0;accent-color:var(--navy)}
+button.action{width:100%;padding:.58em;margin-top:.5em;border:1px solid var(--navy);border-radius:4px;background:var(--navy);color:#fff;font-weight:bold;cursor:pointer;font-family:Georgia,serif}button.action.secondary{background:#fff;color:var(--navy);border-color:var(--border)}
+#plot{height:550px;width:100%;background:#fff;border:1px solid var(--border);border-radius:4px}
+.metric{background:#f4f7fb;border:1px solid var(--border);border-radius:5px;padding:.65em;margin:.55em 0}.metric small{display:block;color:var(--muted);font-size:8.5pt}.metric strong{font-family:"Courier New",monospace;font-size:12.5pt;color:var(--pink)}
+.status{padding:.6em;border-radius:4px;text-align:center;font-weight:bold;margin-top:.6em}.pass{background:#e3f6e9;color:#0a6b3a;border:1px solid #8ad3a5}.fail{background:#fbe9ee;color:#a3144b;border:1px solid #e2a1b7}
+.legend{display:flex;gap:1em;flex-wrap:wrap;font-size:9.5pt}.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px}
+.step{padding:.55em .7em;border-left:3px solid var(--cyan);background:#f7f9fc;margin:.4em 0}.formula-box{background:#f4f7fb;border:1px solid var(--border);border-radius:5px;padding:.65em;overflow:auto}.prediction{background:#fff9ef;border-left:4px solid var(--orange);padding:.7em .9em}.ai{background:#f7f5ff;border-left:4px solid var(--pink);padding:.9em}.note{font-size:10pt;color:var(--muted)}
+.scorebar{position:sticky;top:70px;z-index:20;background:var(--navy);color:#fff;padding:.65em 1em;border-radius:5px;display:flex;justify-content:space-between;align-items:center}.scorebar button{background:var(--orange);border:0;color:#fff;padding:.45em .8em;border-radius:4px;cursor:pointer}
+.q{border-bottom:1px dashed var(--border);padding:1em 0}.option{display:block;padding:.55em .7em;background:#f7f9fc;border:1px solid var(--border);border-radius:5px;margin:.4em 0;cursor:pointer}.feedback{display:none;padding:.55em;border-radius:5px;margin-top:.5em}.feedback.show{display:block}.right{background:#e3f6e9;color:#0a6b3a}.wrong{background:#fbe9ee;color:#a3144b}
+textarea{width:100%;min-height:130px;border:1px solid var(--border);border-radius:5px;padding:.7em;font-family:Georgia,serif}
+footer{background:#0b2440;color:#dce8fa;text-align:center;padding:1.3em;font-size:9.5pt}
+@media(max-width:980px){.simgrid{grid-template-columns:1fr}#plot{height:460px}}
+</style>
+</head>
+<body>
+<header>
+ <div class="brand">B.Tech Numerical Methods <span>- Euler Method for First-Order Equations</span></div>
+ <nav id="nav">
+  <button class="active" data-page="concept">I - Concepts</button>
+  <button data-page="sim">II - Simulator</button>
+  <button data-page="apps">III - Applications</button>
+  <button data-page="assess">IV - Assessment</button>
+  <button data-page="notes">V - Notes</button>
+ </nav>
+</header>
+<main>
+<section class="page active" id="concept">
+ <div class="eyebrow">Layer 1 - Conceptual Understanding</div>
+ <h1>Euler Method for Solving First-Order Differential Equations</h1>
+ <p>This simulator follows the same stagewise pattern: <b>Concept - Prediction - Simulation - Interpretation - Application - Assessment</b>.</p>
+ <div class="panel"><h3>Learning Outcomes</h3><ul><li>Identify an initial value problem \(y'=f(x,y)\), \(y(x_0)=y_0\).</li><li>Use Euler's formula to compute successive approximations.</li><li>Interpret Euler's method geometrically as tangent-line stepping.</li><li>Compare numerical values with exact/reference values.</li><li>Analyze error as the step size \(h\) changes.</li></ul></div>
+ <div class="grid3">
+  <div class="card opcard"><span class="badge">INITIAL VALUE</span><div class="op">IVP</div><h3>Starting Point</h3><p>The method begins from a known point \((x_0,y_0)\).</p></div>
+  <div class="card opcard"><span class="badge">LOCAL SLOPE</span><div class="op">f</div><h3>Derivative</h3><p>The slope at each point is calculated from \(f(x_n,y_n)\).</p></div>
+  <div class="card opcard"><span class="badge">STEP FORWARD</span><div class="op">h</div><h3>Approximation</h3><p>The tangent line predicts the next value after one step.</p></div>
+ </div>
+ <h2>1. First-Order Initial Value Problem</h2>
+ <div class="eq">\[ \frac{dy}{dx}=f(x,y), \qquad y(x_0)=y_0 \]</div>
+ <p>We want approximate values of \(y\) at \(x_1,x_2,x_3,\ldots\), where \(x_{n+1}=x_n+h\).</p>
+ <h2>2. Euler Formula</h2>
+ <div class="eq">\[ y_{n+1}=y_n+h f(x_n,y_n) \]</div>
+ <p>The method assumes that the slope at the beginning of the interval remains approximately valid throughout that interval.</p>
+ <h2>3. Worked Step</h2>
+ <p>For \(y'=x+y,\ y(0)=1,\ h=0.2\):</p>
+ <div class="eq">\[ f(0,1)=0+1=1 \]</div>
+ <div class="eq">\[ y_1=y_0+h f(x_0,y_0)=1+0.2(1)=1.2 \]</div>
+ <div class="success-note"><b>Key idea:</b> smaller \(h\) usually means better accuracy, but more computation.</div>
+</section>
+
+<section class="page" id="sim">
+ <div class="eyebrow">Layer 2 - Interactive Verification, Stagewise Visualization & Narration</div>
+ <h1>Narrated Euler Method Simulator</h1>
+ <div class="simgrid">
+  <div class="simcol"><div class="colhead">SIMULATION INPUTS</div><div class="colbody">
+   <label for="equation">Differential equation</label>
+   <select id="equation">
+    <option value="exp">y' = y, y(0)=1</option>
+    <option value="decay">y' = -2y, y(0)=1</option>
+    <option value="linear">y' = x + y, y(0)=1</option>
+    <option value="logistic">y' = y(1-y), y(0)=0.2</option>
+   </select>
+   <label for="h">Step size h: <span id="hout">0.20</span></label><input id="h" type="range" min="0.05" max="0.50" step="0.05" value="0.20">
+   <label for="T">Final x: <span id="tout">2.0</span></label><input id="T" type="range" min="1" max="4" step="0.5" value="2">
+   <label for="stage">Stage</label><input id="stage" type="range" min="0" max="4" step="1" value="0">
+   <button class="action" id="prevStage">Previous Stage</button>
+   <button class="action" id="nextStage">Next Stage</button>
+   <button class="action" id="playStages">Play Guided Explanation</button>
+   <label for="narrationMode">Narration</label><select id="narrationMode"><option value="text">Text only</option><option value="voice">Text + browser voice</option></select>
+   <button class="action secondary" id="speak">Narrate Current Stage</button>
+   <button class="action secondary" id="stopSpeak">Stop Narration</button>
+   <button class="action secondary" id="resetSim">Reset Simulator</button>
+   <button class="action secondary" id="downloadPNG">Download Visualization PNG</button>
+   <button class="action secondary" id="downloadHTML">Download HTML</button>
+  </div></div>
+  <div class="simcol"><div class="colhead">STAGEWISE VISUALIZATION</div><canvas id="plot" width="760" height="550"></canvas><div class="colbody"><div class="legend"><span><i style="background:var(--navy)"></i>Exact/reference</span><span><i style="background:var(--orange)"></i>Euler polygon</span><span><i style="background:var(--green)"></i>Tangent step</span></div><div id="stageTitle" style="font-weight:bold;color:var(--navy);font-size:13pt"></div><div id="stageDescription" class="note" style="margin-top:.25em"></div></div></div>
+  <div class="simcol"><div class="colhead">MATHEMATICAL ENGINE</div><div class="colbody">
+   <div class="metric"><small>Current equation</small><strong id="eqRead">-</strong></div>
+   <div class="metric"><small>Number of Euler steps</small><strong id="nRead">-</strong></div>
+   <div class="metric"><small>Euler y(T)</small><strong id="eulerRead">-</strong></div>
+   <div class="metric"><small>Reference y(T)</small><strong id="exactRead">-</strong></div>
+   <div class="metric"><small>Absolute error</small><strong id="errRead">-</strong></div>
+   <div class="metric"><small>Relative error</small><strong id="relRead">-</strong></div>
+   <div id="status" class="status">AWAITING COMPUTATION</div>
+  </div></div>
+ </div>
+ <div class="grid2"><div class="panel"><h3>Narrator</h3><div id="narratorBox" class="callout" aria-live="polite">Move the stage slider or press Play Guided Explanation.</div><div class="formula-box" id="stageFormula" style="margin-top:.8em"></div></div><div class="panel"><h3>AI-Assisted Error and Convergence Analysis</h3><div id="aiPanel" class="ai"></div><div class="prediction" style="margin-top:.8em"><b>Try this:</b> reduce \(h\) from 0.50 to 0.25 to 0.10 and observe how the Euler polygon approaches the exact/reference curve.</div></div></div>
+ <div class="panel"><h3>Stage List</h3><div id="steps"></div></div>
+</section>
+
+<section class="page" id="apps">
+ <div class="eyebrow">Layer 3 - Exploration & Applications</div><h1>Applications of Euler Method</h1>
+ <div class="appnav"><button class="active" data-app="physics">Physics</button><button data-app="biology">Biology</button><button data-app="engineering">Engineering</button><button data-app="computing">Computing</button></div>
+ <div class="apppage active" id="physics"><div class="card"><h3>Cooling and Motion</h3><p>Euler's method gives a first approximation for temperature change, velocity change, and other time-dependent processes.</p></div></div>
+ <div class="apppage" id="biology"><div class="card"><h3>Population Models</h3><p>Growth and decay models can be explored step by step using Euler's formula.</p></div></div>
+ <div class="apppage" id="engineering"><div class="card"><h3>Electrical Circuits</h3><p>First-order circuit equations can be solved approximately when inputs vary or exact solving is inconvenient.</p></div></div>
+ <div class="apppage" id="computing"><div class="card"><h3>Numerical Simulation</h3><p>Euler's method is often the first numerical solver taught because it reveals the basic idea of stepping through a differential equation.</p></div></div>
+</section>
+
+<section class="page" id="assess">
+ <div class="eyebrow">Layer 4 - Practice, Problem Solving & Assessment</div><h1>Assessment</h1>
+ <div class="scorebar"><span>Score: <span id="score">0</span> / 8</span><button id="resetQuiz">Reset Quiz</button></div>
+ <div class="panel"><h3>Conceptual MCQs</h3><div id="quiz"></div></div>
+ <div class="panel"><h3>Short Assessment Activity</h3><p>For \(y'=x+y,\ y(0)=1,\ h=0.2\), compute \(y_1\) using Euler's method and explain the meaning of the tangent approximation.</p><textarea placeholder="Write your answer here..."></textarea></div>
+</section>
+
+<section class="page" id="notes">
+ <div class="eyebrow">Instructor & Student Support</div><h1>Teaching Notes</h1>
+ <div class="grid2"><div class="panel"><h3>Suggested Teaching Sequence</h3><ol><li>Introduce the initial value problem.</li><li>Draw the tangent at \((x_0,y_0)\).</li><li>Use \(y_{n+1}=y_n+hf(x_n,y_n)\).</li><li>Compare the Euler polygon with the exact/reference curve.</li><li>Discuss truncation error and convergence.</li></ol></div><div class="panel"><h3>Common Errors</h3><ul><li>Using \(f(x_{n+1},y_{n+1})\) instead of \(f(x_n,y_n)\).</li><li>Forgetting to update \(x\) after each step.</li><li>Using degrees/radians style thinking where no angle is involved.</li><li>Assuming Euler is exact for curved solutions.</li></ul></div></div>
+ <table><tr><th>Stage</th><th>Student action</th><th>Instructor prompt</th></tr><tr><td>1</td><td>Identify \(f,x_0,y_0,h\).</td><td>Ask what information the formula needs.</td></tr><tr><td>2</td><td>Observe the slope field.</td><td>Ask what the small line segments represent.</td></tr><tr><td>3</td><td>Trace the first tangent step.</td><td>Ask why tangent approximation causes error.</td></tr><tr><td>4</td><td>Build the Euler polygon.</td><td>Ask how each new point is produced.</td></tr><tr><td>5</td><td>Compare errors.</td><td>Ask what happens when \(h\) is reduced.</td></tr></table>
+</section>
+</main>
+<footer>Euler Method First-Order Simulator - standalone offline teaching file</footer>
+<script>
+const $=id=>document.getElementById(id);let timer=null,currentNarration='';
+const quizData=[
+ ['Euler method solves which type of problem in this simulator?',['Initial value problem','Only determinant problem','Only eigenvalue problem','Only geometry problem'],0,'Euler method is used here for first-order IVPs.'],
+ ['Euler formula is',['\(y_{n+1}=y_n+h f(x_n,y_n)\)','\(y_{n+1}=y_n-h\)','\(y_{n+1}=f(x_n)\)','\(y_{n+1}=0\)'],0,'This is the standard Euler update formula.'],
+ ['The step size is denoted by',['h','k','lambda','theta'],0,'The step size is usually written as \(h\).'],
+ ['Euler method uses',['one slope per step','four slopes per step','no slope','only exact solution'],0,'Euler uses the beginning slope only.'],
+ ['If \(h\) is reduced, the solution usually becomes',['more accurate','less meaningful always','independent of initial value','not computable'],0,'Smaller steps usually reduce truncation error.'],
+ ['For \(y\'=y,\ y(0)=1\), the exact solution is',['\(e^x\)','\(x^2\)','\(\sin x\)','0'],0,'The solution of \(y\'=y\) with \(y(0)=1\) is \(e^x\).'],
+ ['The graph made by joining Euler points is called',['Euler polygon','circle theorem','matrix path','residue curve'],0,'The connected tangent-step approximation is often called Euler polygon.'],
+ ['Euler is less accurate for large h because',['the solution curve may bend within each step','there is no initial condition','it uses complex numbers','it computes determinants'],0,'One tangent cannot fully represent a curved solution over a large interval.']
+];
+function fmt(x,n=6){if(!isFinite(x))return 'not finite';return Math.abs(x)<1e-12?'0':Number(x).toFixed(n)}
+function equation(){
+ const v=$('equation').value;
+ if(v==='exp')return {name:"y' = y",f:(x,y)=>y,exact:x=>Math.exp(x),y0:1};
+ if(v==='decay')return {name:"y' = -2y",f:(x,y)=>-2*y,exact:x=>Math.exp(-2*x),y0:1};
+ if(v==='linear')return {name:"y' = x + y",f:(x,y)=>x+y,exact:x=>2*Math.exp(x)-x-1,y0:1};
+ return {name:"y' = y(1-y)",f:(x,y)=>y*(1-y),exact:x=>1/(1+4*Math.exp(-x)),y0:.2};
+}
+function euler(f,y0,h,T){let pts=[{x:0,y:y0,s:f(0,y0)}],x=0,y=y0;while(x<T-1e-12){const hh=Math.min(h,T-x),s=f(x,y);y=y+hh*s;x=x+hh;pts.push({x,y,s:f(x,y)})}return pts}
+function compute(){const eq=equation(),h=+$('h').value,T=+$('T').value,pts=euler(eq.f,eq.y0,h,T),exact=eq.exact(T),err=Math.abs(pts.at(-1).y-exact),rel=Math.abs(exact)>1e-12?100*err/Math.abs(exact):0;return{eq,h,T,pts,exact,err,rel}}
+function stages(c){return[
+ {title:'Stage 1 - Define the Initial Value Problem',formula:'\\[y\\prime=f(x,y),\\qquad y(0)=y_0\\]',desc:'The equation and starting value define the path to be approximated.',narr:`Stage one. We define the initial value problem ${c.eq.name}. The starting value is ${c.eq.y0}.`},
+ {title:'Stage 2 - Read the Slope Field',formula:'\\[\\text{slope at }(x,y)=f(x,y)\\]',desc:'Each small segment shows the direction in which the solution curve moves.',narr:'Stage two. The slope field shows the derivative at many points. Euler follows these local tangent directions.'},
+ {title:'Stage 3 - Take the First Tangent Step',formula:'\\[y_1=y_0+h f(x_0,y_0)\\]',desc:'Euler predicts the next point using the tangent at the current point.',narr:`Stage three. The first Euler step uses the starting slope and moves forward by h equals ${c.h.toFixed(2)}.`},
+ {title:'Stage 4 - Build the Euler Polygon',formula:'\\[x_{n+1}=x_n+h,\\qquad y_{n+1}=y_n+h f(x_n,y_n)\\]',desc:'The method repeats the same tangent-step rule until the final x-value.',narr:`Stage four. The Euler polygon is formed by ${c.pts.length-1} tangent steps.`},
+ {title:'Stage 5 - Analyze Error and Convergence',formula:'\\[\\text{absolute error}=|y_{Euler}(T)-y_{exact}(T)|\\]',desc:'The final numerical value is compared with the exact/reference value.',narr:`Stage five. The final absolute error is ${fmt(c.err,5)}. Reduce the step size to observe convergence.`}
+]}
+function draw(c){
+ const canvas=$('plot'),ctx=canvas.getContext('2d'),dpr=window.devicePixelRatio||1,box=canvas.getBoundingClientRect();canvas.width=Math.max(500,box.width*dpr);canvas.height=Math.max(420,box.height*dpr);
+ const W=canvas.width,H=canvas.height,p=52,stage=+$('stage').value;ctx.clearRect(0,0,W,H);ctx.fillStyle='#fff';ctx.fillRect(0,0,W,H);
+ let exactPts=[];for(let i=0;i<=240;i++){let x=c.T*i/240;exactPts.push({x,y:c.eq.exact(x)})}
+ const all=exactPts.concat(c.pts);let xmin=0,xmax=c.T,ymin=Math.min(...all.map(q=>q.y)),ymax=Math.max(...all.map(q=>q.y));if(ymax===ymin){ymax++;ymin--}let yp=(ymax-ymin)*.12;ymin-=yp;ymax+=yp;
+ const X=x=>p+(x-xmin)/(xmax-xmin)*(W-2*p),Y=y=>H-p-(y-ymin)/(ymax-ymin)*(H-2*p);
+ ctx.strokeStyle='#d9e1ea';ctx.lineWidth=1;for(let i=0;i<=8;i++){let x=p+i*(W-2*p)/8,y=p+i*(H-2*p)/8;ctx.beginPath();ctx.moveTo(x,p);ctx.lineTo(x,H-p);ctx.stroke();ctx.beginPath();ctx.moveTo(p,y);ctx.lineTo(W-p,y);ctx.stroke()}
+ ctx.strokeStyle='#8391a4';ctx.beginPath();ctx.moveTo(p,p);ctx.lineTo(p,H-p);ctx.lineTo(W-p,H-p);ctx.stroke();ctx.fillStyle='#1c2733';ctx.font=`${14*dpr}px Georgia`;ctx.fillText('x',W-p+10*dpr,H-p+4*dpr);ctx.fillText('y',p-20*dpr,p-12*dpr);
+ if(stage>=1){ctx.strokeStyle='#8fb6d8';ctx.lineWidth=1*dpr;for(let ix=0;ix<=16;ix++)for(let iy=0;iy<=10;iy++){const x=xmin+(xmax-xmin)*ix/16,y=ymin+(ymax-ymin)*iy/10,m=c.eq.f(x,y),len=16*dpr,ang=Math.atan(m),cx=X(x),cy=Y(y);ctx.beginPath();ctx.moveTo(cx-Math.cos(ang)*len/2,cy+Math.sin(ang)*len/2);ctx.lineTo(cx+Math.cos(ang)*len/2,cy-Math.sin(ang)*len/2);ctx.stroke()}}
+ function path(points,color,width,dash){ctx.strokeStyle=color;ctx.lineWidth=width*dpr;ctx.setLineDash((dash||[]).map(v=>v*dpr));ctx.beginPath();points.forEach((q,i)=>i?ctx.lineTo(X(q.x),Y(q.y)):ctx.moveTo(X(q.x),Y(q.y)));ctx.stroke();ctx.setLineDash([])}
+ path(exactPts,'#123a7a',2,[8,5]);if(stage>=2){let visible=stage===2?c.pts.slice(0,2):c.pts;path(visible,'#e8720c',3,[]);visible.forEach(q=>{ctx.fillStyle='#e8720c';ctx.beginPath();ctx.arc(X(q.x),Y(q.y),4*dpr,0,Math.PI*2);ctx.fill()})}
+ if(stage>=2&&c.pts[0]){const q=c.pts[Math.min(stage===2?0:1,c.pts.length-2)],dx=c.h*.75,dy=q.s*dx;ctx.strokeStyle='#0a8f4a';ctx.lineWidth=3*dpr;ctx.beginPath();ctx.moveTo(X(q.x),Y(q.y));ctx.lineTo(X(q.x+dx),Y(q.y+dy));ctx.stroke();ctx.fillStyle='#0a6b3a';ctx.fillText('tangent slope',X(q.x+dx)+5*dpr,Y(q.y+dy))}
+ ctx.fillStyle='#123a7a';ctx.font=`bold ${16*dpr}px Georgia`;ctx.fillText('Euler method first-order ODE simulator',18*dpr,28*dpr);
+}
+function update(){const c=compute(),s=stages(c),stage=+$('stage').value;$('hout').textContent=c.h.toFixed(2);$('tout').textContent=c.T.toFixed(1);$('eqRead').textContent=c.eq.name;$('nRead').textContent=c.pts.length-1;$('eulerRead').textContent=fmt(c.pts.at(-1).y);$('exactRead').textContent=fmt(c.exact);$('errRead').textContent=fmt(c.err);$('relRead').textContent=fmt(c.rel,3)+' %';$('status').className='status '+(c.rel<5?'pass':'fail');$('status').textContent=c.rel<5?'GOOD APPROXIMATION':'TRY SMALLER STEP SIZE';$('stageTitle').textContent=s[stage].title;$('stageDescription').textContent=s[stage].desc;$('narratorBox').textContent=s[stage].narr;currentNarration=s[stage].narr;$('stageFormula').innerHTML=s[stage].formula;if(window.MathJax)MathJax.typesetPromise([$('stageFormula')]);$('steps').innerHTML=s.map((x,i)=>`<div class="step" style="${i===stage?'border-left-color:var(--orange);background:#fff9ef':''}"><b>${i+1}. ${x.title.replace(/^Stage [0-9]+ - /,'')}</b><br><span class="note">${x.desc}</span></div>`).join('');$('aiPanel').innerHTML=`<b>AI-style diagnosis:</b> Euler gives \(y(T)\approx <b>${fmt(c.pts.at(-1).y,5)}</b>\), while the reference value is <b>${fmt(c.exact,5)}</b>. The absolute error is <b>${fmt(c.err,5)}</b>.<br><br><b>Convergence hint:</b> Euler is first-order, so halving \(h\) usually reduces the global error roughly by a factor of 2 for smooth equations.`;draw(c)}
+function speakCurrent(){stopNarration();if($('narrationMode').value!=='voice'||!('speechSynthesis'in window))return;const u=new SpeechSynthesisUtterance(currentNarration);u.rate=.95;window.speechSynthesis.speak(u)}
+function stopNarration(){if('speechSynthesis'in window)window.speechSynthesis.cancel()}function stopGuided(){if(timer){clearInterval(timer);timer=null;$('playStages').textContent='Play Guided Explanation'}}
+function downloadCanvas(){const a=document.createElement('a');a.download='Euler_First_Order_Stage_'+(+$('stage').value+1)+'.png';a.href=$('plot').toDataURL('image/png');a.click()}
+function downloadHTML(){const html='<!DOCTYPE html>\\n'+document.documentElement.outerHTML;const blob=new Blob([html],{type:'text/html'});const a=document.createElement('a');a.download='Euler_First_Order_Narrated_Stagewise_Simulator.html';a.href=URL.createObjectURL(blob);a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function renderQuiz(){$('quiz').innerHTML=quizData.map((q,i)=>`<div class="q"><b>Q${i+1}. ${q[0]}</b>${q[1].map((o,j)=>`<label class="option"><input type="radio" name="q${i}" value="${j}"> ${String.fromCharCode(65+j)}. ${o}</label>`).join('')}<div class="feedback" id="fb${i}"></div></div>`).join('');if(window.MathJax)MathJax.typesetPromise([$('quiz')])}
+let score=0,answered={};document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));$(b.dataset.page).classList.add('active');setTimeout(update,60)});document.querySelectorAll('.appnav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.appnav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.apppage').forEach(p=>p.classList.remove('active'));$(b.dataset.app).classList.add('active')});['equation','h','T','stage'].forEach(id=>$(id).oninput=update);$('prevStage').onclick=()=>{stopGuided();$('stage').value=Math.max(0,+$('stage').value-1);update()};$('nextStage').onclick=()=>{stopGuided();$('stage').value=Math.min(4,+$('stage').value+1);update()};$('playStages').onclick=()=>{if(timer){stopGuided();return}$('playStages').textContent='Stop Guided Explanation';$('stage').value=0;update();speakCurrent();timer=setInterval(()=>{let v=+$('stage').value;if(v>=4){stopGuided();return}$('stage').value=v+1;update();speakCurrent()},4200)};$('speak').onclick=speakCurrent;$('stopSpeak').onclick=()=>{stopGuided();stopNarration()};$('resetSim').onclick=()=>{$('equation').value='exp';$('h').value=.2;$('T').value=2;$('stage').value=0;update()};$('downloadPNG').onclick=downloadCanvas;$('downloadHTML').onclick=downloadHTML;$('quiz').addEventListener('change',e=>{if(e.target.type!=='radio')return;const i=+e.target.name.slice(1),j=+e.target.value;if(answered[i])return;answered[i]=true;const fb=$('fb'+i),ok=j===quizData[i][2];if(ok)score++;fb.className='feedback show '+(ok?'right':'wrong');fb.textContent=(ok?'Correct. ':'Incorrect. ')+quizData[i][3];$('score').textContent=score});$('resetQuiz').onclick=()=>{score=0;answered={};$('score').textContent='0';renderQuiz()};window.addEventListener('resize',update);renderQuiz();update();
+</script>
+</body>
+</html>
