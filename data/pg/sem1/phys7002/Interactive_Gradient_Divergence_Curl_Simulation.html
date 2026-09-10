@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Gradient, Divergence &amp; Curl — M.Sc. Physics Interactive Module</title>
+
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+
+<style>
+:root{
+  --navy:#123a7a; --navy-dark:#0b2c5e; --cyan:#29b6e8;
+  --orange:#e8720c; --magenta:#c2185b; --green:#0a6b3a;
+  --bg:#eef2f7; --card:#ffffff; --border:#dde3ea;
+  --ink:#1c2733; --ink-soft:#5b6b7c;
+}
+*{box-sizing:border-box}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);
+font-family:"Times New Roman",Georgia,serif;font-size:12pt;line-height:1.55}
+h1,h2,h3,h4{font-family:"Times New Roman",Georgia,serif;color:var(--navy);
+font-weight:700;margin:0 0 .5em}
+h1{font-size:22pt}
+h2{font-size:16pt;border-bottom:2px solid var(--border);padding-bottom:.25em;margin-top:1.4em}
+h3{font-size:14pt;color:var(--navy-dark)}
+h4{font-size:10.5pt;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft)}
+p{margin:.5em 0}
+a{color:var(--magenta)}
+.eyebrow{font-family:Georgia,serif;font-size:9.5pt;letter-spacing:.14em;
+text-transform:uppercase;color:var(--orange);font-weight:700}
+header.topbar{position:sticky;top:0;z-index:50;background:#fff;color:var(--navy);
+padding:.7em 1.2em;display:flex;align-items:center;gap:1.2em;flex-wrap:wrap;
+border-bottom:3px solid var(--cyan);box-shadow:0 1px 4px rgba(18,58,122,.08)}
+header.topbar .brand{font-weight:700;font-size:14pt;color:var(--navy)}
+header.topbar .brand span{color:var(--ink-soft);font-style:italic;font-weight:400;font-size:11pt}
+nav.tabs{display:flex;gap:.4em;flex-wrap:wrap}
+nav.tabs button{background:#eef1f4;border:1px solid var(--border);color:var(--navy);
+font-family:Georgia,serif;font-size:10.5pt;padding:.55em 1.1em;cursor:pointer;
+border-radius:4px;font-weight:600;letter-spacing:.03em}
+nav.tabs button:hover{background:#e2e9f2}
+nav.tabs button.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+main{max-width:1200px;margin:0 auto;padding:1.6em 1.6em 5em}
+.page{display:none}.page.active{display:block}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:6px;
+padding:1.2em 1.4em;margin:1em 0;box-shadow:0 1px 3px rgba(18,58,122,.06)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1em}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:1em}
+@media(max-width:760px){.grid2,.grid3{grid-template-columns:1fr}}
+.legend{display:flex;gap:1.1em;flex-wrap:wrap;font-size:10pt;margin:.6em 0}
+.legend .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:.35em;vertical-align:middle}
+table{border-collapse:collapse;width:100%;font-size:10.3pt;margin:.8em 0}
+th,td{border:1px solid var(--border);padding:.5em .6em;text-align:left;vertical-align:top}
+th{background:var(--navy);color:#fff}
+tr:nth-child(even) td{background:#f4f7fb}
+blockquote.eq{background:#f4f7fb;border-left:4px solid var(--magenta);
+padding:.6em 1em;margin:.8em 0;font-size:12.5pt;overflow-x:auto}
+.pill-note{background:#eaf6fc;border:1px dashed var(--cyan);padding:.6em .9em;
+border-radius:4px;font-size:10.2pt;margin:.8em 0}
+.opcard{border:1px solid var(--border);border-radius:8px;background:#fff;
+padding:1.1em 1.2em;border-top:4px solid var(--cyan)}
+.opcard:nth-child(2){border-top-color:var(--orange)}
+.opcard:nth-child(3){border-top-color:var(--magenta)}
+.opcard .op{font-size:22pt;color:var(--navy);font-weight:700;margin:.2em 0}
+.badge{display:inline-block;background:#eef1f4;border:1px solid var(--border);
+padding:.2em .6em;border-radius:12px;font-size:8.5pt;color:var(--navy);font-weight:700}
+
+/* ===== simulator ===== */
+.sim-shell{display:grid;grid-template-columns:.85fr 2fr .9fr;gap:1em;align-items:stretch}
+@media(max-width:980px){.sim-shell{grid-template-columns:1fr}}
+.simcol{background:var(--card);border:1px solid var(--border);border-radius:8px;
+border-top:4px solid var(--cyan);padding:0;overflow:hidden;display:flex;flex-direction:column}
+.simcol.numcol{border-top-color:var(--orange)}
+.simcol .col-head{padding:.75em 1em;font-weight:700;font-size:11pt;color:var(--navy);
+letter-spacing:.03em;border-bottom:1px solid var(--border)}
+.simcol.numcol .col-head{color:var(--orange)}
+.simcol .col-body{padding:.9em 1em;flex:1;display:flex;flex-direction:column;gap:.7em}
+.controls{display:flex;flex-direction:column;gap:.75em}
+.control-block{background:transparent;border:none;padding:0}
+.control-row{display:flex;flex-direction:column;gap:.25em;margin:.5em 0}
+.control-row label{font-size:10pt;color:var(--ink-soft);display:flex;
+justify-content:space-between;font-weight:600}
+input[type=range]{accent-color:var(--navy);width:100%}
+select,input[type=text]{font-family:Georgia,serif;padding:.45em;width:100%;
+border:1px solid var(--border);border-radius:4px;background:#fff;color:var(--ink)}
+.btnrow{display:flex;gap:.5em;flex-wrap:wrap;margin-top:.4em}
+button.ctl{background:var(--navy);color:#fff;border:1px solid var(--navy-dark);
+padding:.5em .9em;border-radius:4px;font-family:Georgia,serif;font-size:9.5pt;
+cursor:pointer;font-weight:600}
+button.ctl:hover{background:var(--navy-dark)}
+button.ctl.secondary{background:transparent;color:var(--navy);border-color:var(--border)}
+.sim-canvas-wrap{background:#fff;padding:0}
+canvas{width:100%;display:block;background:#fff;border-radius:3px}
+.readout{font-family:"Courier New",monospace;font-size:9.5pt;background:#f4f7fb;
+color:var(--ink);padding:.7em .8em;border-radius:3px;line-height:1.7;white-space:pre-wrap;
+border:1px solid var(--border)}
+.num-table{width:100%;border-collapse:collapse;font-size:10.3pt}
+.num-table tr{border-bottom:1px dashed var(--border)}
+.num-table td{padding:.5em .2em;border:none}
+.num-table td.lbl{color:var(--navy);font-weight:700}
+.num-table td.val{color:var(--magenta);font-weight:700;text-align:right;font-family:"Courier New",monospace}
+.eqpanel{margin-top:.6em;padding:.6em .7em;background:#f4f7fb;
+border:1px solid var(--border);border-radius:5px}
+.eqline{margin:.35em 0;overflow-x:auto}
+.eqline .eqlabel{display:inline-block;min-width:125px;font-size:8.6pt;font-weight:700;
+color:var(--navy);vertical-align:middle}
+.derivbox{border:1px solid var(--border);border-radius:6px;padding:.8em .9em;
+margin:.6em 0;background:#fbfcfe}
+.stepbtns{display:flex;gap:.4em;flex-wrap:wrap;margin-bottom:.5em}
+.stepbtn{flex:1;min-width:90px;background:#eef1f4;border:1px solid var(--border);
+padding:.55em .6em;border-radius:5px;cursor:pointer;font-family:Georgia,serif;
+font-size:9pt;font-weight:700;color:var(--navy);text-align:center}
+.stepbtn.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.stepbtn .num{display:block;font-size:12.5pt}
+.derivctl{display:flex;gap:.5em;flex-wrap:wrap}
+.derivctl button{background:transparent;color:var(--navy);border:1px solid var(--border);
+padding:.45em .8em;border-radius:5px;font-family:Georgia,serif;font-size:9pt;
+cursor:pointer;font-weight:600}
+.derivnote{font-size:10pt;color:var(--ink-soft);border-top:1px dashed var(--border);
+padding-top:.5em}
+.obs-panel{border-top:1px dashed var(--border);margin-top:.6em;padding-top:.6em;font-size:10.5pt}
+
+/* ===== audio ===== */
+.audio-panel{display:flex;gap:10px;align-items:center;flex-wrap:wrap;margin:.8em 0;
+padding:.7em .9em;background:#f4f7fb;border:1px solid var(--border);border-radius:6px}
+.audio-panel button{border:0;border-radius:5px;padding:.55em .9em;background:var(--navy);
+color:#fff;font:700 9.5pt Georgia;cursor:pointer}
+.audio-panel button:hover{background:var(--navy-dark)}
+.audio-panel select{padding:.4em;border:1px solid var(--border);border-radius:5px;
+font-family:Georgia,serif;max-width:220px}
+.audio-panel .rate{display:flex;align-items:center;gap:6px;color:var(--ink-soft);font-size:9.5pt}
+.audio-panel .rate input{width:90px}
+.audio-status{color:var(--ink-soft);font-size:9.7pt}
+.caption-box{margin:0 0 .8em;padding:.6em .9em;background:#0b2440;border-radius:6px;
+color:#dce8fa;font-size:10.6pt;line-height:1.5;min-height:1.4em}
+.caption-box.idle{color:#7f92ab;font-style:italic}
+
+/* ===== applications ===== */
+.vizsub{display:flex;gap:.4em;flex-wrap:wrap;margin-bottom:1em}
+.vizsub button{background:#eef1f4;border:1px solid var(--border);padding:.6em 1.2em;
+font-family:Georgia,serif;font-size:10pt;border-radius:16px;cursor:pointer;
+font-weight:600;color:var(--navy)}
+.vizsub button.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+.apppage{display:none}.apppage.active{display:block}
+.appcard{border:1px solid var(--border);background:#fff;border-radius:8px;padding:1.1em 1.3em;
+margin:1em 0;box-shadow:0 1px 3px rgba(18,58,122,.06)}
+.applbl{font-weight:700;color:var(--ink-soft)}
+
+/* ===== assessment ===== */
+.quiz-score{position:sticky;top:56px;z-index:20;display:flex;align-items:center;
+justify-content:space-between;background:var(--navy);color:#fff;padding:.7em 1em;
+border-radius:6px;margin-bottom:1em;font-weight:700}
+.quiz-score .scoreval{font-size:14pt}
+.quiz-score button{background:var(--orange);color:#fff;border:0;padding:.5em .9em;
+border-radius:4px;font-family:Georgia,serif;font-size:9.5pt;cursor:pointer;font-weight:600}
+.qcard{background:#fff;border:1px solid var(--border);border-radius:6px;padding:1em 1.2em;
+margin:0 0 1em;box-shadow:0 1px 3px rgba(18,58,122,.05)}
+.qmeta{display:flex;gap:.6em;align-items:center;margin-bottom:.5em}
+.bloom-pill{font-size:8pt;font-weight:700;letter-spacing:.05em;text-transform:uppercase;
+padding:.25em .6em;border-radius:10px;color:#fff}
+.bloom-understand{background:var(--cyan)} .bloom-apply{background:var(--orange)}
+.qnum{font-weight:700;color:var(--navy);font-size:10.5pt}
+.qtext{font-size:11.5pt;margin:.3em 0 .7em}
+.qopt{display:block;width:100%;text-align:left;background:#f7f9fc;border:1px solid var(--border);
+border-radius:5px;padding:.6em .8em;margin:.4em 0;font-family:Georgia,serif;
+font-size:10.3pt;cursor:pointer;color:var(--ink)}
+.qopt:hover{background:#eef1f4}
+.qopt.correct{background:#e3f6e9;border-color:#0a8f4a;color:#0a6b3a;font-weight:700}
+.qopt.incorrect{background:#fbe9ee;border-color:#c2185b;color:#c2185b;font-weight:700}
+.qfeedback{margin-top:.6em;padding:.6em .8em;border-radius:5px;font-size:10.3pt;display:none}
+.qfeedback.show{display:block}
+.qfeedback.right{background:#e3f6e9;color:#0a6b3a;border:1px solid #0a8f4a}
+.qfeedback.wrong{background:#fbe9ee;color:#c2185b;border:1px solid #c2185b}
+footer{background:#0b2440;color:#dce8fa;padding:1.4em;text-align:center;font-size:10pt}
+</style>
+</head>
+
+<body>
+
+<header class="topbar">
+  <div class="brand">Vector Calculus<span>&nbsp;· Gradient, Divergence &amp; Curl — M.Sc. Physics</span></div>
+  <nav class="tabs" id="mainNav">
+    <button data-page="concepts" class="active">I · Concepts</button>
+    <button data-page="sim">II · Simulator</button>
+    <button data-page="apps">III · Applications</button>
+    <button data-page="assess">IV · Assessment</button>
+  </nav>
+</header>
+
+<main>
+
+<!-- ================= CONCEPTS ================= -->
+<section class="page active" id="page-concepts">
+<p class="eyebrow">Layer 1 — Conceptual Understanding</p>
+<h1>Gradient, Divergence and Curl</h1>
+<p>Three fundamental differential operators provide a compact mathematical language for describing spatial variation, flux and local rotation. This module moves from <b>concept → visualization → exploration → assessment → application</b>.</p>
+
+<div class="legend">
+<span><span class="dot" style="background:var(--cyan)"></span>Gradient</span>
+<span><span class="dot" style="background:var(--orange)"></span>Divergence</span>
+<span><span class="dot" style="background:var(--magenta)"></span>Curl</span>
+</div>
+
+<div class="panel">
+<h3>Learning Outcomes</h3>
+<ul>
+<li>Define scalar and vector fields and distinguish their physical meaning.</li>
+<li>Calculate the gradient of a scalar field and interpret its direction and magnitude.</li>
+<li>Calculate divergence and identify source, sink and divergence-free behavior.</li>
+<li>Calculate curl and interpret local circulation using the right-hand rule.</li>
+<li>Relate vector calculus operators to electrostatics, electromagnetism, fluids and heat transfer.</li>
+<li>Use visualization and AI-assisted exploration while independently verifying mathematical results.</li>
+</ul>
+</div>
+
+<div class="panel">
+<h3>Motivation — Three Physical Questions</h3>
+<div class="grid3">
+<div class="opcard"><span class="badge">SCALAR → VECTOR</span><div class="op">∇φ</div><h3>Gradient</h3><p>Which direction does the scalar field increase most rapidly?</p></div>
+<div class="opcard"><span class="badge">VECTOR → SCALAR</span><div class="op">∇ · F</div><h3>Divergence</h3><p>Is the field locally behaving like a source or a sink?</p></div>
+<div class="opcard"><span class="badge">VECTOR → VECTOR</span><div class="op">∇ × F</div><h3>Curl</h3><p>Does the field have a local rotational or circulation tendency?</p></div>
+</div>
+</div>
+
+<h2>Scalar and Vector Fields</h2>
+<div class="grid2">
+<div class="panel">
+<h3>Scalar Field</h3>
+<p>A scalar field assigns a single scalar value to every point in space.</p>
+<blockquote class="eq" id="eqScalar"></blockquote>
+<p><b>Examples:</b> temperature T, pressure P, electric potential V and gravitational potential.</p>
+</div>
+<div class="panel">
+<h3>Vector Field</h3>
+<p>A vector field assigns a vector to every point in space.</p>
+<blockquote class="eq" id="eqVector"></blockquote>
+<p><b>Examples:</b> electric field E, magnetic field B, velocity v and gravitational field g.</p>
+</div>
+</div>
+
+<h2>The Three Operators at a Glance</h2>
+<table>
+<tr><th>Operator</th><th>Input</th><th>Output</th><th>Physical Interpretation</th><th>Physics Example</th></tr>
+<tr><td><b>Gradient</b></td><td>Scalar field</td><td>Vector field</td><td>Maximum spatial increase</td><td>E = −∇V</td></tr>
+<tr><td><b>Divergence</b></td><td>Vector field</td><td>Scalar field</td><td>Net outward flux density</td><td>∇ · E = ρ/ε₀</td></tr>
+<tr><td><b>Curl</b></td><td>Vector field</td><td>Vector field</td><td>Local circulation / rotation</td><td>∇ × E = −∂B/∂t</td></tr>
+</table>
+
+<div class="pill-note"><b>Memory aid:</b> Gradient → “Which way uphill?” &nbsp; Divergence → “Is it spreading out?” &nbsp; Curl → “Is it rotating?”</div>
+
+<h2>Key Mathematical Identities</h2>
+<div class="grid2">
+<div class="panel"><h3>Curl of a Gradient</h3><blockquote class="eq" id="eqId1"></blockquote><p>The gradient of a sufficiently smooth scalar field is irrotational.</p></div>
+<div class="panel"><h3>Divergence of a Curl</h3><blockquote class="eq" id="eqId2"></blockquote><p>The curl of a sufficiently smooth vector field is solenoidal.</p></div>
+</div>
+</section>
+
+<!-- ================= SIMULATOR ================= -->
+<section class="page" id="page-sim">
+<p class="eyebrow">Layer 2 — Interactive Visualization</p>
+<h1>Unified Vector-Calculus Simulator</h1>
+<p>Select an operator and a field. The visualization, mathematical expression, observation point and numerical interpretation update together.</p>
+
+<div class="audio-panel">
+<button id="simNarrateBtn">▶ Play Narration</button>
+<button id="simPauseBtn">⏸ Pause</button>
+<button id="simStopBtn">■ Stop</button>
+<label class="rate">Voice <select id="simVoiceSel"></select></label>
+<label class="rate">Speed <input id="simRate" type="range" min=".7" max="1.3" step=".05" value=".95"></label>
+<span id="simAudioStatus" class="audio-status">Narration describes the selected operator.</span>
+</div>
+<div id="simCaption" class="caption-box idle">Press Play Narration to hear a concise explanation of the active visualization.</div>
+
+<div class="sim-shell">
+<div class="simcol">
+<div class="col-head">SIMULATION INPUTS</div>
+<div class="col-body">
+<div class="control-block">
+<h4>Operator</h4>
+<div class="control-row"><label>Choose quantity</label>
+<select id="operator">
+<option value="gradient">Gradient of a scalar field</option>
+<option value="divergence">Divergence of a vector field</option>
+<option value="curl">Curl of a vector field</option>
+</select></div>
+</div>
+
+<div class="derivbox">
+<h4>Step-by-Step Exploration</h4>
+<div class="stepbtns">
+<button class="stepbtn active" data-step="1"><span class="num">①</span>Concept</button>
+<button class="stepbtn" data-step="2"><span class="num">②</span>Field</button>
+<button class="stepbtn" data-step="3"><span class="num">③</span>Interpret</button>
+</div>
+<div class="derivctl"><button id="stepPrev">◀ Prev</button><button id="stepNext">Next ▶</button></div>
+<p class="derivnote" id="derivNote">Start with the physical question, then inspect the field and finally interpret the calculated operator.</p>
+</div>
+
+<div class="control-block">
+<h4>Field</h4>
+<div class="control-row"><label>Preset</label><select id="preset"></select></div>
+<div class="control-row"><label>Range <span id="rangeVal">5</span></label><input id="range" type="range" min="2" max="8" step=".5" value="5"></div>
+<div class="control-row"><label>Vector scale <span id="scaleVal">0.35</span></label><input id="scale" type="range" min=".05" max="1" step=".05" value=".35"></div>
+</div>
+
+<div class="control-block">
+<h4>Observation Point</h4>
+<div class="control-row"><label>x <span id="xVal">1.0</span></label><input id="xObs" type="range" min="-5" max="5" step=".1" value="1"></div>
+<div class="control-row"><label>y <span id="yVal">1.0</span></label><input id="yObs" type="range" min="-5" max="5" step=".1" value="1"></div>
+</div>
+
+<div class="btnrow">
+<button class="ctl" id="updateBtn">Update</button>
+<button class="ctl secondary" id="resetBtn">Reset</button>
+<button class="ctl secondary" id="pngBtn">⤓ PNG</button>
+</div>
+</div>
+</div>
+
+<div class="simcol">
+<div class="col-head" style="text-align:center">FIELD VISUALIZATION</div>
+<div class="col-body" style="padding:.5em">
+<div id="plot" style="height:500px"></div>
+<h4>Governing Equation</h4>
+<div class="eqpanel" id="eqPanel"></div>
+</div>
+</div>
+
+<div class="simcol numcol">
+<div class="col-head">NUMERICAL DATA</div>
+<div class="col-body">
+<table class="num-table" id="readout"></table>
+<div class="analysis-hd">Physical Interpretation</div>
+<div class="readout" id="interpretation"></div>
+</div>
+</div>
+</div>
+
+<div class="obs-panel">
+<h4>Observation Panel</h4>
+<p>Move the observation point and watch the local value change. The visualization is intended to make the mathematical operation physically interpretable rather than treating the operator as a purely symbolic calculation.</p>
+<h4>Conceptual Explanation Behind the Visualization</h4>
+<p id="conceptExplain">For the gradient, arrows point in the direction of maximum increase and are normal to contour lines.</p>
+</div>
+</section>
+
+<!-- ================= APPLICATIONS ================= -->
+<section class="page" id="page-apps">
+<p class="eyebrow">Layer 3 — Applications</p>
+<h1>Physics Applications</h1>
+<p>Connect the mathematical operators to familiar physical systems.</p>
+
+<div class="vizsub" id="appsubnav">
+<button class="active" data-app="electrostatics">Case 1 · Electrostatics</button>
+<button data-app="heat">Case 2 · Heat Transfer</button>
+<button data-app="fluid">Case 3 · Fluid Mechanics</button>
+<button data-app="maxwell">Case 4 · Maxwell Equations</button>
+</div>
+
+<div class="apppage active" id="apppage-electrostatics">
+<div class="appcard">
+<h3>Case 1 · Electric Potential and Electric Field</h3>
+<blockquote class="eq" id="eqApp1"></blockquote>
+<p><span class="applbl">Physical meaning:</span> Electric field points in the direction of decreasing electric potential. The magnitude of the gradient gives the magnitude of the electric field when the relation is applied to a potential field.</p>
+<p><span class="applbl">Explore:</span> Use the Gradient simulator with φ = x² + y² or φ = sin(x) cos(y). Ask students to identify equipotential contours and verify that the gradient is perpendicular to them.</p>
+</div></div>
+
+<div class="apppage" id="apppage-heat">
+<div class="appcard">
+<h3>Case 2 · Heat Conduction</h3>
+<blockquote class="eq" id="eqApp2"></blockquote>
+<p><span class="applbl">Physical meaning:</span> Fourier's law states that heat flux is directed opposite to the temperature gradient. This gives a direct physical meaning to the gradient operator.</p>
+<p><span class="applbl">Explore:</span> Treat temperature as a scalar landscape. Identify where the temperature changes most rapidly and predict the heat-flow direction.</p>
+</div></div>
+
+<div class="apppage" id="apppage-fluid">
+<div class="appcard">
+<h3>Case 3 · Fluid Mechanics</h3>
+<blockquote class="eq" id="eqApp3"></blockquote>
+<p><span class="applbl">Physical meaning:</span> Divergence describes local expansion or compression of a velocity field, while curl is connected with local vorticity.</p>
+<p><span class="applbl">Explore:</span> Compare F = x i + y j with F = −y i + x j. One is source-like; the other is rotational.</p>
+</div></div>
+
+<div class="apppage" id="apppage-maxwell">
+<div class="appcard">
+<h3>Case 4 · Maxwell Equations</h3>
+<div class="grid2">
+<div><h3>Gauss's Law</h3><blockquote class="eq" id="eqApp4a"></blockquote><p>Divergence connects electric field with charge density.</p></div>
+<div><h3>Faraday's Law</h3><blockquote class="eq" id="eqApp4b"></blockquote><p>Curl connects changing magnetic fields with circulating electric fields.</p></div>
+</div>
+<p class="pill-note"><b>Advanced discussion:</b> The same operators recur throughout classical field theory because they encode local spatial structure of physical fields.</p>
+</div></div>
+
+<div class="panel">
+<h3>AI-Assisted Exploratory Activities</h3>
+<ol>
+<li>Ask an AI tool to predict the gradient of φ = x² + y². Calculate it independently and verify the answer.</li>
+<li>Give AI a vector field and ask whether it behaves like a source, sink or rotational field. Verify using divergence and curl.</li>
+<li>Ask AI to construct a field with zero divergence but non-zero curl, then check every derivative yourself.</li>
+<li>Ask AI for a real-world example of zero curl and assess whether the example is physically appropriate.</li>
+</ol>
+<p><b>AI verification checklist:</b> mathematical correctness → dimensional consistency → physical interpretation → independent calculation → visualization agreement.</p>
+</div>
+</section>
+
+<!-- ================= ASSESSMENT ================= -->
+<section class="page" id="page-assess">
+<span class="eyebrow">Self-Check</span>
+<h2>IV. Assessment — Gradient, Divergence and Curl</h2>
+<p>Ten questions move from <b>Understand</b> to <b>Apply</b>. Select an option to receive immediate feedback and a conceptual explanation.</p>
+<div class="quiz-score">
+<span>Score: <span class="scoreval" id="quizScore">0 / 10</span></span>
+<button id="quizReset">↺ Reset Quiz</button>
+</div>
+<div id="quizContainer"></div>
+</section>
+
+</main>
+
+<footer>
+Gradient, Divergence &amp; Curl · Interactive M.Sc. Physics Learning Module
+</footer>
+
+<script>
+/* ================= KaTeX ================= */
+function K(id,tex,display=true){
+  const el=document.getElementById(id); if(!el)return;
+  try{katex.render(tex,el,{throwOnError:false,displayMode:display})}
+  catch(e){el.textContent=tex}
+}
+K('eqScalar','\\phi=\\phi(x,y,z)');
+K('eqVector','\\mathbf F=F_x\\mathbf i+F_y\\mathbf j+F_z\\mathbf k');
+K('eqId1','\\nabla\\times(\\nabla\\phi)=0');
+K('eqId2','\\nabla\\cdot(\\nabla\\times\\mathbf F)=0');
+K('eqApp1','\\mathbf E=-\\nabla V');
+K('eqApp2','\\mathbf q=-k\\nabla T');
+K('eqApp3','\\nabla\\cdot\\mathbf v\\quad\\text{and}\\quad\\nabla\\times\\mathbf v');
+K('eqApp4a','\\nabla\\cdot\\mathbf E=\\dfrac{\\rho}{\\varepsilon_0}');
+K('eqApp4b','\\nabla\\times\\mathbf E=-\\dfrac{\\partial\\mathbf B}{\\partial t}');
+
+/* ================= Navigation ================= */
+document.getElementById('mainNav').addEventListener('click',e=>{
+ const b=e.target.closest('button'); if(!b)return;
+ document.querySelectorAll('#mainNav button').forEach(x=>x.classList.remove('active'));
+ b.classList.add('active');
+ document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+ document.getElementById('page-'+b.dataset.page).classList.add('active');
+ if(b.dataset.page==='sim')setTimeout(updateSimulator,60);
+});
+
+/* ================= Application tabs ================= */
+document.getElementById('appsubnav').addEventListener('click',e=>{
+ const b=e.target.closest('button'); if(!b)return;
+ document.querySelectorAll('#appsubnav button').forEach(x=>x.classList.remove('active'));
+ b.classList.add('active');
+ document.querySelectorAll('.apppage').forEach(p=>p.classList.remove('active'));
+ document.getElementById('apppage-'+b.dataset.app).classList.add('active');
+});
+
+/* ================= Physics definitions ================= */
+const DATA={
+ gradient:{
+   presets:[
+    ['radial','φ = x² + y²'],['saddle','φ = x² − y²'],
+    ['wave','φ = sin(x) cos(y)'],['gauss','φ = exp[−(x²+y²)]']
+   ],
+   equation:'\\nabla\\phi=\\dfrac{\\partial\\phi}{\\partial x}\\mathbf i+\\dfrac{\\partial\\phi}{\\partial y}\\mathbf j',
+   concept:'The gradient converts a scalar field into a vector field. It points in the direction of maximum increase and is perpendicular to a contour of constant scalar value.'
+ },
+ divergence:{
+   presets:[
+    ['source','F = x i + y j'],['sink','F = −x i − y j'],
+    ['rot','F = −y i + x j'],['constant','F = 2 i + j']
+   ],
+   equation:'\\nabla\\cdot\\mathbf F=\\dfrac{\\partial F_x}{\\partial x}+\\dfrac{\\partial F_y}{\\partial y}+\\dfrac{\\partial F_z}{\\partial z}',
+   concept:'Divergence is a scalar field describing net outward flux per unit volume. Positive values indicate source-like behavior, negative values indicate sink-like behavior, and zero means no net local source or sink.'
+ },
+ curl:{
+   presets:[
+    ['ccw','F = −y i + x j'],['cw','F = y i − x j'],
+    ['constant','F = 2 i + j'],['mixed','F = −y i + x j + z k']
+   ],
+   equation:'\\nabla\\times\\mathbf F=\\left(\\dfrac{\\partial F_z}{\\partial y}-\\dfrac{\\partial F_y}{\\partial z}\\right)\\mathbf i+\\left(\\dfrac{\\partial F_x}{\\partial z}-\\dfrac{\\partial F_z}{\\partial x}\\right)\\mathbf j+\\left(\\dfrac{\\partial F_y}{\\partial x}-\\dfrac{\\partial F_x}{\\partial y}\\right)\\mathbf k',
+   concept:'Curl is a vector describing local circulation or rotational tendency. In a 2-D field it is represented by the z-component.'
+ }
+};
+
+function fGrad(type,x,y){
+ if(type==='radial')return {v:x*x+y*y,gx:2*x,gy:2*y};
+ if(type==='saddle')return {v:x*x-y*y,gx:2*x,gy:-2*y};
+ if(type==='wave')return {v:Math.sin(x)*Math.cos(y),gx:Math.cos(x)*Math.cos(y),gy:-Math.sin(x)*Math.sin(y)};
+ let e=Math.exp(-(x*x+y*y)); return {v:e,gx:-2*x*e,gy:-2*y*e};
+}
+function fDiv(type,x,y){
+ if(type==='source')return {fx:x,fy:y,d:2};
+ if(type==='sink')return {fx:-x,fy:-y,d:-2};
+ if(type==='rot')return {fx:-y,fy:x,d:0};
+ return {fx:2,fy:1,d:0};
+}
+function fCurl(type,x,y){
+ if(type==='ccw')return {fx:-y,fy:x,c:2};
+ if(type==='cw')return {fx:y,fy:-x,c:-2};
+ if(type==='mixed')return {fx:-y,fy:x,c:2};
+ return {fx:2,fy:1,c:0};
+}
+
+/* ================= Simulator ================= */
+const opEl=document.getElementById('operator');
+const presetEl=document.getElementById('preset');
+const rangeEl=document.getElementById('range');
+const scaleEl=document.getElementById('scale');
+const xObs=document.getElementById('xObs');
+const yObs=document.getElementById('yObs');
+let step=1;
+
+function loadPresets(){
+ const d=DATA[opEl.value];
+ presetEl.innerHTML=d.presets.map(p=>`<option value="${p[0]}">${p[1]}</option>`).join('');
+ K('eqPanel',d.equation,true);
+ document.getElementById('conceptExplain').textContent=d.concept;
+ updateSimulator();
+}
+opEl.addEventListener('change',()=>{
+ xObs.min=-+rangeEl.value;xObs.max=+rangeEl.value;
+ yObs.min=-+rangeEl.value;yObs.max=+rangeEl.value;
+ loadPresets();
+});
+presetEl.addEventListener('change',updateSimulator);
+[rangeEl,scaleEl,xObs,yObs].forEach(el=>el.addEventListener('input',()=>{
+ document.getElementById('rangeVal').textContent=rangeEl.value;
+ document.getElementById('scaleVal').textContent=scaleEl.value;
+ document.getElementById('xVal').textContent=xObs.value;
+ document.getElementById('yVal').textContent=yObs.value;
+ updateSimulator();
+}));
+
+document.querySelectorAll('.stepbtn').forEach(b=>b.addEventListener('click',()=>{
+ step=+b.dataset.step;updateStep();
+}));
+document.getElementById('stepPrev').onclick=()=>{step=Math.max(1,step-1);updateStep()};
+document.getElementById('stepNext').onclick=()=>{step=Math.min(3,step+1);updateStep()};
+
+function updateStep(){
+ document.querySelectorAll('.stepbtn').forEach(b=>b.classList.toggle('active',+b.dataset.step===step));
+ const notes=[
+  'Start with the physical question: change, spreading or rotation?',
+  'Inspect the chosen scalar/vector field and the local behavior around the observation point.',
+  'Interpret the numerical result using the physical meaning of the operator.'
+ ];
+ document.getElementById('derivNote').textContent=notes[step-1];
+}
+
+function updateSimulator(){
+ const op=opEl.value,type=presetEl.value,r=+rangeEl.value,s=+scaleEl.value;
+ const xo=+xObs.value,yo=+yObs.value;
+ document.getElementById('rangeVal').textContent=r;
+ document.getElementById('scaleVal').textContent=s;
+ document.getElementById('xVal').textContent=xo.toFixed(1);
+ document.getElementById('yVal').textContent=yo.toFixed(1);
+ K('eqPanel',DATA[op].equation,true);
+
+ if(op==='gradient')drawGradient(type,r,s,xo,yo);
+ if(op==='divergence')drawDivergence(type,r,s,xo,yo);
+ if(op==='curl')drawCurl(type,r,s,xo,yo);
+}
+
+function drawGradient(type,r,s,xo,yo){
+ const xs=[],ys=[],z=[];
+ const n=35;
+ for(let i=0;i<n;i++){
+  let x=-r+2*r*i/(n-1);xs.push(x);z.push([]);
+  for(let j=0;j<n;j++){let y=-r+2*r*j/(n-1);if(i===0)ys.push(y);z[i].push(fGrad(type,x,y).v)}
+ }
+ const qx=[],qy=[],qu=[],qv=[];
+ for(let i=0;i<n;i+=3)for(let j=0;j<n;j+=3){
+  let x=xs[i],y=ys[j],q=fGrad(type,x,y);
+  qx.push(x);qy.push(y);qu.push(q.gx*s);qv.push(q.gy*s);
+ }
+ const obs=fGrad(type,xo,yo);
+ Plotly.newPlot('plot',[
+  {x:xs,y:ys,z:z,type:'contour',colorscale:'Viridis',contours:{showlabels:true},colorbar:{title:'φ'}},
+  {x:qx,y:qy,u:qu,v:qv,type:'scatter',mode:'markers',marker:{size:3,color:'#123a7a'},showlegend:false},
+  {x:[xo],y:[yo],mode:'markers+text',text:['P'],textposition:'top center',
+   marker:{size:11,color:'#c2185b',symbol:'circle'},showlegend:false}
+ ],{title:'Gradient field: contours + direction of maximum increase',
+ xaxis:{title:'x'},yaxis:{title:'y'},margin:{l:45,r:20,b:45,t:50},responsive:true});
+ const mag=Math.hypot(obs.gx,obs.gy);
+ document.getElementById('readout').innerHTML=
+ `<tr><td class="lbl">Point P</td><td class="val">(${xo.toFixed(2)}, ${yo.toFixed(2)})</td></tr>
+ <tr><td class="lbl">φ(P)</td><td class="val">${obs.v.toFixed(4)}</td></tr>
+ <tr><td class="lbl">∂φ/∂x</td><td class="val">${obs.gx.toFixed(4)}</td></tr>
+ <tr><td class="lbl">∂φ/∂y</td><td class="val">${obs.gy.toFixed(4)}</td></tr>
+ <tr><td class="lbl">|∇φ|</td><td class="val">${mag.toFixed(4)}</td></tr>`;
+ document.getElementById('interpretation').textContent=
+ `The gradient at P points toward the direction in which φ increases most rapidly. Its magnitude is ${mag.toFixed(3)}.`
+}
+
+function drawDivergence(type,r,s,xo,yo){
+ const xs=[],ys=[],u=[],v=[],c=[];
+ for(let i=0;i<17;i++){
+  let x=-r+2*r*i/16;
+  for(let j=0;j<17;j++){
+   let y=-r+2*r*j/16,q=fDiv(type,x,y);
+   xs.push(x);ys.push(y);u.push(q.fx*s);v.push(q.fy*s);c.push(q.d);
+  }
+ }
+ const q=fDiv(type,xo,yo);
+ Plotly.newPlot('plot',[
+  {x:xs,y:ys,mode:'markers',type:'scatter',
+   marker:{size:9,color:c,colorscale:'RdBu',showscale:true,colorbar:{title:'∇ · F'}},
+   showlegend:false},
+  {x:[xo],y:[yo],mode:'markers+text',text:['P'],textposition:'top center',
+   marker:{size:12,color:'#c2185b'},showlegend:false}
+ ],{title:'Vector field with local divergence map',
+ xaxis:{title:'x'},yaxis:{title:'y'},margin:{l:45,r:20,b:45,t:50},responsive:true});
+ document.getElementById('readout').innerHTML=
+ `<tr><td class="lbl">Point P</td><td class="val">(${xo.toFixed(2)}, ${yo.toFixed(2)})</td></tr>
+ <tr><td class="lbl">Fₓ(P)</td><td class="val">${q.fx.toFixed(4)}</td></tr>
+ <tr><td class="lbl">Fᵧ(P)</td><td class="val">${q.fy.toFixed(4)}</td></tr>
+ <tr><td class="lbl">∇ · F</td><td class="val">${q.d.toFixed(4)}</td></tr>`;
+ let meaning=q.d>0?'positive — source-like behavior':q.d<0?'negative — sink-like behavior':'zero — no net local source/sink';
+ document.getElementById('interpretation').textContent=
+ `At P, divergence is ${q.d.toFixed(3)}: ${meaning}.`;
+}
+
+function drawCurl(type,r,s,xo,yo){
+ const xs=[],ys=[],u=[],v=[],c=[];
+ for(let i=0;i<17;i++){
+  let x=-r+2*r*i/16;
+  for(let j=0;j<17;j++){
+   let y=-r+2*r*j/16,q=fCurl(type,x,y);
+   xs.push(x);ys.push(y);u.push(q.fx*s);v.push(q.fy*s);c.push(q.c);
+  }
+ }
+ const q=fCurl(type,xo,yo);
+ Plotly.newPlot('plot',[
+  {x:xs,y:ys,mode:'markers',type:'scatter',
+   marker:{size:9,color:c,colorscale:'RdBu',showscale:true,colorbar:{title:'(∇ × F)z'}},
+   showlegend:false},
+  {x:[xo],y:[yo],mode:'markers+text',text:['P'],textposition:'top center',
+   marker:{size:12,color:'#c2185b'},showlegend:false}
+ ],{title:'Vector field with local curl map',
+ xaxis:{title:'x'},yaxis:{title:'y'},margin:{l:45,r:20,b:45,t:50},responsive:true});
+ document.getElementById('readout').innerHTML=
+ `<tr><td class="lbl">Point P</td><td class="val">(${xo.toFixed(2)}, ${yo.toFixed(2)})</td></tr>
+ <tr><td class="lbl">Fₓ(P)</td><td class="val">${q.fx.toFixed(4)}</td></tr>
+ <tr><td class="lbl">Fᵧ(P)</td><td class="val">${q.fy.toFixed(4)}</td></tr>
+ <tr><td class="lbl">(∇ × F)z</td><td class="val">${q.c.toFixed(4)}</td></tr>`;
+ let meaning=q.c>0?'counterclockwise tendency when viewed from +z':q.c<0?'clockwise tendency when viewed from +z':'no local rotational tendency';
+ document.getElementById('interpretation').textContent=
+ `At P, the z-component of curl is ${q.c.toFixed(3)}: ${meaning}.`;
+}
+document.getElementById('updateBtn').onclick=updateSimulator;
+document.getElementById('resetBtn').onclick=()=>{
+ opEl.value='gradient';rangeEl.value=5;scaleEl.value=.35;xObs.value=1;yObs.value=1;step=1;updateStep();loadPresets()
+};
+document.getElementById('pngBtn').onclick=()=>Plotly.downloadImage('plot',{format:'png',filename:'vector_calculus_visualization',height:700,width:1100});
+
+/* ================= Speech narration ================= */
+const synth=window.speechSynthesis;
+function populateVoices(){
+ const s=document.getElementById('simVoiceSel'); if(!s||!synth)return;
+ const voices=synth.getVoices();s.innerHTML='';
+ voices.filter(v=>/en/i.test(v.lang)).forEach(v=>{
+  const o=document.createElement('option');o.value=v.voiceURI;o.textContent=v.name+' ('+v.lang+')';s.appendChild(o);
+ });
+}
+function narrate(){
+ if(!('speechSynthesis' in window))return;
+ synth.cancel();
+ const op=opEl.value;
+ const texts={
+ gradient:'The gradient converts a scalar field into a vector field. The arrows show the direction of maximum increase, and the observation panel reports the local gradient magnitude.',
+ divergence:'Divergence measures net outward flux per unit volume. Positive divergence is source-like, negative divergence is sink-like, and zero divergence means no net local source or sink.',
+ curl:'Curl measures local circulation or rotational tendency. In this two-dimensional visualization, the displayed value is the z-component of curl.'
+ };
+ const u=new SpeechSynthesisUtterance(texts[op]);u.rate=+document.getElementById('simRate').value;
+ const voices=synth.getVoices();u.voice=voices.find(v=>v.voiceURI===document.getElementById('simVoiceSel').value)||voices[0];
+ document.getElementById('simAudioStatus').textContent='Speaking…';
+ u.onend=()=>document.getElementById('simAudioStatus').textContent='Narration finished.';
+ synth.speak(u);
+}
+document.getElementById('simNarrateBtn').onclick=narrate;
+document.getElementById('simPauseBtn').onclick=()=>{if(synth.paused)synth.resume();else synth.pause()};
+document.getElementById('simStopBtn').onclick=()=>{synth.cancel();document.getElementById('simAudioStatus').textContent='Narration stopped.'};
+if('speechSynthesis' in window){populateVoices();speechSynthesis.onvoiceschanged=populateVoices}
+
+/* ================= Assessment ================= */
+const questions=[
+{b:'Understand',q:'The gradient of a scalar field points in the direction of:',o:['Minimum increase','Maximum increase','Maximum rotation','Zero flux'],a:1,e:'The gradient gives the direction of the maximum directional derivative.'},
+{b:'Understand',q:'Divergence of a vector field is:',o:['A scalar field','A vector field','Always zero','A tensor'],a:0,e:'The dot product ∇ · F produces a scalar field.'},
+{b:'Understand',q:'Curl of a vector field in three-dimensional space is:',o:['A scalar','A vector','Always zero','A matrix'],a:1,e:'The curl operator produces a vector field.'},
+{b:'Understand',q:'Positive divergence indicates:',o:['Source-like behavior','Sink-like behavior','Pure rotation','No field'],a:0,e:'Positive divergence corresponds to net outward flux locally.'},
+{b:'Understand',q:'Negative divergence indicates:',o:['A source','A sink','An equipotential surface','Maximum gradient'],a:1,e:'Negative divergence means net inward flux locally.'},
+{b:'Understand',q:'A vector field with zero curl is called:',o:['Solenoidal','Irrotational','Singular','Harmonic only'],a:1,e:'Zero curl defines an irrotational field.'},
+{b:'Understand',q:'Which identity is correct for a sufficiently smooth scalar field?',o:['∇ × ∇φ = 0','∇ · ∇φ = 0','∇φ = 0','∇ × φ = 0'],a:0,e:'The curl of a gradient vanishes.'},
+{b:'Apply',q:'For φ = x² + y², what is ∇φ?',o:['x i + y j','2x i + 2y j','2xy i','x² i + y² j'],a:1,e:'Differentiate with respect to x and y: ∂φ/∂x = 2x and ∂φ/∂y = 2y.'},
+{b:'Apply',q:'For F = x i + y j, what is ∇ · F?',o:['0','1','2','x + y'],a:2,e:'∂x/∂x + ∂y/∂y = 1 + 1 = 2.'},
+{b:'Apply',q:'For F = −y i + x j, what is the z-component of curl?',o:['−2','−1','0','2'],a:3,e:'(∇ × F)z = ∂Fy/∂x − ∂Fx/∂y = 1 − (−1) = 2.'}
+];
+function renderQuiz(){
+ document.getElementById('quizContainer').innerHTML=questions.map((q,i)=>`
+ <div class="qcard">
+ <div class="qmeta"><span class="bloom-pill ${q.b==='Apply'?'bloom-apply':'bloom-understand'}">${q.b}</span><span class="qnum">Question ${i+1}</span></div>
+ <div class="qtext">${q.q}</div>
+ ${q.o.map((o,j)=>`<button class="qopt" data-q="${i}" data-a="${j}">${String.fromCharCode(65+j)}. ${o}</button>`).join('')}
+ <div class="qfeedback" id="feedback${i}"></div>
+ </div>`).join('');
+ document.querySelectorAll('.qopt').forEach(btn=>btn.onclick=answerQuestion);
+}
+let score=0,answered=new Set();
+function answerQuestion(e){
+ const b=e.currentTarget,q=+b.dataset.q,a=+b.dataset.a;if(answered.has(q))return;
+ answered.add(q);
+ const correct=questions[q].a;
+ document.querySelectorAll(`.qopt[data-q="${q}"]`).forEach(x=>x.classList.add('disabled'));
+ if(a===correct){b.classList.add('correct');score++}
+ else{
+  b.classList.add('incorrect');
+  document.querySelector(`.qopt[data-q="${q}"][data-a="${correct}"]`).classList.add('correct');
+ }
+ const f=document.getElementById('feedback'+q);f.className='qfeedback show '+(a===correct?'right':'wrong');
+ f.innerHTML=(a===correct?'<b>Correct.</b> ':'<b>Review.</b> ')+questions[q].e;
+ document.getElementById('quizScore').textContent=score+' / '+questions.length;
+}
+document.getElementById('quizReset').onclick=()=>{score=0;answered.clear();document.getElementById('quizScore').textContent='0 / 10';renderQuiz()};
+
+/* initial state */
+loadPresets();
+renderQuiz();
+</script>
+</body>
+</html>
