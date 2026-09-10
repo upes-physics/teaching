@@ -1,0 +1,42 @@
+{
+  "courseCode": "CLM7001_4",
+  "courseName": "CLASSICAL MECHANICS",
+  "stream": "MSc Physics",
+  "semester": "1",
+  "faculty": {
+    "name": "Dr. Balendra Pratap Singh",
+    "email": "BalendraP.Singh@ddn.upes.ac.in"
+  },
+  "simulators": [
+    {
+      "name": "ATWOOD MACHINE",
+      "desc": "",
+      "link": "Atwood Machine.html",
+      "uploadFileLink": "Atwood Machine.html"
+    },
+    {
+      "name": "CENTRAL FORCE",
+      "desc": "",
+      "link": "Central Force Motion.html",
+      "uploadFileLink": "Central Force Motion.html"
+    },
+    {
+      "name": "COUPLED PENDULUM",
+      "desc": "",
+      "link": "Coupled Pendulum.html",
+      "uploadFileLink": "Coupled Pendulum.html"
+    },
+    {
+      "name": "DAMPED AND DRIVEN HARMONIC OSCILLATOR",
+      "desc": "",
+      "link": "Damped and Driven Harmonic Oscillator.html",
+      "uploadFileLink": "Damped and Driven Harmonic Oscillator.html"
+    },
+    {
+      "name": "DOUBLE PENDULUM",
+      "desc": "",
+      "link": "Double Pendulum.html",
+      "uploadFileLink": "Double Pendulum.html"
+    }
+  ]
+}

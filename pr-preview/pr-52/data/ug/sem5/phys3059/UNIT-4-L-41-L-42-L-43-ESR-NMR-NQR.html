@@ -1,0 +1,801 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Interactive Magnetic Resonance Simulator</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;800&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a; /* tailwind slate-900 */
+            color: #f8fafc; /* tailwind slate-50 */
+            margin: 0;
+            padding: 0;
+            overflow-x: hidden;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7); /* slate-800 with opacity */
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 1rem;
+        }
+
+        #canvas-container {
+            width: 100%;
+            height: 400px;
+            border-radius: 0.5rem;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* Custom Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569; 
+        }
+
+        .tab-btn {
+            transition: all 0.3s ease;
+        }
+        .tab-btn.active {
+            background-color: #3b82f6; /* blue-500 */
+            color: white;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.5);
+        }
+
+        .slider-custom {
+            -webkit-appearance: none;
+            width: 100%;
+            height: 6px;
+            border-radius: 3px;
+            background: #334155;
+            outline: none;
+        }
+        .slider-custom::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            border-radius: 50%;
+            background: #60a5fa;
+            cursor: pointer;
+            transition: background .15s ease-in-out;
+        }
+        .slider-custom::-webkit-slider-thumb:hover {
+            background: #93c5fd;
+        }
+
+        .energy-level {
+            transition: top 0.3s ease, height 0.3s ease;
+            position: absolute;
+            left: 0;
+            width: 100%;
+            height: 2px;
+            background-color: #ef4444; /* red-500 */
+            box-shadow: 0 0 8px rgba(239, 68, 68, 0.8);
+        }
+        .energy-level.lower { background-color: #3b82f6; box-shadow: 0 0 8px rgba(59, 130, 246, 0.8); }
+
+        .photon {
+            position: absolute;
+            width: 10px;
+            height: 10px;
+            background-color: #fbbf24;
+            border-radius: 50%;
+            box-shadow: 0 0 10px #fbbf24;
+            left: -20px;
+            opacity: 0;
+        }
+
+        @keyframes photonShoot {
+            0% { left: -10%; opacity: 0; }
+            20% { opacity: 1; }
+            50% { left: 45%; top: 50%; opacity: 1;}
+            80% { left: 50%; opacity: 0; transform: scale(2);}
+            100% { left: 50%; opacity: 0; }
+        }
+        .animate-photon {
+            animation: photonShoot 1.5s ease-out;
+        }
+
+        #chart-container {
+            position: relative;
+            height: 250px;
+            width: 100%;
+        }
+
+        .resonance-pulse {
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255,255,255,0.8) 0%, rgba(255,255,255,0) 70%);
+            opacity: 0;
+            pointer-events: none;
+        }
+        @keyframes pulseRing {
+            0% { transform: translate(-50%, -50%) scale(0.5); opacity: 1; }
+            100% { transform: translate(-50%, -50%) scale(4); opacity: 0; }
+        }
+        .animate-pulse {
+            animation: pulseRing 0.8s ease-out;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-4 md:p-8 flex flex-col items-center">
+
+    <header class="w-full max-w-6xl mb-8 text-center">
+        <h1 class="text-4xl md:text-5xl font-extrabold mb-4 bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500">
+            Magnetic Resonance Phenomena
+        </h1>
+        <p class="text-slate-400 max-w-2xl mx-auto">Interactive simulation of Electron Spin Resonance (ESR), Nuclear Magnetic Resonance (NMR), and Nuclear Quadrupole Resonance (NQR).</p>
+    </header>
+
+    <div class="w-full max-w-6xl grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Left Column: Controls & Info -->
+        <div class="lg:col-span-1 flex flex-col gap-6">
+            
+            <!-- Mode Selection -->
+            <div class="glass-panel p-4 flex gap-2 justify-center">
+                <button id="btn-esr" class="tab-btn active px-4 py-2 rounded-md font-semibold text-sm w-full" onclick="setMode('esr')">ESR</button>
+                <button id="btn-nmr" class="tab-btn px-4 py-2 rounded-md font-semibold text-sm w-full bg-slate-700 text-slate-300 hover:bg-slate-600" onclick="setMode('nmr')">NMR</button>
+                <button id="btn-nqr" class="tab-btn px-4 py-2 rounded-md font-semibold text-sm w-full bg-slate-700 text-slate-300 hover:bg-slate-600" onclick="setMode('nqr')">NQR</button>
+            </div>
+
+            <!-- Parameters Panel -->
+            <div class="glass-panel p-6">
+                <h2 class="text-xl font-bold mb-4 flex items-center justify-between border-b border-slate-600 pb-2">
+                    <span>Parameters</span>
+                    <span id="resonance-status" class="text-xs px-2 py-1 rounded-full bg-slate-700 text-slate-400">Off Resonance</span>
+                </h2>
+                
+                <div class="space-y-6">
+                    <!-- Magnetic Field -->
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <label>Static Magnetic Field (B₀)</label>
+                            <span id="b0-val" class="font-mono text-blue-300">1.00 T</span>
+                        </div>
+                        <input type="range" id="b0-slider" class="slider-custom" min="0" max="3" step="0.01" value="1.0">
+                        <p class="text-xs text-slate-500 mt-1" id="b0-desc">Splits degenerate energy levels (Zeeman effect).</p>
+                    </div>
+
+                    <!-- RF Frequency -->
+                    <div>
+                        <div class="flex justify-between text-sm mb-1">
+                            <label>Applied Frequency (ν)</label>
+                            <span id="freq-val" class="font-mono text-purple-300">28.00 GHz</span>
+                        </div>
+                        <input type="range" id="freq-slider" class="slider-custom" min="0" max="100" step="0.1" value="28.0">
+                        <p class="text-xs text-slate-500 mt-1" id="freq-desc">Frequency of oscillating EM field.</p>
+                    </div>
+
+                    <!-- Electric Field Gradient (NQR only) -->
+                    <div id="efg-control" style="display: none;">
+                        <div class="flex justify-between text-sm mb-1">
+                            <label>Electric Field Gradient (eq)</label>
+                            <span id="efg-val" class="font-mono text-green-300">1.0</span>
+                        </div>
+                        <input type="range" id="efg-slider" class="slider-custom" min="0.1" max="5" step="0.1" value="1.0">
+                        <p class="text-xs text-slate-500 mt-1">Interacts with nuclear quadrupole moment.</p>
+                    </div>
+
+                    <div class="pt-4 border-t border-slate-700">
+                        <button id="btn-fire" class="w-full py-3 bg-gradient-to-r from-green-500 to-emerald-600 hover:from-green-400 hover:to-emerald-500 text-white rounded-lg font-bold shadow-lg shadow-green-900/50 transition-all transform active:scale-95" onclick="fireRF()">
+                            Apply RF Pulse
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Energy Level Diagram -->
+            <div class="glass-panel p-6 flex-grow flex flex-col">
+                <h2 class="text-xl font-bold mb-4 border-b border-slate-600 pb-2">Energy Levels</h2>
+                <div class="relative flex-grow flex items-center justify-center bg-slate-900 rounded-lg p-4 border border-slate-700 overflow-hidden min-h-[200px]">
+                    <div class="w-full h-full relative" id="energy-diagram">
+                        <!-- Y-axis line -->
+                        <div class="absolute left-4 top-4 bottom-4 w-px bg-slate-600"></div>
+                        <div class="absolute left-2 top-2 text-xs text-slate-400">Energy</div>
+                        
+                        <!-- Energy Levels -->
+                        <div id="level-upper" class="energy-level" style="top: 20%; left: 20%; width: 60%;">
+                            <span class="absolute -top-6 left-1 text-xs font-mono" id="label-upper">m = +1/2</span>
+                        </div>
+                        <div id="level-lower" class="energy-level lower" style="top: 80%; left: 20%; width: 60%;">
+                            <span class="absolute -bottom-6 left-1 text-xs font-mono" id="label-lower">m = -1/2</span>
+                        </div>
+                        
+                        <!-- Gap indicator -->
+                        <div id="delta-e" class="absolute left-1/2 w-px border-l-2 border-dashed border-slate-500 flex items-center justify-center" style="top: 20%; bottom: 20%; transform: translateX(-50%);">
+                            <span class="bg-slate-900 px-2 text-xs font-mono text-yellow-300 whitespace-nowrap" id="label-delta-e">ΔE = hν</span>
+                        </div>
+
+                        <!-- Particle -->
+                        <div id="particle" class="absolute w-4 h-4 bg-white rounded-full shadow-[0_0_10px_white] transition-all duration-500" style="left: 48%; top: 78.5%;"></div>
+                        
+                        <!-- Photon Animation -->
+                        <div id="photon" class="photon"></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Column: Visualization & Theory -->
+        <div class="lg:col-span-2 flex flex-col gap-6">
+            
+            <!-- 3D Visualization -->
+            <div class="glass-panel p-2 relative">
+                <div class="absolute top-4 left-4 z-10 bg-slate-900/80 p-2 rounded text-xs font-mono border border-slate-700 pointer-events-none">
+                    <div class="text-blue-400 flex items-center gap-2"><span class="w-3 h-px bg-blue-400 inline-block"></span> Static B-field (B₀)</div>
+                    <div class="text-red-400 flex items-center gap-2"><span class="w-3 h-px bg-red-400 inline-block"></span> Magnetization (M)</div>
+                    <div class="text-purple-400 flex items-center gap-2"><span class="w-3 h-px bg-purple-400 inline-block"></span> RF Field (B₁)</div>
+                </div>
+                <div id="canvas-container">
+                    <div id="resonance-ring" class="resonance-pulse"></div>
+                </div>
+                <div class="absolute bottom-4 right-4 z-10 text-xs text-slate-400 bg-slate-900/80 p-2 rounded">
+                    Drag to rotate. Scroll to zoom.
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Spectrum Graph -->
+                <div class="glass-panel p-4">
+                    <h3 class="text-lg font-semibold mb-2">Absorption Spectrum</h3>
+                    <div id="chart-container">
+                        <canvas id="spectrumChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Info Panel -->
+                <div class="glass-panel p-6 overflow-y-auto" style="max-height: 350px;">
+                    <h3 id="info-title" class="text-2xl font-bold mb-3 text-blue-300">Electron Spin Resonance (ESR)</h3>
+                    
+                    <div class="space-y-4 text-sm text-slate-300 leading-relaxed">
+                        <div id="info-theory">
+                            <h4 class="font-semibold text-white mb-1">Theory</h4>
+                            <p>ESR (or EPR) studies molecules with unpaired electrons. An external magnetic field (B₀) splits the degenerate spin states (m_s = ±1/2) via the Zeeman effect. The energy difference is ΔE = gμ_B B₀.</p>
+                            <p class="mt-2">Resonance occurs when applied microwave radiation matches this energy gap: hν = gμ_B B₀. The electron absorbs a photon and flips its spin.</p>
+                        </div>
+                        
+                        <div id="info-equation" class="p-3 bg-slate-900 rounded-md border border-slate-700 font-mono text-center my-2 text-yellow-300">
+                            ΔE = hν = gμ_B B₀
+                        </div>
+
+                        <div id="info-apps">
+                            <h4 class="font-semibold text-white mb-1">Applications</h4>
+                            <ul class="list-disc pl-5 space-y-1">
+                                <li>Detecting free radicals in chemical reactions.</li>
+                                <li>Studying transition metal complexes.</li>
+                                <li>Dating archaeological materials (bone, tooth enamel).</li>
+                                <li>Radiation dosimetry.</li>
+                            </ul>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // Physical Constants (simplified for visualization scaling)
+        const CONSTANTS = {
+            esr: {
+                gamma: 28.0, // GHz/T (approx for electron)
+                name: "Electron Spin Resonance",
+                color: "#3b82f6",
+                particleColor: "#60a5fa", // Blueish for electron
+                eq: "hν = gμ_B B₀",
+                theory: "ESR studies species with unpaired electrons. The magnetic moment of the electron interacts with an external magnetic field, splitting spin states (Zeeman effect). Resonance occurs when microwave frequency matches this energy gap.",
+                apps: ["Detecting free radicals", "Studying metalloproteins", "Defect centers in materials", "Radiation dosimetry"],
+                b0Range: [0, 3], b0Default: 1.0,
+                freqRange: [0, 100], freqDefault: 28.0
+            },
+            nmr: {
+                gamma: 42.58, // MHz/T (approx for 1H proton)
+                name: "Nuclear Magnetic Resonance",
+                color: "#ef4444",
+                particleColor: "#f87171", // Reddish for proton
+                eq: "hν = γħB₀",
+                theory: "NMR relies on the magnetic properties of certain atomic nuclei (like 1H, 13C). In a strong static magnetic field, nuclear spins align, creating energy levels. Radiofrequency pulses cause transitions between these levels.",
+                apps: ["Determining molecular structure in chemistry", "MRI (Magnetic Resonance Imaging) in medicine", "Studying protein dynamics", "Quality control in food industry"],
+                b0Range: [0, 14], b0Default: 4.7, // Higher field for NMR
+                freqRange: [0, 600], freqDefault: 200.0 // MHz
+            },
+            nqr: {
+                gamma: 1.0, // Arbitrary for viz, depends heavily on nucleus and gradient
+                name: "Nuclear Quadrupole Resonance",
+                color: "#10b981",
+                particleColor: "#34d399",
+                eq: "hν = (e²qQ/4h) * f(I, m)",
+                theory: "NQR is 'zero-field NMR'. It applies to nuclei with spin I > 1/2 (having a quadrupole moment). The energy levels are split by the interaction between the nuclear quadrupole moment and the local Electric Field Gradient (EFG) created by surrounding electron bonds. No external magnetic field is needed.",
+                apps: ["Detecting explosives (e.g., RDX, TNT via 14N)", "Narcotics detection", "Studying chemical bonding and crystalline structure", "Temperature/pressure sensing"],
+                b0Range: [0, 0], b0Default: 0.0, // B0 is 0 for pure NQR
+                freqRange: [0, 10], freqDefault: 3.0,
+                hasEFG: true
+            }
+        };
+
+        // App State
+        let currentMode = 'esr';
+        let isResonating = false;
+        let b0Value = CONSTANTS.esr.b0Default;
+        let freqValue = CONSTANTS.esr.freqDefault;
+        let efgValue = 1.0;
+        let resonanceFreq = 0;
+
+        // Three.js Variables
+        let scene, camera, renderer, magnetizationVector, b0Vector, b1Vector;
+        let isDragging = false, previousMousePosition = { x: 0, y: 0 };
+        let rotationAngle = 0;
+        let precessionSpeed = 0;
+        let flipAngle = 0;
+        let animationFrameId;
+
+        // Chart Variable
+        let spectrumChart;
+
+        function initThreeJS() {
+            const container = document.getElementById('canvas-container');
+            scene = new THREE.Scene();
+            scene.background = null; // Transparent
+
+            camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 100);
+            camera.position.set(3, 2, 5);
+            camera.lookAt(0, 0, 0);
+
+            renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            container.appendChild(renderer.domElement);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            const directionalLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            directionalLight.position.set(5, 10, 7);
+            scene.add(directionalLight);
+
+            // Grid and Axes
+            const gridHelper = new THREE.GridHelper(4, 10, 0x475569, 0x1e293b);
+            scene.add(gridHelper);
+            const axesHelper = new THREE.AxesHelper(2);
+            // Customize axis colors (R=X, G=Y, B=Z)
+            const colors = axesHelper.geometry.attributes.color;
+            colors.setXYZ(0, 0.5,0.5,0.5); colors.setXYZ(1, 0.5,0.5,0.5); // X
+            colors.setXYZ(2, 0.5,0.5,0.5); colors.setXYZ(3, 0.5,0.5,0.5); // Y
+            colors.setXYZ(4, 0.5,0.5,0.5); colors.setXYZ(5, 0.5,0.5,0.5); // Z
+            scene.add(axesHelper);
+
+            // B0 Vector (Static Field - Z axis)
+            const dirZ = new THREE.Vector3(0, 1, 0);
+            const origin = new THREE.Vector3(0, 0, 0);
+            b0Vector = new THREE.ArrowHelper(dirZ, origin, 2, 0x60a5fa, 0.2, 0.1);
+            scene.add(b0Vector);
+
+            // Magnetization Vector (M)
+            magnetizationVector = new THREE.ArrowHelper(dirZ, origin, 1.5, 0xf87171, 0.3, 0.15);
+            scene.add(magnetizationVector);
+
+            // B1 Vector (RF Field - X/Y plane)
+            const dirX = new THREE.Vector3(1, 0, 0);
+            b1Vector = new THREE.ArrowHelper(dirX, origin, 1, 0xc084fc, 0.2, 0.1);
+            b1Vector.visible = false;
+            scene.add(b1Vector);
+
+            // Nucleus/Electron Sphere representation
+            const geometry = new THREE.SphereGeometry(0.2, 32, 32);
+            const material = new THREE.MeshPhongMaterial({ 
+                color: 0x94a3b8, 
+                transparent: true, 
+                opacity: 0.8,
+                shininess: 100
+            });
+            const nucleus = new THREE.Mesh(geometry, material);
+            scene.add(nucleus);
+
+            // Event Listeners for Interaction
+            renderer.domElement.addEventListener('mousedown', onMouseDown);
+            renderer.domElement.addEventListener('mousemove', onMouseMove);
+            renderer.domElement.addEventListener('mouseup', onMouseUp);
+            renderer.domElement.addEventListener('mouseleave', onMouseUp);
+            renderer.domElement.addEventListener('wheel', onMouseWheel);
+            
+            // Touch support
+            renderer.domElement.addEventListener('touchstart', (e) => {
+                e.preventDefault();
+                onMouseDown(e.touches[0]);
+            }, {passive: false});
+            renderer.domElement.addEventListener('touchmove', (e) => {
+                e.preventDefault();
+                onMouseMove(e.touches[0]);
+            }, {passive: false});
+            renderer.domElement.addEventListener('touchend', onMouseUp);
+
+            window.addEventListener('resize', onWindowResize, false);
+
+            animate();
+        }
+
+        function onMouseDown(e) { isDragging = true; }
+        function onMouseUp(e) { isDragging = false; }
+        function onMouseMove(e) {
+            if (!isDragging) return;
+            const deltaMove = {
+                x: e.offsetX - previousMousePosition.x,
+                y: e.offsetY - previousMousePosition.y
+            };
+            const rotationSpeed = 0.01;
+            scene.rotation.y += deltaMove.x * rotationSpeed;
+            scene.rotation.x += deltaMove.y * rotationSpeed;
+            previousMousePosition = { x: e.offsetX, y: e.offsetY };
+        }
+        function onMouseWheel(e) {
+            camera.position.z += e.deltaY * 0.01;
+            camera.position.z = Math.max(2, Math.min(camera.position.z, 10));
+        }
+
+        function animate() {
+            animationFrameId = requestAnimationFrame(animate);
+
+            // Physics/Animation Logic
+            if (currentMode !== 'nqr') {
+                precessionSpeed = b0Value * 0.05; // Larmor precession relative to B0
+            } else {
+                // NQR precession is complex, simplify for viz
+                precessionSpeed = efgValue * 0.05;
+            }
+
+            // Animate B1 (RF) if active
+            if (isResonating) {
+                b1Vector.visible = true;
+                rotationAngle += freqValue * 0.005; // RF frequency
+                b1Vector.setDirection(new THREE.Vector3(Math.cos(rotationAngle), 0, Math.sin(rotationAngle)).normalize());
+                
+                // Flip magnetization vector towards XY plane
+                flipAngle += 0.05;
+                if (flipAngle > Math.PI / 2) flipAngle = Math.PI / 2; // Stop at 90 deg pulse
+                
+            } else {
+                b1Vector.visible = false;
+                // Relax back to Z axis (T1 relaxation sim)
+                flipAngle -= 0.02;
+                if (flipAngle < 0) flipAngle = 0;
+            }
+
+            // Apply precession and flip to Magnetization vector
+            const mDirection = new THREE.Vector3(
+                Math.sin(flipAngle) * Math.cos(Date.now() * precessionSpeed * 0.001),
+                Math.cos(flipAngle),
+                Math.sin(flipAngle) * Math.sin(Date.now() * precessionSpeed * 0.001)
+            ).normalize();
+            
+            // In NQR without B0, conceptualize differently (aligns with EFG axes)
+            if (currentMode === 'nqr' && b0Value === 0) {
+                 // Simplified viz for NQR: oscillating in a plane
+                mDirection.set(Math.sin(Date.now() * precessionSpeed * 0.001) * Math.sin(flipAngle), Math.cos(flipAngle), 0).normalize();
+            }
+
+            magnetizationVector.setDirection(mDirection);
+            
+            // Adjust B0 visual length based on value
+            if (currentMode === 'nqr') {
+                b0Vector.visible = false; // No B0 in pure NQR
+            } else {
+                b0Vector.visible = true;
+                const b0Len = Math.max(0.1, (b0Value / CONSTANTS[currentMode].b0Range[1]) * 3);
+                b0Vector.setLength(b0Len, 0.2, 0.1);
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        function onWindowResize() {
+            const container = document.getElementById('canvas-container');
+            camera.aspect = container.clientWidth / container.clientHeight;
+            camera.updateProjectionMatrix();
+            renderer.setSize(container.clientWidth, container.clientHeight);
+        }
+
+        function initChart() {
+            const ctx = document.getElementById('spectrumChart').getContext('2d');
+            
+            // Initial dummy data
+            const labels = Array.from({length: 100}, (_, i) => i);
+            const data = Array.from({length: 100}, () => 0.05); // Base noise
+
+            spectrumChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: 'Absorption',
+                        data: data,
+                        borderColor: '#3b82f6',
+                        backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                        borderWidth: 2,
+                        pointRadius: 0,
+                        fill: true,
+                        tension: 0.4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 200 },
+                    scales: {
+                        x: { 
+                            title: { display: true, text: 'Frequency', color: '#94a3b8' },
+                            ticks: { display: false },
+                            grid: { color: '#334155' }
+                        },
+                        y: { 
+                            title: { display: true, text: 'Intensity', color: '#94a3b8' },
+                            min: 0, max: 1,
+                            ticks: { display: false },
+                            grid: { color: '#334155' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: { enabled: false }
+                    }
+                }
+            });
+        }
+
+        function updatePhysics() {
+            const c = CONSTANTS[currentMode];
+            
+            // Calculate Resonance Frequency
+            if (currentMode === 'esr' || currentMode === 'nmr') {
+                resonanceFreq = c.gamma * b0Value;
+            } else if (currentMode === 'nqr') {
+                // Simplified relation: Freq proportional to EFG (eq)
+                resonanceFreq = c.freqDefault * efgValue; 
+            }
+
+            // Check if applied frequency matches resonance frequency (within tolerance)
+            const tolerance = c.freqRange[1] * 0.05; // 5% bandwidth
+            
+            let detuning = Math.abs(freqValue - resonanceFreq);
+            
+            const statusEl = document.getElementById('resonance-status');
+            if (detuning < tolerance && freqValue > 0) {
+                // Resonance!
+                statusEl.textContent = "ON RESONANCE";
+                statusEl.className = "text-xs px-2 py-1 rounded-full bg-green-900 text-green-300 font-bold shadow-[0_0_10px_rgba(34,197,94,0.5)]";
+                
+                // Animate Energy Level particle up
+                document.getElementById('particle').style.top = '18.5%';
+                document.getElementById('particle').style.backgroundColor = c.particleColor;
+                document.getElementById('particle').style.boxShadow = `0 0 15px ${c.particleColor}`;
+                
+            } else {
+                // Off Resonance
+                statusEl.textContent = "Off Resonance";
+                statusEl.className = "text-xs px-2 py-1 rounded-full bg-slate-700 text-slate-400";
+                
+                // Particle drops down
+                document.getElementById('particle').style.top = '78.5%';
+                document.getElementById('particle').style.backgroundColor = 'white';
+                document.getElementById('particle').style.boxShadow = '0 0 5px white';
+            }
+
+            updateEnergyDiagram();
+            updateChart();
+        }
+
+        function updateEnergyDiagram() {
+            const levelUpper = document.getElementById('level-upper');
+            const levelLower = document.getElementById('level-lower');
+            const deltaE = document.getElementById('delta-e');
+            
+            let gap;
+            if (currentMode === 'nqr') {
+                gap = efgValue * 15; // Visual scaling for EFG
+            } else {
+                gap = b0Value * 15; // Visual scaling for B0 splitting
+            }
+            
+            // Constraints
+            gap = Math.max(2, Math.min(gap, 40)); 
+            
+            const baseCenter = 50;
+            const topPos = baseCenter - gap;
+            const bottomPos = baseCenter + gap;
+
+            levelUpper.style.top = `${topPos}%`;
+            levelLower.style.top = `${bottomPos}%`;
+            
+            deltaE.style.top = `${topPos}%`;
+            deltaE.style.bottom = `${100 - bottomPos}%`;
+        }
+
+        function updateChart() {
+            if (!spectrumChart) return;
+            
+            const c = CONSTANTS[currentMode];
+            const maxFreq = c.freqRange[1];
+            
+            // Map resonance freq to 0-100 index for chart
+            const resIndex = Math.floor((resonanceFreq / maxFreq) * 100);
+            
+            const newData = [];
+            for (let i = 0; i < 100; i++) {
+                // Lorentzian lineshape
+                const width = 2; // Line width
+                const x = i;
+                const x0 = resIndex;
+                let y = 0.05 + Math.random() * 0.02; // Base noise
+                
+                if (x0 > 0 && x0 < 100) {
+                     // intensity = A / (1 + ((x-x0)/width)^2)
+                    const intensity = 0.8 / (1 + Math.pow((x - x0) / width, 2));
+                    y += intensity;
+                }
+                newData.push(y);
+            }
+
+            spectrumChart.data.datasets[0].data = newData;
+            spectrumChart.data.datasets[0].borderColor = c.color;
+            spectrumChart.data.datasets[0].backgroundColor = c.color + '22'; // add alpha
+            
+            // Update X-axis title unit based on mode
+            let unit = currentMode === 'esr' ? 'GHz' : 'MHz';
+            spectrumChart.options.scales.x.title.text = `Frequency (${unit})`;
+            
+            spectrumChart.update();
+        }
+
+        function fireRF() {
+            // Trigger Photon Animation
+            const photon = document.getElementById('photon');
+            photon.classList.remove('animate-photon');
+            void photon.offsetWidth; // trigger reflow
+            photon.classList.add('animate-photon');
+
+            // Trigger Resonance Ring in 3D canvas
+            const ring = document.getElementById('resonance-ring');
+            ring.classList.remove('animate-pulse');
+            void ring.offsetWidth;
+            ring.classList.add('animate-pulse');
+
+            // Set RF State for 3D viz
+            isResonating = true;
+            setTimeout(() => { isResonating = false; }, 1500); // Pulse duration
+        }
+
+        function setMode(mode) {
+            currentMode = mode;
+            const c = CONSTANTS[mode];
+
+            // Update Buttons
+            document.querySelectorAll('.tab-btn').forEach(btn => {
+                btn.classList.remove('active', 'bg-blue-500', 'bg-red-500', 'bg-green-500');
+                btn.style.backgroundColor = '';
+                btn.style.boxShadow = 'none';
+                
+                if(btn.id === `btn-${mode}`) {
+                    btn.classList.add('active');
+                    btn.style.backgroundColor = c.color;
+                    btn.style.boxShadow = `0 0 15px ${c.color}80`;
+                } else {
+                    btn.classList.add('bg-slate-700');
+                }
+            });
+
+            // Update UI Elements based on Mode
+            document.getElementById('info-title').textContent = c.name;
+            document.getElementById('info-title').style.color = c.color;
+            document.getElementById('info-theory').innerHTML = `<h4 class="font-semibold text-white mb-1">Theory</h4><p>${c.theory}</p>`;
+            document.getElementById('info-equation').textContent = c.eq;
+            
+            let appsHtml = '<h4 class="font-semibold text-white mb-1">Applications</h4><ul class="list-disc pl-5 space-y-1">';
+            c.apps.forEach(app => appsHtml += `<li>${app}</li>`);
+            appsHtml += '</ul>';
+            document.getElementById('info-apps').innerHTML = appsHtml;
+
+            // Configure Sliders
+            const b0Slider = document.getElementById('b0-slider');
+            const freqSlider = document.getElementById('freq-slider');
+            const efgControl = document.getElementById('efg-control');
+
+            if (mode === 'nqr') {
+                b0Slider.parentElement.style.opacity = '0.3';
+                b0Slider.disabled = true;
+                b0Value = 0;
+                document.getElementById('b0-val').textContent = "0.00 T";
+                
+                efgControl.style.display = 'block';
+                
+                document.getElementById('label-upper').textContent = 'm = ±3/2';
+                document.getElementById('label-lower').textContent = 'm = ±1/2';
+                
+            } else {
+                b0Slider.parentElement.style.opacity = '1';
+                b0Slider.disabled = false;
+                b0Slider.min = c.b0Range[0];
+                b0Slider.max = c.b0Range[1];
+                b0Slider.step = (c.b0Range[1] - c.b0Range[0]) / 100;
+                b0Value = c.b0Default;
+                b0Slider.value = b0Value;
+                
+                efgControl.style.display = 'none';
+                
+                document.getElementById('label-upper').textContent = mode==='nmr' ? 'β state (-1/2)' : 'm_s = +1/2';
+                document.getElementById('label-lower').textContent = mode==='nmr' ? 'α state (+1/2)' : 'm_s = -1/2';
+            }
+
+            freqSlider.min = c.freqRange[0];
+            freqSlider.max = c.freqRange[1];
+            freqSlider.step = (c.freqRange[1] - c.freqRange[0]) / 100;
+            freqValue = c.freqDefault;
+            freqSlider.value = freqValue;
+
+            // Update Labels
+            let freqUnit = mode === 'esr' ? 'GHz' : 'MHz';
+            document.getElementById('freq-val').textContent = `${freqValue.toFixed(1)} ${freqUnit}`;
+            document.getElementById('b0-val').textContent = `${b0Value.toFixed(2)} T`;
+            
+            // Reset state
+            flipAngle = 0;
+            document.getElementById('particle').style.backgroundColor = c.particleColor;
+
+            updatePhysics();
+        }
+
+        // Event Listeners for Sliders
+        document.getElementById('b0-slider').addEventListener('input', (e) => {
+            b0Value = parseFloat(e.target.value);
+            document.getElementById('b0-val').textContent = `${b0Value.toFixed(2)} T`;
+            updatePhysics();
+        });
+
+        document.getElementById('freq-slider').addEventListener('input', (e) => {
+            freqValue = parseFloat(e.target.value);
+            let unit = currentMode === 'esr' ? 'GHz' : 'MHz';
+            document.getElementById('freq-val').textContent = `${freqValue.toFixed(1)} ${unit}`;
+            updatePhysics();
+        });
+
+        document.getElementById('efg-slider').addEventListener('input', (e) => {
+            efgValue = parseFloat(e.target.value);
+            document.getElementById('efg-val').textContent = efgValue.toFixed(1);
+            updatePhysics();
+        });
+
+        // Initialize Application
+        window.onload = function() {
+            initThreeJS();
+            initChart();
+            setMode('esr'); // Default mode
+            
+            // Add mouse tracking for 3D interaction variables
+            renderer.domElement.addEventListener('mousemove', (e) => {
+                previousMousePosition = { x: e.offsetX, y: e.offsetY };
+            });
+        };
+
+    </script>
+</body>
+</html>

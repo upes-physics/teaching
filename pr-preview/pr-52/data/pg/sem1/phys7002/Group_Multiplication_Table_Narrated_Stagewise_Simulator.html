@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B.Tech Mathematics - Group Multiplication Table Simulator</title>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+:root{--navy:#123a7a;--cyan:#29b6e8;--orange:#e8720c;--pink:#c2185b;--green:#0a8f4a;--red:#b51d4b;--bg:#eef2f7;--card:#fff;--border:#d9e1ea;--ink:#1c2733;--muted:#5d6b7b}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Times New Roman",Georgia,serif;font-size:12pt;line-height:1.55}
+h1,h2,h3,h4{color:var(--navy);margin:0 0 .55em}h1{font-size:23pt}h2{font-size:17pt;border-bottom:2px solid var(--border);padding-bottom:.25em;margin-top:1.35em}h3{font-size:14pt}p{margin:.55em 0}
+header{position:sticky;top:0;z-index:1000;background:#fff;border-bottom:3px solid var(--cyan);box-shadow:0 1px 5px #123a7a14;padding:.65em 1.2em;display:flex;justify-content:space-between;align-items:center;gap:1em;flex-wrap:wrap}.brand{font-weight:bold;color:var(--navy);font-size:14pt}.brand span{font-size:10.5pt;color:var(--muted);font-style:italic;font-weight:normal}
+nav,.appnav{display:flex;gap:.35em;flex-wrap:wrap}nav button,.appnav button{border:1px solid var(--border);background:#eef1f4;color:var(--navy);padding:.5em .85em;border-radius:4px;font-family:Georgia,serif;font-weight:bold;cursor:pointer;font-size:9.5pt}nav button.active,.appnav button.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+main{max-width:1200px;margin:auto;padding:1.4em 1.5em 4em}.page,.apppage{display:none}.page.active,.apppage.active{display:block}.eyebrow{font-size:9pt;letter-spacing:.15em;text-transform:uppercase;color:var(--orange);font-weight:bold}
+.panel,.card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1.1em 1.3em;margin:1em 0;box-shadow:0 1px 4px #123a7a0d}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1em}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:1em}@media(max-width:900px){.grid2,.grid3{grid-template-columns:1fr}}
+.opcard{border-top:4px solid var(--cyan)}.opcard:nth-child(2){border-top-color:var(--orange)}.opcard:nth-child(3){border-top-color:var(--pink)}.op{font-size:22pt;color:var(--navy);font-weight:bold}.badge{display:inline-block;padding:.2em .55em;border-radius:12px;background:#eef1f4;border:1px solid var(--border);font-size:8pt;font-weight:bold;color:var(--navy)}
+.eq{background:#f4f7fb;border-left:4px solid var(--pink);padding:.65em .9em;overflow:auto;margin:.7em 0}.callout{background:#eaf6fc;border-left:4px solid var(--cyan);padding:.75em .9em;border-radius:4px}.success-note{background:#eaf7ef;border-left:4px solid var(--green);padding:.8em .9em;border-radius:4px}.warning{background:#fff2f4;border-left:4px solid var(--pink);padding:.8em .9em;border-radius:4px}
+table{width:100%;border-collapse:collapse;margin:.8em 0;font-size:10.2pt}th,td{border:1px solid var(--border);padding:.5em;text-align:center;vertical-align:middle}th{background:var(--navy);color:#fff}tr:nth-child(even) td{background:#f7f9fc}
+.simgrid{display:grid;grid-template-columns:.82fr 2fr .9fr;gap:1em}.simcol{background:#fff;border:1px solid var(--border);border-radius:8px;overflow:hidden}.simcol:nth-child(1){border-top:4px solid var(--cyan)}.simcol:nth-child(2){border-top:4px solid var(--navy)}.simcol:nth-child(3){border-top:4px solid var(--orange)}
+.colhead{font-weight:bold;color:var(--navy);padding:.75em 1em;border-bottom:1px solid var(--border)}.colbody{padding:1em}label{font-size:9.5pt;color:var(--muted);font-weight:bold;display:block;margin:.65em 0 .25em}
+select,input[type=range],input[type=text]{width:100%;padding:.45em;border:1px solid var(--border);border-radius:4px;background:#fff;color:var(--ink);font-family:Georgia,serif}input[type=range]{padding:0;accent-color:var(--navy)}
+button.action{width:100%;padding:.58em;margin-top:.5em;border:1px solid var(--navy);border-radius:4px;background:var(--navy);color:#fff;font-weight:bold;cursor:pointer;font-family:Georgia,serif}button.action.secondary{background:#fff;color:var(--navy);border-color:var(--border)}
+.metric{background:#f4f7fb;border:1px solid var(--border);border-radius:5px;padding:.65em;margin:.55em 0}.metric small{display:block;color:var(--muted);font-size:8.5pt}.metric strong{font-family:"Courier New",monospace;font-size:12.5pt;color:var(--pink)}
+.status{padding:.6em;border-radius:4px;text-align:center;font-weight:bold;margin-top:.6em}.pass{background:#e3f6e9;color:#0a6b3a;border:1px solid #8ad3a5}.fail{background:#fbe9ee;color:#a3144b;border:1px solid #e2a1b7}
+.legend{display:flex;gap:1em;flex-wrap:wrap;font-size:9.5pt}.legend i{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:4px}.step{padding:.55em .7em;border-left:3px solid var(--cyan);background:#f7f9fc;margin:.4em 0}.formula-box{background:#f4f7fb;border:1px solid var(--border);border-radius:5px;padding:.65em;overflow:auto}.prediction{background:#fff9ef;border-left:4px solid var(--orange);padding:.7em .9em}.ai{background:#f7f5ff;border-left:4px solid var(--pink);padding:.9em}.note{font-size:10pt;color:var(--muted)}
+.cayley-wrap{overflow:auto}.cayley th:first-child{background:var(--orange)}.cayley td.good{background:#eaf7ef}.cayley td.bad{background:#fff2f4;color:var(--red);font-weight:bold}.edit-cell{width:4.5em;text-align:center}
+.scorebar{position:sticky;top:70px;z-index:20;background:var(--navy);color:#fff;padding:.65em 1em;border-radius:5px;display:flex;justify-content:space-between;align-items:center}.scorebar button{background:var(--orange);border:0;color:#fff;padding:.45em .8em;border-radius:4px;cursor:pointer}.q{border-bottom:1px dashed var(--border);padding:1em 0}.option{display:block;text-align:left;padding:.55em .7em;background:#f7f9fc;border:1px solid var(--border);border-radius:5px;margin:.4em 0;cursor:pointer}.feedback{display:none;padding:.55em;border-radius:5px;margin-top:.5em}.feedback.show{display:block}.right{background:#e3f6e9;color:#0a6b3a}.wrong{background:#fbe9ee;color:#a3144b}textarea{width:100%;min-height:130px;border:1px solid var(--border);border-radius:5px;padding:.7em;font-family:Georgia,serif}
+footer{background:#0b2440;color:#dce8fa;text-align:center;padding:1.3em;font-size:9.5pt}@media(max-width:980px){.simgrid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><div class="brand">B.Tech Abstract Algebra <span>- Multiplication Tables of Groups</span></div><nav id="nav"><button class="active" data-page="concept">I - Concepts</button><button data-page="sim">II - Simulator</button><button data-page="apps">III - Applications</button><button data-page="assess">IV - Assessment</button><button data-page="notes">V - Notes</button></nav></header>
+<main>
+<section class="page active" id="concept">
+ <div class="eyebrow">Layer 1 - Conceptual Understanding</div><h1>Multiplication Tables in Group Theory</h1>
+ <p>A multiplication table, also called a Cayley table, displays the result of combining any two elements of a finite algebraic structure.</p>
+ <div class="panel"><h3>Learning Outcomes</h3><ul><li>Construct Cayley tables for finite groups.</li><li>Check closure, identity, inverses, and associativity.</li><li>Identify whether a table represents a group.</li><li>Detect common errors in multiplication tables.</li><li>Compare cyclic and non-cyclic examples.</li></ul></div>
+ <div class="grid3"><div class="card opcard"><span class="badge">CLOSURE</span><div class="op">*</div><h3>Inside the Set</h3><p>Every product \(a*b\) must be an element of the same set.</p></div><div class="card opcard"><span class="badge">IDENTITY & INVERSE</span><div class="op">e</div><h3>Neutral Element</h3><p>There must be an element \(e\) such that \(ea=ae=a\).</p></div><div class="card opcard"><span class="badge">ASSOCIATIVITY</span><div class="op">( )</div><h3>Grouping Rule</h3><p>For all \(a,b,c\), \((a*b)*c=a*(b*c)\).</p></div></div>
+ <h2>1. Cayley Table</h2><div class="eq">\[ \begin{array}{c|cccc} *&e&a&b&c\\ \hline e&e&a&b&c\\ a&a&\cdots&\cdots&\cdots \end{array} \]</div>
+ <p>The row element multiplies the column element. In a group, every row and every column is a rearrangement of the group elements.</p>
+ <h2>2. Group Axioms</h2><table><tr><th>Axiom</th><th>Table-based test</th></tr><tr><td>Closure</td><td>Every entry belongs to the set.</td></tr><tr><td>Identity</td><td>One row and one column copy the headers exactly.</td></tr><tr><td>Inverse</td><td>Every row and column contains the identity element.</td></tr><tr><td>Associativity</td><td>Check \((a*b)*c=a*(b*c)\) for all triples.</td></tr></table>
+</section>
+
+<section class="page" id="sim">
+ <div class="eyebrow">Layer 2 - Interactive Verification, Stagewise Visualization & Narration</div><h1>Narrated Cayley Table Simulator</h1>
+ <div class="simgrid">
+  <div class="simcol"><div class="colhead">SIMULATION INPUTS</div><div class="colbody">
+   <label for="group">Example table</label><select id="group"><option value="c3">C3: addition modulo 3</option><option value="c4">C4: addition modulo 4</option><option value="v4">V4: Klein four group</option><option value="s3">S3-style non-abelian table</option><option value="bad">Broken table for error finding</option></select>
+   <label for="mode">Table mode</label><select id="mode"><option value="fixed">Generated table</option><option value="edit">Editable entries</option></select>
+   <label for="stage">Stage</label><input id="stage" type="range" min="0" max="4" step="1" value="0">
+   <button class="action" id="prevStage">Previous Stage</button><button class="action" id="nextStage">Next Stage</button><button class="action" id="playStages">Play Guided Explanation</button>
+   <label for="narrationMode">Narration</label><select id="narrationMode"><option value="text">Text only</option><option value="voice">Text + browser voice</option></select>
+   <button class="action secondary" id="speak">Narrate Current Stage</button><button class="action secondary" id="stopSpeak">Stop Narration</button><button class="action secondary" id="resetSim">Reset Simulator</button><button class="action secondary" id="downloadCSV">Download Table CSV</button><button class="action secondary" id="downloadHTML">Download HTML</button>
+  </div></div>
+  <div class="simcol"><div class="colhead">CAYLEY TABLE</div><div class="colbody"><div class="legend"><span><i style="background:var(--green)"></i>Checked/valid cell</span><span><i style="background:var(--red)"></i>Problem cell or failed condition</span></div><div id="tableBox" class="cayley-wrap"></div><div id="stageTitle" style="font-weight:bold;color:var(--navy);font-size:13pt"></div><div id="stageDescription" class="note" style="margin-top:.25em"></div></div></div>
+  <div class="simcol"><div class="colhead">MATHEMATICAL ENGINE</div><div class="colbody"><div class="metric"><small>Set of elements</small><strong id="setRead">-</strong></div><div class="metric"><small>Closure</small><strong id="closureRead">-</strong></div><div class="metric"><small>Identity</small><strong id="identityRead">-</strong></div><div class="metric"><small>Inverses</small><strong id="inverseRead">-</strong></div><div class="metric"><small>Associativity</small><strong id="assocRead">-</strong></div><div class="metric"><small>Commutative?</small><strong id="abelianRead">-</strong></div><div id="status" class="status">AWAITING CHECK</div></div></div>
+ </div>
+ <div class="grid2"><div class="panel"><h3>Narrator</h3><div id="narratorBox" class="callout" aria-live="polite">Move the stage slider or press Play Guided Explanation.</div><div class="formula-box" id="stageFormula" style="margin-top:.8em"></div></div><div class="panel"><h3>AI-Assisted Table Verification</h3><div id="aiPanel" class="ai"></div><div class="prediction" style="margin-top:.8em"><b>Try this:</b> switch to editable mode, change one entry, and observe which axiom fails first.</div></div></div>
+ <div class="panel"><h3>Stage List</h3><div id="steps"></div></div>
+</section>
+
+<section class="page" id="apps">
+ <div class="eyebrow">Layer 3 - Exploration & Applications</div><h1>Applications</h1><div class="appnav"><button class="active" data-app="algebra">Algebra</button><button data-app="symmetry">Symmetry</button><button data-app="coding">Coding</button><button data-app="physics">Physics</button></div>
+ <div class="apppage active" id="algebra"><div class="card"><h3>Finite Groups</h3><p>Cayley tables help students verify small finite groups and distinguish cyclic, abelian, and non-abelian structures.</p></div></div><div class="apppage" id="symmetry"><div class="card"><h3>Symmetry Operations</h3><p>Rotations and reflections of geometric objects form groups whose operations can be written in tables.</p></div></div><div class="apppage" id="coding"><div class="card"><h3>Computational Algebra</h3><p>Programs can verify group axioms mechanically for finite tables.</p></div></div><div class="apppage" id="physics"><div class="card"><h3>Physics Symmetry</h3><p>Symmetry groups organize transformations in crystallography, quantum mechanics, and particle physics.</p></div></div>
+</section>
+
+<section class="page" id="assess">
+ <div class="eyebrow">Layer 4 - Practice, Problem Solving & Assessment</div><h1>Assessment</h1><div class="scorebar"><span>Score: <span id="score">0</span> / 8</span><button id="resetQuiz">Reset Quiz</button></div><div class="panel"><h3>Conceptual MCQs</h3><div id="quiz"></div></div><div class="panel"><h3>Short Assessment Activity</h3><p>Choose C4 and identify its identity element. Then explain how the table shows that every element has an inverse.</p><textarea placeholder="Write your answer here..."></textarea></div>
+</section>
+
+<section class="page" id="notes">
+ <div class="eyebrow">Instructor & Student Support</div><h1>Teaching Notes</h1><div class="grid2"><div class="panel"><h3>Suggested Sequence</h3><ol><li>Define binary operation and closure.</li><li>Show how to read row-column products.</li><li>Find the identity row and column.</li><li>Check inverse entries against the identity.</li><li>Discuss associativity and why it is the longest finite check.</li></ol></div><div class="panel"><h3>Common Errors</h3><ul><li>Checking only rows but not columns.</li><li>Assuming a Latin square is automatically associative.</li><li>Confusing commutativity with associativity.</li><li>Missing that every entry must remain inside the set.</li></ul></div></div>
+ <table><tr><th>Stage</th><th>Student action</th><th>Instructor prompt</th></tr><tr><td>1</td><td>Read elements and operation.</td><td>Ask what the row and column mean.</td></tr><tr><td>2</td><td>Check closure.</td><td>Ask whether any entry leaves the set.</td></tr><tr><td>3</td><td>Find identity.</td><td>Ask which row and column copy the headers.</td></tr><tr><td>4</td><td>Find inverses.</td><td>Ask where identity appears in each row and column.</td></tr><tr><td>5</td><td>Check associativity.</td><td>Ask why this is not visible from one row alone.</td></tr></table>
+</section>
+</main>
+<footer>Group Multiplication Table Simulator - standalone offline teaching file</footer>
+<script>
+const $=id=>document.getElementById(id);let timer=null,currentNarration='',current=null;
+const quizData=[
+ ['A Cayley table represents',['a binary operation on a finite set','only a matrix determinant','only a vector field','a differential equation'],0,'A Cayley table lists products of pairs of elements.'],
+ ['Closure means',['every product remains in the set','there is always a zero','the table is symmetric','all products are equal'],0,'Closure requires all entries to belong to the set.'],
+ ['An identity element e satisfies',['ea=ae=a','ea=0','ea=e only','ea=a^2'],0,'Identity leaves every element unchanged on both sides.'],
+ ['An inverse of a satisfies',['ab=ba=e for some b','ab=a always','a=b always','ab=0 always'],0,'The inverse combines with the element to give identity.'],
+ ['Associativity means',['(ab)c=a(bc)','ab=ba','a^2=e for all a','every row is identical'],0,'Associativity concerns grouping.'],
+ ['Commutativity means',['ab=ba','(ab)c=a(bc)','there is no identity','closure fails'],0,'Commutativity means order does not matter.'],
+ ['A group must have',['closure, associativity, identity, inverses','only closure','only a symmetric table','only four elements'],0,'These are the group axioms.'],
+ ['A Latin square table alone guarantees',['closure-style row/column balance, not associativity','associativity always','no identity','infinite order'],0,'Associativity still needs a triple check.']
+];
+function elementsFor(kind){if(kind==='c3')return ['0','1','2'];if(kind==='s3')return ['e','r','r2','s','sr','sr2'];return ['e','a','b','c']}
+function opFor(kind){
+ if(kind==='c3')return (a,b)=>String((+a+ +b)%3);
+ if(kind==='c4')return (a,b)=>['e','a','b','c'][( ['e','a','b','c'].indexOf(a)+['e','a','b','c'].indexOf(b) )%4];
+ if(kind==='v4'){const E=['e','a','b','c'],m={e:0,a:1,b:2,c:3};return(a,b)=>E[m[a]^m[b]]}
+ if(kind==='s3'){
+  const E=['e','r','r2','s','sr','sr2'],pair={e:[0,0],r:[1,0],r2:[2,0],s:[0,1],sr:[1,1],sr2:[2,1]},name={'0,0':'e','1,0':'r','2,0':'r2','0,1':'s','1,1':'sr','2,1':'sr2'};
+  return(a,b)=>{let [i,j]=pair[a],[k,l]=pair[b];return name[((i+(j?-k:k)+6)%3)+','+((j+l)%2)]}
+ }
+ return(a,b)=>{if(a==='e')return b;if(b==='e')return a;if(a===b)return 'e';return a==='a'&&b==='b'?'x':'a'}
+}
+function makeTable(kind){const E=elementsFor(kind),op=opFor(kind);return {E,tab:E.map(a=>E.map(b=>op(a,b)))}}
+function readEdited(){if($('mode').value!=='edit'||!current)return makeTable($('group').value);const E=current.E,tab=E.map((a,i)=>E.map((b,j)=>$('cell_'+i+'_'+j).value.trim()));return{E,tab}}
+function product(G,a,b){const i=G.E.indexOf(a),j=G.E.indexOf(b);return i<0||j<0?undefined:G.tab[i][j]}
+function analyze(G){
+ const E=G.E,closure=G.tab.flat().every(x=>E.includes(x));
+ const identity=E.find(e=>E.every(a=>product(G,e,a)===a&&product(G,a,e)===a))||null;
+ const inverses=!!identity&&E.every(a=>E.some(b=>product(G,a,b)===identity&&product(G,b,a)===identity));
+ let assoc=true,badTriple=null;for(const a of E)for(const b of E)for(const c of E){if(product(G,product(G,a,b),c)!==product(G,a,product(G,b,c))){assoc=false;badTriple=[a,b,c];break}if(!assoc)break;if(!assoc)break}
+ const abelian=E.every(a=>E.every(b=>product(G,a,b)===product(G,b,a)));
+ return{closure,identity,inverses,assoc,badTriple,abelian,isGroup:closure&&identity&&inverses&&assoc}
+}
+function renderTable(G,A){
+ let html='<table class="cayley"><tr><th>*</th>'+G.E.map(x=>'<th>'+x+'</th>').join('')+'</tr>';
+ for(let i=0;i<G.E.length;i++){html+='<tr><th>'+G.E[i]+'</th>';for(let j=0;j<G.E.length;j++){const val=G.tab[i][j],bad=!G.E.includes(val);html+='<td class="'+(bad?'bad':'good')+'">'+($('mode').value==='edit'?`<input class="edit-cell" id="cell_${i}_${j}" value="${val}">`:val)+'</td>'}html+='</tr>'}
+ html+='</table>';$('tableBox').innerHTML=html;if($('mode').value==='edit')document.querySelectorAll('.edit-cell').forEach(x=>x.oninput=update);
+}
+function stages(c){return[
+ {title:'Stage 1 - Read the Cayley Table',formula:'\\[a*b=\\text{entry at row }a\\text{ and column }b\\]',desc:'Every table entry is the product of a row element and a column element.',narr:`Stage one. The set is ${c.G.E.join(', ')}. Read each product from row to column.`},
+ {title:'Stage 2 - Check Closure',formula:'\\[a,b\\in G\\Rightarrow a*b\\in G\\]',desc:'Closure passes only if every entry belongs to the same set.',narr:`Stage two. Closure ${c.A.closure?'passes':'fails'}. ${c.A.closure?'All entries stay inside the set.':'At least one entry is outside the set.'}`},
+ {title:'Stage 3 - Find Identity',formula:'\\[e*a=a*e=a\\]',desc:'The identity row and identity column reproduce the headers.',narr:`Stage three. The identity element is ${c.A.identity||'not found'}.`},
+ {title:'Stage 4 - Check Inverses',formula:'\\[a*b=b*a=e\\]',desc:'Each element must combine with some element to give the identity on both sides.',narr:`Stage four. The inverse test ${c.A.inverses?'passes':'fails'}.`},
+ {title:'Stage 5 - Check Associativity',formula:'\\[(a*b)*c=a*(b*c)\\]',desc:'Associativity is checked over all ordered triples.',narr:`Stage five. Associativity ${c.A.assoc?'passes':'fails'}. ${c.A.badTriple?'A failing triple is '+c.A.badTriple.join(', ')+'.':''}`}
+]}
+function update(){
+ if($('mode').value==='fixed'||!current)current=makeTable($('group').value);
+ const G=readEdited(),A=analyze(G),s=stages({G,A}),stage=+$('stage').value;renderTable(G,A);current=G;
+ $('setRead').textContent='{'+G.E.join(', ')+'}';$('closureRead').textContent=A.closure?'pass':'fail';$('identityRead').textContent=A.identity||'none';$('inverseRead').textContent=A.inverses?'pass':'fail';$('assocRead').textContent=A.assoc?'pass':'fail';$('abelianRead').textContent=A.abelian?'yes':'no';$('status').className='status '+(A.isGroup?'pass':'fail');$('status').textContent=A.isGroup?'THIS TABLE DEFINES A GROUP':'NOT A GROUP';
+ $('stageTitle').textContent=s[stage].title;$('stageDescription').textContent=s[stage].desc;$('narratorBox').textContent=s[stage].narr;currentNarration=s[stage].narr;$('stageFormula').innerHTML=s[stage].formula;if(window.MathJax)MathJax.typesetPromise([$('stageFormula')]);$('steps').innerHTML=s.map((x,i)=>`<div class="step" style="${i===stage?'border-left-color:var(--orange);background:#fff9ef':''}"><b>${i+1}. ${x.title.replace(/^Stage [0-9]+ - /,'')}</b><br><span class="note">${x.desc}</span></div>`).join('');
+ $('aiPanel').innerHTML=`<b>AI-style diagnosis:</b> Closure: <b>${A.closure?'pass':'fail'}</b>, identity: <b>${A.identity||'none'}</b>, inverses: <b>${A.inverses?'pass':'fail'}</b>, associativity: <b>${A.assoc?'pass':'fail'}</b>.<br><br>${A.isGroup?'The table satisfies the group axioms.':'The table fails at least one axiom. Check the earliest failing stage first.'} ${A.abelian?'The operation is commutative.':'The operation is not commutative.'}`;
+}
+function speakCurrent(){stopNarration();if($('narrationMode').value!=='voice'||!('speechSynthesis'in window))return;const u=new SpeechSynthesisUtterance(currentNarration);u.rate=.95;window.speechSynthesis.speak(u)}function stopNarration(){if('speechSynthesis'in window)window.speechSynthesis.cancel()}function stopGuided(){if(timer){clearInterval(timer);timer=null;$('playStages').textContent='Play Guided Explanation'}}
+function downloadHTML(){const html='<!DOCTYPE html>\\n'+document.documentElement.outerHTML;const blob=new Blob([html],{type:'text/html'});const a=document.createElement('a');a.download='Group_Multiplication_Table_Narrated_Stagewise_Simulator.html';a.href=URL.createObjectURL(blob);a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function downloadCSV(){const G=readEdited();let csv='*,'+G.E.join(',')+'\\n'+G.E.map((e,i)=>e+','+G.tab[i].join(',')).join('\\n');const blob=new Blob([csv],{type:'text/csv'});const a=document.createElement('a');a.download='group_multiplication_table.csv';a.href=URL.createObjectURL(blob);a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function renderQuiz(){$('quiz').innerHTML=quizData.map((q,i)=>`<div class="q"><b>Q${i+1}. ${q[0]}</b>${q[1].map((o,j)=>`<label class="option"><input type="radio" name="q${i}" value="${j}"> ${String.fromCharCode(65+j)}. ${o}</label>`).join('')}<div class="feedback" id="fb${i}"></div></div>`).join('');if(window.MathJax)MathJax.typesetPromise([$('quiz')])}
+let score=0,answered={};document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));$(b.dataset.page).classList.add('active');setTimeout(update,60)});document.querySelectorAll('.appnav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.appnav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.apppage').forEach(p=>p.classList.remove('active'));$(b.dataset.app).classList.add('active')});
+$('group').oninput=()=>{current=makeTable($('group').value);update()};$('mode').oninput=()=>{current=makeTable($('group').value);update()};$('stage').oninput=update;$('prevStage').onclick=()=>{stopGuided();$('stage').value=Math.max(0,+$('stage').value-1);update()};$('nextStage').onclick=()=>{stopGuided();$('stage').value=Math.min(4,+$('stage').value+1);update()};$('playStages').onclick=()=>{if(timer){stopGuided();return}$('playStages').textContent='Stop Guided Explanation';$('stage').value=0;update();speakCurrent();timer=setInterval(()=>{let v=+$('stage').value;if(v>=4){stopGuided();return}$('stage').value=v+1;update();speakCurrent()},4200)};$('speak').onclick=speakCurrent;$('stopSpeak').onclick=()=>{stopGuided();stopNarration()};$('resetSim').onclick=()=>{$('group').value='c3';$('mode').value='fixed';$('stage').value=0;current=null;update()};$('downloadHTML').onclick=downloadHTML;$('downloadCSV').onclick=downloadCSV;
+$('quiz').addEventListener('change',e=>{if(e.target.type!=='radio')return;const i=+e.target.name.slice(1),j=+e.target.value;if(answered[i])return;answered[i]=true;const fb=$('fb'+i),ok=j===quizData[i][2];if(ok)score++;fb.className='feedback show '+(ok?'right':'wrong');fb.textContent=(ok?'Correct. ':'Incorrect. ')+quizData[i][3];$('score').textContent=score});$('resetQuiz').onclick=()=>{score=0;answered={};$('score').textContent='0';renderQuiz()};
+renderQuiz();update();
+</script>
+</body>
+</html>

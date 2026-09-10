@@ -1,0 +1,812 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>M.Sc. Mathematical Physics — Elements of Complex Analysis, Complex Roots & Mapping</title>
+
+<script src="https://cdn.plot.ly/plotly-2.35.2.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+
+<style>
+:root{
+ --navy:#123a7a;--navy2:#0b2c5e;--cyan:#29b6e8;--orange:#e8720c;
+ --pink:#c2185b;--green:#0a8f4a;--red:#b51d4b;--bg:#eef2f7;
+ --card:#fff;--border:#d9e1ea;--ink:#1c2733;--muted:#5d6b7b
+}
+*{box-sizing:border-box}
+html,body{margin:0;background:var(--bg);color:var(--ink);
+ font-family:"Times New Roman",Georgia,serif;font-size:12pt;line-height:1.55}
+h1,h2,h3,h4{color:var(--navy);margin:0 0 .55em}
+h1{font-size:23pt}h2{font-size:17pt;border-bottom:2px solid var(--border);
+ padding-bottom:.25em;margin-top:1.35em}h3{font-size:14pt}h4{font-size:10pt;
+ text-transform:uppercase;letter-spacing:.07em;color:var(--muted)}
+p{margin:.55em 0}
+header{position:sticky;top:0;z-index:1000;background:#fff;border-bottom:3px solid var(--cyan);
+ box-shadow:0 1px 5px #123a7a14;padding:.65em 1.2em;display:flex;
+ justify-content:space-between;align-items:center;gap:1em;flex-wrap:wrap}
+.brand{font-weight:bold;color:var(--navy);font-size:14pt}
+.brand span{font-size:10.5pt;color:var(--muted);font-style:italic;font-weight:normal}
+nav{display:flex;gap:.35em;flex-wrap:wrap}
+nav button,.appnav button{border:1px solid var(--border);background:#eef1f4;color:var(--navy);
+ padding:.5em .85em;border-radius:4px;font-family:Georgia,serif;font-weight:bold;
+ cursor:pointer;font-size:9.5pt}
+nav button.active,.appnav button.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+main{max-width:1250px;margin:auto;padding:1.4em 1.5em 4em}
+.page{display:none}.page.active{display:block}
+.eyebrow{font-size:9pt;letter-spacing:.15em;text-transform:uppercase;color:var(--orange);font-weight:bold}
+.panel,.card{background:var(--card);border:1px solid var(--border);border-radius:8px;
+ padding:1.1em 1.3em;margin:1em 0;box-shadow:0 1px 4px #123a7a0d}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1em}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:1em}
+@media(max-width:900px){.grid2,.grid3{grid-template-columns:1fr}}
+.opcard{border-top:4px solid var(--cyan)}
+.opcard:nth-child(2){border-top-color:var(--orange)}
+.opcard:nth-child(3){border-top-color:var(--pink)}
+.op{font-size:22pt;color:var(--navy);font-weight:bold}
+.badge{display:inline-block;padding:.2em .55em;border-radius:12px;background:#eef1f4;
+ border:1px solid var(--border);font-size:8pt;font-weight:bold;color:var(--navy)}
+.eq,.formula-box{background:#f4f7fb;border-left:4px solid var(--pink);padding:.65em .9em;
+ overflow:auto;margin:.7em 0}
+.callout{background:#eaf6fc;border-left:4px solid var(--cyan);padding:.75em .9em;border-radius:4px}
+.warning{background:#fff2f4;border-left:4px solid var(--pink);padding:.8em .9em;border-radius:4px}
+.success-note{background:#eaf7ef;border-left:4px solid var(--green);padding:.8em .9em;border-radius:4px}
+.ai{background:#f7f5ff;border-left:4px solid var(--pink);padding:.9em}
+.note{font-size:10pt;color:var(--muted)}
+table{width:100%;border-collapse:collapse;margin:.8em 0;font-size:10.2pt}
+th,td{border:1px solid var(--border);padding:.5em;text-align:left;vertical-align:top}
+th{background:var(--navy);color:#fff}tr:nth-child(even) td{background:#f7f9fc}
+
+.simgrid{display:grid;grid-template-columns:.82fr 2fr .9fr;gap:1em}
+.simcol{background:#fff;border:1px solid var(--border);border-radius:8px;overflow:hidden}
+.simcol:nth-child(1){border-top:4px solid var(--cyan)}
+.simcol:nth-child(2){border-top:4px solid var(--navy)}
+.simcol:nth-child(3){border-top:4px solid var(--orange)}
+.colhead{font-weight:bold;color:var(--navy);padding:.75em 1em;border-bottom:1px solid var(--border)}
+.colbody{padding:1em}
+label{font-size:9.5pt;color:var(--muted);font-weight:bold;display:block;margin:.65em 0 .25em}
+select,input[type=range],input[type=text],input[type=number]{width:100%;padding:.45em;
+ border:1px solid var(--border);border-radius:4px;background:#fff;color:var(--ink);
+ font-family:Georgia,serif}
+input[type=range]{padding:0;accent-color:var(--navy)}
+button.action{width:100%;padding:.58em;margin-top:.5em;border:1px solid var(--navy);
+ border-radius:4px;background:var(--navy);color:#fff;font-weight:bold;cursor:pointer;font-family:Georgia,serif}
+button.action.secondary{background:#fff;color:var(--navy);border-color:var(--border)}
+button.action.orange{background:var(--orange);border-color:var(--orange)}
+button.action.green{background:var(--green);border-color:var(--green)}
+#complexPlot,#mappingPlot{height:570px;width:100%}
+.metric{background:#f4f7fb;border:1px solid var(--border);border-radius:5px;padding:.65em;margin:.55em 0}
+.metric small{display:block;color:var(--muted);font-size:8.5pt}
+.metric strong{font-family:"Courier New",monospace;font-size:11.5pt;color:var(--pink)}
+.status{padding:.6em;border-radius:4px;text-align:center;font-weight:bold;margin-top:.6em}
+.pass{background:#e3f6e9;color:#0a6b3a;border:1px solid #8ad3a5}
+.fail{background:#fbe9ee;color:#a3144b;border:1px solid #e2a1b7}
+.step{padding:.55em .7em;border-left:3px solid var(--cyan);background:#f7f9fc;margin:.4em 0}
+.prediction{background:#fff9ef;border-left:4px solid var(--orange);padding:.7em .9em}
+.appnav{display:flex;gap:.4em;flex-wrap:wrap;margin-bottom:1em}
+.apppage{display:none}.apppage.active{display:block}
+.scorebar{position:sticky;top:70px;z-index:20;background:var(--navy);color:#fff;
+ padding:.65em 1em;border-radius:5px;display:flex;justify-content:space-between;align-items:center}
+.scorebar button{background:var(--orange);border:0;color:#fff;padding:.45em .8em;border-radius:4px;cursor:pointer}
+.q{border-bottom:1px dashed var(--border);padding:1em 0}
+.option{display:block;padding:.55em .7em;background:#f7f9fc;border:1px solid var(--border);
+ border-radius:5px;margin:.4em 0;cursor:pointer}
+.option:hover{border-color:var(--navy)}
+.feedback{display:none;padding:.55em;border-radius:5px;margin-top:.5em}
+.feedback.show{display:block}.right{background:#e3f6e9;color:#0a6b3a}.wrong{background:#fbe9ee;color:#a3144b}
+textarea{width:100%;min-height:130px;border:1px solid var(--border);border-radius:5px;
+ padding:.7em;font-family:Georgia,serif}
+footer{background:#0b2440;color:#dce8fa;text-align:center;padding:1.3em;font-size:9.5pt}
+.smallbtn{border:1px solid var(--border);background:#fff;padding:.4em .65em;border-radius:4px;cursor:pointer;color:var(--navy);font-weight:bold}
+@media(max-width:980px){.simgrid{grid-template-columns:1fr}#complexPlot,#mappingPlot{height:460px}}
+</style>
+</head>
+
+<body>
+<header>
+ <div class="brand">M.Sc. Mathematical Physics <span>· Elements of Complex Analysis, Complex Roots & Complex Mapping</span></div>
+ <nav id="nav">
+  <button class="active" data-page="concept">I · Concepts</button>
+  <button data-page="roots">II · Complex Roots</button>
+  <button data-page="mapping">III · Complex Mapping</button>
+  <button data-page="apps">IV · AI Tools & Applications</button>
+  <button data-page="assess">V · Assessment</button>
+  <button data-page="notes">VI · Notes</button>
+ </nav>
+</header>
+
+<main>
+
+<section class="page active" id="concept">
+<div class="eyebrow">Layer 1 — Conceptual Understanding</div>
+<h1>Elements of Complex Analysis</h1>
+<p>This interactive module develops the basic language of complex numbers, analytic functions, limits, continuity, differentiability, the Cauchy–Riemann equations, elementary complex functions and visual interpretation in the complex plane.</p>
+
+<div class="panel"><h3>Learning Outcomes</h3>
+<ul>
+<li>Represent a complex number in Cartesian and polar forms.</li>
+<li>Interpret modulus and argument geometrically.</li>
+<li>Distinguish complex differentiability from real-variable differentiability.</li>
+<li>Apply the Cauchy–Riemann equations to test analyticity at regular points.</li>
+<li>Find and visualize complex roots of polynomial equations.</li>
+<li>Understand how a complex function maps points and regions from the z-plane to the w-plane.</li>
+<li>Use AI tools to generate explanations, examples and verification prompts while independently checking the mathematics.</li>
+</ul></div>
+
+<div class="grid3">
+<div class="card opcard"><span class="badge">NUMBER SYSTEM</span><div class="op">z = x + iy</div><h3>Complex Numbers</h3><p>Every complex number has a real part, an imaginary part, a modulus and an argument.</p></div>
+<div class="card opcard"><span class="badge">FUNCTION THEORY</span><div class="op">f(z)</div><h3>Complex Functions</h3><p>A complex function maps points in the z-plane to points in the w-plane and may transform lengths, angles and shapes.</p></div>
+<div class="card opcard"><span class="badge">GEOMETRY</span><div class="op">z → w</div><h3>Complex Mapping</h3><p>Mappings make abstract algebra visible by showing how a curve or region changes under a function.</p></div>
+</div>
+
+<h2>1. Complex Number and Argand Plane</h2>
+<div class="grid2">
+<div class="card">
+<p>A complex number is written as</p>
+<div class="eq">z = x + iy, &nbsp; i² = −1.</div>
+<p>Here x is the real part and y is the imaginary part.</p>
+<div class="eq">|z| = √(x² + y²), &nbsp; arg(z) = atan2(y,x).</div>
+<p>In polar form,</p>
+<div class="eq">z = r(cos θ + i sin θ) = r e<sup>iθ</sup>.</div>
+</div>
+<div class="card">
+<h3>Geometrical interpretation</h3>
+<ul>
+<li>Re(z) gives the horizontal coordinate.</li>
+<li>Im(z) gives the vertical coordinate.</li>
+<li>|z| is the distance from the origin.</li>
+<li>arg(z) is the directed angle from the positive real axis.</li>
+</ul>
+<div class="callout"><b>Key idea:</b> multiplication by re<sup>iθ</sup> scales a complex number by r and rotates it by θ.</div>
+</div>
+</div>
+
+<h2>2. Elementary Operations</h2>
+<table>
+<tr><th>Operation</th><th>Formula</th><th>Geometrical meaning</th></tr>
+<tr><td>Addition</td><td>(x₁+iy₁)+(x₂+iy₂)</td><td>Vector addition in the Argand plane.</td></tr>
+<tr><td>Multiplication</td><td>z₁z₂ = r₁r₂e<sup>i(θ₁+θ₂)</sup></td><td>Multiply magnitudes and add arguments.</td></tr>
+<tr><td>Division</td><td>z₁/z₂ = (r₁/r₂)e<sup>i(θ₁−θ₂)</sup></td><td>Divide magnitudes and subtract arguments.</td></tr>
+<tr><td>Conjugation</td><td>z* = x − iy</td><td>Reflection about the real axis.</td></tr>
+</table>
+
+<h2>3. Complex Differentiability and Analyticity</h2>
+<div class="grid2">
+<div class="card">
+<p>For f(z), the complex derivative at z₀ is</p>
+<div class="eq">f′(z₀) = lim<sub>Δz→0</sub> [f(z₀+Δz)−f(z₀)]/Δz.</div>
+<p>The limit must be independent of the direction through which Δz approaches zero.</p>
+</div>
+<div class="card">
+<p>If f(z)=u(x,y)+iv(x,y), the Cauchy–Riemann equations are</p>
+<div class="eq">u<sub>x</sub> = v<sub>y</sub>, &nbsp; u<sub>y</sub> = −v<sub>x</sub>.</div>
+<p>When suitable continuity conditions hold, these equations provide a practical test for analyticity.</p>
+</div>
+</div>
+
+<div class="warning"><b>Important:</b> Satisfying the Cauchy–Riemann equations at one point is not by itself the same as proving that a function is analytic throughout a region. Always specify the domain and regularity assumptions.</div>
+
+<h2>4. Common Complex Functions</h2>
+<table>
+<tr><th>Function</th><th>Definition</th><th>Important feature</th></tr>
+<tr><td>Polynomial</td><td>f(z)=a₀+a₁z+…+aₙzⁿ</td><td>Entire function.</td></tr>
+<tr><td>Exponential</td><td>e<sup>z</sup>=e<sup>x</sup>(cos y+i sin y)</td><td>Periodic in the imaginary direction.</td></tr>
+<tr><td>Logarithm</td><td>Log z = ln|z| + i Arg z</td><td>Multivalued unless a branch is selected.</td></tr>
+<tr><td>Power</td><td>zⁿ = rⁿe<sup>inθ</sup></td><td>Magnifies argument by n.</td></tr>
+</table>
+
+<div class="ai"><h3>AI-Assisted Concept Check</h3>
+<p>Use an AI tool to ask: <b>“Explain the Cauchy–Riemann equations geometrically for f(z)=z², then derive the equations independently.”</b></p>
+<p><b>Verification rule:</b> Treat AI output as a learning aid, not as a proof. Check derivatives, domains, signs and assumptions yourself.</p></div>
+</section>
+
+<section class="page" id="roots">
+<div class="eyebrow">Layer 2 — Numerical Exploration & Stagewise Visualization</div>
+<h1>Complex Roots of an Equation</h1>
+<p>Enter a polynomial and visualize its complex roots in the Argand plane. The simulator uses a numerical Durand–Kerner iteration and also reports residuals |P(z)| for each computed root.</p>
+
+<div class="simgrid">
+<div class="simcol">
+<div class="colhead">ROOT FINDER INPUTS</div>
+<div class="colbody">
+<label>Polynomial coefficients, highest power first</label>
+<input id="coeffs" type="text" value="1,0,0,-1" placeholder="Example: 1,0,0,-1">
+<p class="note">Example 1,0,0,-1 means z³ − 1 = 0.</p>
+<label>Iteration limit: <span id="iterOut">80</span></label>
+<input id="iter" type="range" min="20" max="200" step="10" value="80">
+<label>Tolerance</label>
+<select id="tol">
+<option value="1e-6">10⁻⁶</option>
+<option value="1e-8" selected>10⁻⁸</option>
+<option value="1e-10">10⁻¹⁰</option>
+</select>
+<button class="action" id="solveRoots">▶ Solve & Visualize Roots</button>
+<button class="action secondary" id="rootsExample">Load z⁴ + z² + 1</button>
+<button class="action secondary" id="rootsReset">Reset</button>
+</div></div>
+
+<div class="simcol">
+<div class="colhead">ARGAND-PLANE VISUALIZATION</div>
+<div id="complexPlot"></div>
+<div style="padding:.7em 1em;border-top:1px solid var(--border)">
+<div id="rootStageTitle" style="font-weight:bold;color:var(--navy);font-size:13pt">Stage 1 — Define the equation</div>
+<div id="rootStageText" class="note">Enter the polynomial and solve it to reveal the roots.</div>
+</div>
+</div>
+
+<div class="simcol">
+<div class="colhead">MATHEMATICAL ENGINE</div>
+<div class="colbody">
+<div class="metric"><small>Degree</small><strong id="degreeOut">—</strong></div>
+<div class="metric"><small>Roots found</small><strong id="rootCount">—</strong></div>
+<div class="metric"><small>Maximum residual</small><strong id="maxResidual">—</strong></div>
+<div id="rootStatus" class="status">AWAITING COMPUTATION</div>
+</div></div>
+</div>
+
+<div class="grid2">
+<div class="panel">
+<h3>🎙 Root-Finding Narrator</h3>
+<select id="rootNarrationMode"><option value="voice">Voice + on-screen text</option><option value="text">On-screen text only</option></select>
+<button class="action" id="rootPlay">▶ Play 5-Stage Explanation</button>
+<button class="action secondary" id="rootSpeak">🔊 Narrate Current Stage</button>
+<button class="action secondary" id="rootStop">■ Stop</button>
+<div class="formula-box" id="rootFormula" style="margin-top:.8em">P(z)=0</div>
+<div id="rootNarratorBox" class="callout">Stage 1. First define the polynomial equation.</div>
+</div>
+<div class="panel">
+<h3>Variation at This Stage</h3>
+<div id="rootVariation"><p><b>Prediction:</b> A degree-n polynomial has n complex roots counted with multiplicity, by the fundamental theorem of algebra.</p></div>
+<div class="step" id="rootStep1">1. Define polynomial</div>
+<div class="step" id="rootStep2">2. Generate initial complex estimates</div>
+<div class="step" id="rootStep3">3. Iterate the root estimates</div>
+<div class="step" id="rootStep4">4. Check residuals</div>
+<div class="step" id="rootStep5">5. Interpret and visualize the roots</div>
+</div>
+</div>
+
+<div class="panel">
+<h3>Root Table</h3>
+<div id="rootTable" class="note">No roots calculated yet.</div>
+</div>
+
+<div class="ai"><h3>AI Tool Activity — Complex Roots</h3>
+<ol>
+<li>Ask an AI tool to predict the roots of z⁴−1=0. Then verify them using the simulator.</li>
+<li>Ask AI to explain why non-real roots of a polynomial with real coefficients occur in conjugate pairs. Check the explanation.</li>
+<li>Ask AI to derive Newton–Raphson iteration for a complex polynomial and compare it with the numerical method used here.</li>
+<li>Ask AI to identify repeated roots of a polynomial. Confirm by checking P(z) and P′(z).</li>
+</ol>
+<div class="callout"><b>AI verification workflow:</b> Prompt → Predict → Calculate independently → Visualize → Check residual → Explain.</div>
+</div>
+</section>
+
+<section class="page" id="mapping">
+<div class="eyebrow">Layer 3 — Complex Mapping</div>
+<h1>Complex Mapping: z → w = f(z)</h1>
+<p>Explore how selected complex functions transform a grid and points from the z-plane into the w-plane. Stagewise narration explains the mapping process.</p>
+
+<div class="simgrid">
+<div class="simcol">
+<div class="colhead">MAPPING CONTROLS</div>
+<div class="colbody">
+<label>Mapping function</label>
+<select id="mapFunction">
+<option value="square">w = z²</option>
+<option value="inverse">w = 1/z</option>
+<option value="exp">w = e<sup>z</sup></option>
+<option value="mobius">w = (z−1)/(z+1)</option>
+<option value="cube">w = z³</option>
+</select>
+<label>Grid range: <span id="mapRangeOut">2.0</span></label>
+<input id="mapRange" type="range" min="0.5" max="4" step="0.1" value="2">
+<label>Grid density: <span id="mapDensityOut">9</span></label>
+<input id="mapDensity" type="range" min="5" max="17" step="1" value="9">
+<label>Stage</label>
+<input id="mapStage" type="range" min="0" max="4" step="1" value="0">
+<div style="display:flex;justify-content:space-between;font-size:8.5pt;color:var(--muted)"><span>1</span><span>2</span><span>3</span><span>4</span><span>5</span></div>
+<button class="action" id="mapPrev">Previous Stage</button>
+<button class="action" id="mapNext">Next Stage</button>
+<button class="action orange" id="mapPlay">▶ Play Guided Mapping</button>
+<button class="action secondary" id="mapSpeak">🔊 Narrate Current Stage</button>
+<button class="action secondary" id="mapStop">■ Stop</button>
+<button class="action secondary" id="mapPNG">Download Mapping PNG</button>
+</div></div>
+
+<div class="simcol">
+<div class="colhead">Z-PLANE → W-PLANE</div>
+<div id="mappingPlot"></div>
+<div style="padding:.7em 1em;border-top:1px solid var(--border)">
+<div id="mapStageTitle" style="font-weight:bold;color:var(--navy);font-size:13pt"></div>
+<div id="mapStageText" class="note"></div>
+</div>
+</div>
+
+<div class="simcol">
+<div class="colhead">MAPPING ENGINE</div>
+<div class="colbody">
+<div class="metric"><small>Function</small><strong id="mapFormula">w = z²</strong></div>
+<div class="metric"><small>Point samples</small><strong id="mapPointCount">—</strong></div>
+<div class="metric"><small>Transformation</small><strong id="mapType">—</strong></div>
+<div class="status" id="mapStatus">GUIDED EXPLORATION</div>
+</div></div>
+</div>
+
+<div class="grid2">
+<div class="panel">
+<h3>🎙 Mapping Narrator</h3>
+<select id="mapNarrationMode"><option value="voice">Voice + on-screen text</option><option value="text">On-screen text only</option></select>
+<div id="mapNarratorBox" class="callout"></div>
+<div class="formula-box" id="mapStageFormula" style="margin-top:.8em"></div>
+</div>
+<div class="panel">
+<h3>Variation at Each Stage</h3>
+<div id="mapVariation"></div>
+</div>
+</div>
+
+<h2>Mapping Concepts</h2>
+<div class="grid3">
+<div class="card"><h3>Conformal behaviour</h3><p>Where f′(z) exists and is non-zero, an analytic function preserves angles locally.</p></div>
+<div class="card"><h3>Critical points</h3><p>Points where f′(z)=0 can change local scale behaviour and may alter the visual structure of a mapping.</p></div>
+<div class="card"><h3>Singularities</h3><p>Functions such as 1/z have points where the mapping is undefined. These must be excluded from the domain.</p></div>
+</div>
+
+<div class="ai"><h3>AI Tool Activity — Complex Mapping</h3>
+<p>Use an AI tool with prompts such as:</p>
+<ul>
+<li>“Explain geometrically what w=z² does to circles and rays in the complex plane.”</li>
+<li>“Predict the image of the unit circle under w=1/z and verify it analytically.”</li>
+<li>“Explain why w=e<sup>z</sup> maps horizontal and vertical lines in characteristic ways.”</li>
+<li>“Compare conformal mapping and ordinary coordinate transformation using a visual example.”</li>
+</ul>
+<p><b>Do not accept a generated diagram without checking sample points and the function definition.</b></p>
+</div>
+</section>
+
+<section class="page" id="apps">
+<div class="eyebrow">Layer 4 — AI Tools, Applications & Exploration</div>
+<h1>Complex Analysis Using AI Tools</h1>
+
+<div class="appnav">
+<button class="active" data-app="ai-prompts">AI Prompt Studio</button>
+<button data-app="physics">Physics Applications</button>
+<button data-app="engineering">Engineering Applications</button>
+<button data-app="verification">Verification Workflow</button>
+</div>
+
+<div class="apppage active" id="ai-prompts">
+<div class="panel"><h3>AI Prompt Studio</h3>
+<p>Select a learning task. The module generates a structured prompt that can be copied into an AI assistant.</p>
+<label>Task</label>
+<select id="promptType">
+<option value="concept">Explain a complex-analysis concept</option>
+<option value="roots">Solve and verify complex roots</option>
+<option value="mapping">Explain a complex mapping</option>
+<option value="cr">Check Cauchy–Riemann equations</option>
+<option value="visual">Design a visualization activity</option>
+<option value="quiz">Generate conceptual questions</option>
+</select>
+<label>Topic / equation</label>
+<input id="promptTopic" type="text" value="f(z)=z²">
+<button class="action" id="makePrompt">Generate AI Prompt</button>
+<button class="action secondary" id="copyPrompt">Copy Prompt</button>
+<textarea id="aiPrompt" placeholder="Generated prompt will appear here..."></textarea>
+</div>
+</div>
+
+<div class="apppage" id="physics">
+<div class="grid2">
+<div class="card"><h3>Quantum Mechanics</h3><p>Complex amplitudes, phase factors and probability amplitudes are naturally expressed using complex numbers.</p><div class="eq">ψ(x,t) ∈ ℂ</div></div>
+<div class="card"><h3>Electromagnetism</h3><p>Phasor methods use complex exponentials to represent sinusoidally varying fields and circuit quantities.</p><div class="eq">E(t)=Re{E₀e<sup>iωt</sup>}</div></div>
+<div class="card"><h3>Wave Physics</h3><p>Complex representations simplify the treatment of amplitude, phase and propagation.</p></div>
+<div class="card"><h3>Fluid and Potential Flow</h3><p>Analytic functions can connect velocity components through complex potentials in suitable two-dimensional flows.</p></div>
+</div>
+</div>
+
+<div class="apppage" id="engineering">
+<div class="panel"><h3>Engineering and Technology</h3>
+<ul>
+<li>Signal processing and Fourier analysis.</li>
+<li>Control systems and frequency-domain methods.</li>
+<li>Electrical circuit analysis using phasors.</li>
+<li>Potential flow and aerodynamic modelling.</li>
+<li>Image and signal transformations.</li>
+<li>Numerical root finding for nonlinear engineering equations.</li>
+</ul></div>
+</div>
+
+<div class="apppage" id="verification">
+<div class="panel"><h3>AI Verification Workflow</h3>
+<ol>
+<li><b>Define:</b> State the function, equation, domain and required result.</li>
+<li><b>Prompt:</b> Ask the AI for a derivation, explanation or prediction.</li>
+<li><b>Inspect:</b> Check symbols, assumptions, branches and boundary conditions.</li>
+<li><b>Calculate:</b> Reproduce the key steps independently.</li>
+<li><b>Visualize:</b> Use the interactive simulator to test the interpretation.</li>
+<li><b>Challenge:</b> Ask the AI for a counterexample or edge case.</li>
+<li><b>Conclude:</b> Accept the result only after mathematical verification.</li>
+</ol>
+<div class="warning"><b>Important:</b> AI can produce plausible but incorrect mathematics. In complex analysis, branch cuts, singularities, argument conventions and domain restrictions are particularly important.</div>
+</div>
+</div>
+</section>
+
+<section class="page" id="assess">
+<div class="eyebrow">Layer 5 — Practice, Problem Solving & Assessment</div>
+<h1>Assessment</h1>
+<div class="scorebar"><span>Score: <span id="score">0</span> / 14</span><button id="resetQuiz">Reset Quiz</button></div>
+
+<div class="panel"><h3>Problem-Solving Tasks</h3>
+<ol>
+<li>Write 1−i in polar form and determine its principal argument.</li>
+<li>Use the Cauchy–Riemann equations to test f(z)=z².</li>
+<li>Find all roots of z³−1=0 and locate them on the Argand plane.</li>
+<li>Explain why roots of a real-coefficient polynomial occur in conjugate pairs.</li>
+<li>Describe the image of a circle under w=z².</li>
+<li>Explain why z=0 must be excluded from w=1/z.</li>
+<li>Use an AI tool to obtain a solution and independently verify every mathematical step.</li>
+</ol>
+</div>
+
+<div class="panel"><h3>Conceptual MCQs</h3><div id="quiz"></div></div>
+<div class="panel"><h3>Short Assessment Activity</h3>
+<p>Explain the difference between a complex root problem and a complex mapping problem. Include one example of each.</p>
+<textarea id="shortAnswer" placeholder="Write your response here..."></textarea>
+<button class="action" id="prepareReport">Prepare Assessment Report</button>
+<button class="action green" id="excel" style="display:none">Download Excel Report</button>
+</div>
+</section>
+
+<section class="page" id="notes">
+<div class="eyebrow">Instructor & Student Support</div>
+<h1>Instructor & Student Notes</h1>
+<div class="grid2">
+<div class="panel"><h3>Instructor Notes</h3>
+<ol>
+<li>Begin with the Argand-plane interpretation before introducing formal notation.</li>
+<li>Use multiplication in polar form to demonstrate rotation and scaling.</li>
+<li>Emphasize that complex differentiability is a stronger condition than ordinary real-variable differentiability.</li>
+<li>Use the Cauchy–Riemann equations together with domain and regularity conditions.</li>
+<li>For root finding, ask students to predict symmetry before running the numerical solver.</li>
+<li>Use mapping stages to connect algebraic rules with geometric changes.</li>
+<li>Discuss singularities and branch choices explicitly for logarithm and reciprocal mappings.</li>
+<li>When AI is used, require independent verification of all equations and numerical results.</li>
+</ol></div>
+
+<div class="panel"><h3>Student Notes</h3>
+<h4>Remember</h4>
+<ul>
+<li>z=x+iy; |z|=√(x²+y²).</li>
+<li>z=re<sup>iθ</sup>.</li>
+<li>Cauchy–Riemann: u<sub>x</sub>=v<sub>y</sub>, u<sub>y</sub>=−v<sub>x</sub>.</li>
+<li>Polynomial roots are counted with multiplicity.</li>
+<li>Mapping means each admissible z is assigned a w=f(z).</li>
+<li>Always check domain, singularities and branch conventions.</li>
+</ul>
+<h4>Common Mistakes</h4>
+<ul>
+<li>Using an unrestricted argument instead of a specified principal branch.</li>
+<li>Forgetting that division by z requires z≠0.</li>
+<li>Assuming Cauchy–Riemann equations alone prove global analyticity without regularity information.</li>
+<li>Accepting an AI-generated root without checking the residual.</li>
+<li>Confusing a root of P(z)=0 with a fixed point of a mapping.</li>
+</ul>
+</div>
+</div>
+
+<div class="panel"><h3>Recommended Teaching Sequence</h3>
+<table>
+<tr><th>Stage</th><th>Student action</th><th>Instructor action</th></tr>
+<tr><td>Concept</td><td>Study complex numbers and analyticity.</td><td>Use geometric examples.</td></tr>
+<tr><td>Prediction</td><td>Predict roots and mapping behaviour.</td><td>Collect predictions before simulation.</td></tr>
+<tr><td>Simulation</td><td>Run root and mapping visualizations.</td><td>Ask what changes at each stage.</td></tr>
+<tr><td>Verification</td><td>Check residuals and sample mapped points.</td><td>Require analytical confirmation.</td></tr>
+<tr><td>AI Exploration</td><td>Generate explanations and counterexamples.</td><td>Emphasize verification and source criticism.</td></tr>
+<tr><td>Assessment</td><td>Complete MCQs and problem solving.</td><td>Use errors to diagnose conceptual gaps.</td></tr>
+</table></div>
+
+<div class="panel"><h3>Technical Note</h3>
+<p>The root solver is an educational numerical implementation of the Durand–Kerner method. Numerical roots should be interpreted using the displayed residual |P(z)| and not solely by their visual position.</p>
+<p>The mapping simulator samples finite grids. It therefore provides visualization rather than a formal proof of mapping properties.</p>
+</div>
+</section>
+
+</main>
+<footer>Elements of Complex Analysis · Complex Roots of an Equation · Complex Mapping using AI Tools · Interactive M.Sc. Mathematical Physics Learning Module</footer>
+
+<script>
+/* ---------- Navigation ---------- */
+document.getElementById('nav').addEventListener('click',e=>{
+ const b=e.target.closest('button'); if(!b)return;
+ document.querySelectorAll('#nav button').forEach(x=>x.classList.remove('active'));
+ b.classList.add('active');
+ document.querySelectorAll('.page').forEach(x=>x.classList.remove('active'));
+ document.getElementById(b.dataset.page).classList.add('active');
+ if(b.dataset.page==='mapping')setTimeout(updateMapping,60);
+ if(b.dataset.page==='roots')setTimeout(drawRoots,60);
+});
+document.querySelectorAll('.appnav button').forEach(b=>{
+ b.addEventListener('click',()=>{
+  document.querySelectorAll('.appnav button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  document.querySelectorAll('.apppage').forEach(x=>x.classList.remove('active'));
+  document.getElementById(b.dataset.app).classList.add('active');
+ });
+});
+
+/* ---------- Complex arithmetic ---------- */
+function C(re,im){return {re:re,im:im}}
+function cadd(a,b){return C(a.re+b.re,a.im+b.im)}
+function csub(a,b){return C(a.re-b.re,a.im-b.im)}
+function cmul(a,b){return C(a.re*b.re-a.im*b.im,a.re*b.im+a.im*b.re)}
+function cdiv(a,b){
+ const d=b.re*b.re+b.im*b.im;
+ if(d<1e-24)return C(1e12,1e12);
+ return C((a.re*b.re+a.im*b.im)/d,(a.im*b.re-a.re*b.im)/d)
+}
+function cabs(a){return Math.hypot(a.re,a.im)}
+function cexp(a){const e=Math.exp(a.re);return C(e*Math.cos(a.im),e*Math.sin(a.im))}
+function cpowInt(a,n){let r=C(1,0);for(let i=0;i<n;i++)r=cmul(r,a);return r}
+function evalPoly(coefs,z){
+ let r=C(0,0);
+ for(let i=0;i<coefs.length;i++)r=cadd(cmul(r,z),C(coefs[i],0));
+ return r;
+}
+function parseCoeffs(){
+ const a=document.getElementById('coeffs').value.split(',').map(x=>Number(x.trim())).filter(x=>Number.isFinite(x));
+ while(a.length>1 && Math.abs(a[0])<1e-15)a.shift();
+ return a.length>=2?a:null;
+}
+function durandKerner(coefs,maxIter,tol){
+ const n=coefs.length-1;
+ const lead=coefs[0];
+ const monic=coefs.map(x=>x/lead);
+ let radius=1;
+ for(let i=1;i<monic.length;i++)radius=Math.max(radius,1+Math.abs(monic[i]));
+ let roots=[];
+ for(let k=0;k<n;k++){
+   const ang=2*Math.PI*k/n+0.123;
+   roots.push(C(radius*Math.cos(ang),radius*Math.sin(ang)));
+ }
+ let iterations=0;
+ for(iterations=0;iterations<maxIter;iterations++){
+   let maxDelta=0;
+   const next=[];
+   for(let i=0;i<n;i++){
+     let denom=C(1,0);
+     for(let j=0;j<n;j++)if(i!==j)denom=cmul(denom,csub(roots[i],roots[j]));
+     let delta=cdiv(evalPoly(monic,roots[i]),denom);
+     next.push(csub(roots[i],delta));
+     maxDelta=Math.max(maxDelta,cabs(delta));
+   }
+   roots=next;
+   if(maxDelta<tol)break;
+ }
+ return {roots,iterations};
+}
+function fmt(x){return (Math.abs(x)<1e-10?0:x).toFixed(6)}
+function rootStages(){
+ return [
+  ['Stage 1 — Define the equation','P(z)=0','We begin with a polynomial equation and identify its degree.'],
+  ['Stage 2 — Generate initial estimates','z₁,z₂,…,zₙ','The numerical method places starting estimates around a circle in the complex plane.'],
+  ['Stage 3 — Iterate the estimates','zᵢ ← zᵢ − P(zᵢ)/∏(zᵢ−zⱼ)','The estimates move simultaneously toward the polynomial roots.'],
+  ['Stage 4 — Check residuals','|P(zᵢ)| → 0','A small residual indicates that the computed point is close to an actual root.'],
+  ['Stage 5 — Interpret the roots','P(zᵢ) ≈ 0','The roots are displayed in the Argand plane and can be checked for symmetry and multiplicity.']
+ ];
+}
+let rootStage=0,rootTimer=null,rootSpeech=null,rootData=null;
+function drawRoots(){
+ const coefs=parseCoeffs();
+ document.getElementById('iterOut').textContent=document.getElementById('iter').value;
+ if(!coefs){document.getElementById('rootStatus').textContent='INVALID COEFFICIENTS';return}
+ const n=coefs.length-1, maxIter=+document.getElementById('iter').value,tol=+document.getElementById('tol').value;
+ rootData=durandKerner(coefs,maxIter,tol);
+ const roots=rootData.roots;
+ const residuals=roots.map(z=>cabs(evalPoly(coefs,z)));
+ const maxRes=Math.max(...residuals);
+ document.getElementById('degreeOut').textContent=n;
+ document.getElementById('rootCount').textContent=roots.length;
+ document.getElementById('maxResidual').textContent=maxRes.toExponential(3);
+ const range=Math.max(1.5,...roots.map(cabs))*1.25;
+ const traces=[{
+  x:roots.map(z=>z.re),y:roots.map(z=>z.im),type:'scatter',mode:'markers+text',
+  text:roots.map((z,i)=>'z'+(i+1)),textposition:'top center',
+  marker:{size:12,color:'#c2185b'},name:'Roots'
+ },{
+  x:[-range,range],y:[0,0],type:'scatter',mode:'lines',line:{color:'#9aa8b8',width:1},showlegend:false
+ },{
+  x:[0,0],y:[-range,range],type:'scatter',mode:'lines',line:{color:'#9aa8b8',width:1},showlegend:false
+ }];
+ Plotly.react('complexPlot',traces,{title:'Complex roots in the Argand plane',margin:{l:55,r:20,t:50,b:55},
+ xaxis:{title:'Re(z)',range:[-range,range],zeroline:false},yaxis:{title:'Im(z)',range:[-range,range],scaleanchor:'x',scaleratio:1},
+ paper_bgcolor:'#fff',plot_bgcolor:'#fff',showlegend:false},{responsive:true,displaylogo:false});
+ document.getElementById('rootTable').innerHTML='<table><tr><th>Root</th><th>Real part</th><th>Imaginary part</th><th>|P(z)|</th></tr>'+
+ roots.map((z,i)=>`<tr><td>z${i+1}</td><td>${fmt(z.re)}</td><td>${fmt(z.im)}</td><td>${residuals[i].toExponential(3)}</td></tr>`).join('')+'</table>';
+ const status=document.getElementById('rootStatus');
+ status.textContent=maxRes<tol*100?'CONVERGED':'CHECK CONVERGENCE';
+ status.className='status '+(maxRes<tol*100?'pass':'fail');
+ updateRootStage();
+}
+function updateRootStage(){
+ const s=rootStages()[rootStage];
+ document.getElementById('rootStageTitle').textContent=s[0];
+ document.getElementById('rootStageText').textContent=s[2];
+ document.getElementById('rootFormula').textContent=s[1];
+ document.getElementById('rootNarratorBox').textContent=s[2];
+ document.getElementById('rootVariation').innerHTML='<p><b>What changes?</b> '+s[2]+'</p><p><b>Mathematical focus:</b> '+s[1]+'</p>';
+ for(let i=1;i<=5;i++){const el=document.getElementById('rootStep'+i);el.style.borderLeftColor=i-1===rootStage?'var(--orange)':'var(--cyan)';el.style.background=i-1===rootStage?'#fff9ef':'#f7f9fc'}
+}
+function speakRoot(){
+ if(document.getElementById('rootNarrationMode').value==='text')return;
+ if(!('speechSynthesis' in window))return;
+ if(rootSpeech)speechSynthesis.cancel();
+ rootSpeech=new SpeechSynthesisUtterance(document.getElementById('rootNarratorBox').textContent);
+ rootSpeech.rate=.88;speechSynthesis.speak(rootSpeech);
+}
+function playRoots(){
+ stopRoots();rootStage=0;drawRoots();speakRoot();
+ rootTimer=setInterval(()=>{if(rootStage>=4){stopRoots();return}rootStage++;updateRootStage();speakRoot()},4300);
+}
+function stopRoots(){if(rootTimer){clearInterval(rootTimer);rootTimer=null}if('speechSynthesis'in window)speechSynthesis.cancel()}
+document.getElementById('solveRoots').onclick=()=>{rootStage=0;drawRoots();speakRoot()};
+document.getElementById('rootsExample').onclick=()=>{document.getElementById('coeffs').value='1,0,1,0,1';rootStage=0;drawRoots()};
+document.getElementById('rootsReset').onclick=()=>{stopRoots();document.getElementById('coeffs').value='1,0,0,-1';document.getElementById('iter').value=80;rootStage=0;drawRoots()};
+document.getElementById('iter').oninput=drawRoots;
+document.getElementById('rootPlay').onclick=playRoots;
+document.getElementById('rootSpeak').onclick=speakRoot;
+document.getElementById('rootStop').onclick=stopRoots;
+
+/* ---------- Mapping ---------- */
+const mapInfo={
+ square:{formula:'w=z²',type:'Squaring: modulus is squared and argument is doubled.'},
+ inverse:{formula:'w=1/z',type:'Reciprocal: modulus becomes 1/|z| and argument changes sign.'},
+ exp:{formula:'w=e^z',type:'Exponential: real part controls magnitude; imaginary part controls phase.'},
+ mobius:{formula:'w=(z−1)/(z+1)',type:'Möbius transformation with a pole at z=−1.'},
+ cube:{formula:'w=z³',type:'Cubing: modulus is cubed and argument is tripled.'}
+};
+function mapC(z,type){
+ if(type==='square')return cmul(z,z);
+ if(type==='inverse')return cdiv(C(1,0),z);
+ if(type==='exp')return cexp(z);
+ if(type==='cube')return cpowInt(z,3);
+ return cdiv(csub(z,C(1,0)),cadd(z,C(1,0)));
+}
+function mapStageData(type,R){
+ const f=mapInfo[type].formula;
+ return [
+ ['Stage 1 — Define the z-plane','Input domain in z-plane',`We begin with a grid of points in the complex z-plane over the selected range ±${R.toFixed(1)}.`],
+ ['Stage 2 — Select the mapping',f,`The rule ${f} assigns a corresponding w-value to each admissible z.`],
+ ['Stage 3 — Transform the grid','w=f(z)',`Each grid point is evaluated through the mapping. Curves in the z-plane generally become new curves in the w-plane.`],
+ ['Stage 4 — Compare geometry','z-plane ↔ w-plane',`Compare spacing, direction, curvature and any special points such as zeros, poles or critical points.`],
+ ['Stage 5 — Interpret the mapping',mapInfo[type].type,`The final picture is a geometric interpretation of the selected complex function. Check the domain before drawing conclusions.`]
+ ];
+}
+function gridLines(R,n,type,stage){
+ const traces=[];
+ const vals=Array.from({length:n},(_,i)=>-R+2*R*i/(n-1));
+ const samples=100;
+ for(let i=0;i<n;i++){
+   const lineX=[],lineY=[],lineWX=[],lineWY=[];
+   for(let k=0;k<=samples;k++){
+     const t=-R+2*R*k/samples;
+     const z=C(vals[i],t),w=mapC(z,type);
+     if(Number.isFinite(w.re)&&Number.isFinite(w.im)&&Math.abs(w.re)<1e5&&Math.abs(w.im)<1e5){lineX.push(z.re);lineY.push(z.im);lineWX.push(w.re);lineWY.push(w.im)}
+   }
+   traces.push({x:lineX,y:lineY,type:'scatter',mode:'lines',line:{width:1,color:'#29b6e8'},name:'z grid',showlegend:false});
+   if(stage>=2)traces.push({x:lineWX,y:lineWY,type:'scatter',mode:'lines',line:{width:1,color:'#e8720c'},name:'w image',showlegend:false});
+ }
+ for(let j=0;j<n;j++){
+   const lineX=[],lineY=[],lineWX=[],lineWY=[];
+   for(let k=0;k<=samples;k++){
+     const t=-R+2*R*k/samples;
+     const z=C(t,vals[j]),w=mapC(z,type);
+     if(Number.isFinite(w.re)&&Number.isFinite(w.im)&&Math.abs(w.re)<1e5&&Math.abs(w.im)<1e5){lineX.push(z.re);lineY.push(z.im);lineWX.push(w.re);lineWY.push(w.im)}
+   }
+   traces.push({x:lineX,y:lineY,type:'scatter',mode:'lines',line:{width:1,color:'#29b6e8'},showlegend:false});
+   if(stage>=2)traces.push({x:lineWX,y:lineWY,type:'scatter',mode:'lines',line:{width:1,color:'#e8720c'},showlegend:false});
+ }
+ return traces;
+}
+function updateMapping(){
+ const type=document.getElementById('mapFunction').value,R=+document.getElementById('mapRange').value,n=+document.getElementById('mapDensity').value,stage=+document.getElementById('mapStage').value;
+ document.getElementById('mapRangeOut').textContent=R.toFixed(1);document.getElementById('mapDensityOut').textContent=n;
+ const traces=gridLines(R,n,type,stage);
+ const lim=type==='exp'?Math.max(4,R*2.5):type==='inverse'?Math.max(4,R*1.5):Math.max(3,R*R*1.15);
+ Plotly.react('mappingPlot',traces,{title:`Complex mapping: ${mapInfo[type].formula}`,margin:{l:50,r:20,t:50,b:50},
+ xaxis:{title:stage<2?'Re(z)':'Re(z) / Re(w)',range:[-lim,lim]},yaxis:{title:stage<2?'Im(z)':'Im(z) / Im(w)',range:[-lim,lim],scaleanchor:'x',scaleratio:1},
+ paper_bgcolor:'#fff',plot_bgcolor:'#fff',showlegend:false},{responsive:true,displaylogo:false});
+ const s=mapStageData(type,R)[stage];
+ document.getElementById('mapStageTitle').textContent=s[0];document.getElementById('mapStageText').textContent=s[2];
+ document.getElementById('mapFormula').textContent=mapInfo[type].formula;
+ document.getElementById('mapPointCount').textContent=(n*n)+' grid points';
+ document.getElementById('mapType').textContent=mapInfo[type].type;
+ document.getElementById('mapNarratorBox').textContent=s[2];
+ document.getElementById('mapStageFormula').textContent=s[1];
+ document.getElementById('mapVariation').innerHTML=`<p><b>What changes?</b> ${s[2]}</p><p><b>Mapping rule:</b> ${s[1]}</p>`;
+}
+function speakMap(){
+ if(document.getElementById('mapNarrationMode').value==='text')return;
+ if('speechSynthesis'in window){speechSynthesis.cancel();let u=new SpeechSynthesisUtterance(document.getElementById('mapNarratorBox').textContent);u.rate=.88;speechSynthesis.speak(u)}
+}
+let mapTimer=null;
+function stopMap(){if(mapTimer){clearInterval(mapTimer);mapTimer=null}if('speechSynthesis'in window)speechSynthesis.cancel()}
+function playMap(){stopMap();document.getElementById('mapStage').value=0;updateMapping();speakMap();mapTimer=setInterval(()=>{let s=+document.getElementById('mapStage').value;if(s>=4){stopMap();return}document.getElementById('mapStage').value=s+1;updateMapping();speakMap()},4300)}
+['mapFunction','mapRange','mapDensity','mapStage'].forEach(id=>document.getElementById(id).addEventListener('input',updateMapping));
+document.getElementById('mapPrev').onclick=()=>{stopMap();document.getElementById('mapStage').value=Math.max(0,+document.getElementById('mapStage').value-1);updateMapping();speakMap()};
+document.getElementById('mapNext').onclick=()=>{stopMap();document.getElementById('mapStage').value=Math.min(4,+document.getElementById('mapStage').value+1);updateMapping();speakMap()};
+document.getElementById('mapPlay').onclick=playMap;document.getElementById('mapSpeak').onclick=speakMap;document.getElementById('mapStop').onclick=stopMap;
+document.getElementById('mapPNG').onclick=()=>Plotly.downloadImage('mappingPlot',{format:'png',filename:'Complex_Mapping_Stage_'+(+document.getElementById('mapStage').value+1),width:1200,height:750});
+
+/* ---------- AI Prompt Studio ---------- */
+document.getElementById('makePrompt').onclick=()=>{
+ const type=document.getElementById('promptType').value,topic=document.getElementById('promptTopic').value;
+ const templates={
+ concept:`Act as a university-level mathematical physics tutor. Explain ${topic} in complex analysis using intuitive geometry, precise definitions and one worked example. State all domain assumptions. Then give three verification questions. Do not skip mathematical steps.`,
+ roots:`For the polynomial ${topic}, solve for all complex roots. Show the algebraic or numerical method, discuss multiplicity and symmetry, provide approximate numerical values, and calculate a residual |P(z)| for each root. Clearly distinguish exact results from numerical approximations.`,
+ mapping:`Explain the complex mapping ${topic}. Identify its domain, zeros, poles and critical points when relevant. Map at least three representative points and explain how curves or regions transform. State any branch or singularity issues.`,
+ cr:`For ${topic}, write f(z)=u(x,y)+iv(x,y), calculate u_x,u_y,v_x,v_y, apply the Cauchy–Riemann equations and state carefully whether the result proves differentiability or analyticity. Check the domain.`,
+ visual:`Design a stagewise interactive visualization for ${topic}. Use the sequence: geometry → input → transformation → numerical check → interpretation. Include one edge case and explain what should change visually.`,
+ quiz:`Create 8 university-level conceptual MCQs on ${topic}. Include answers and one-sentence explanations. Focus on complex numbers, roots, analyticity, singularities and mapping rather than memorization.`
+ };
+ document.getElementById('aiPrompt').value=templates[type];
+};
+document.getElementById('copyPrompt').onclick=async()=>{
+ const ta=document.getElementById('aiPrompt');if(!ta.value)document.getElementById('makePrompt').click();
+ try{await navigator.clipboard.writeText(ta.value);alert('Prompt copied to clipboard.')}catch(e){ta.select();document.execCommand('copy');alert('Prompt copied.')}
+};
+
+/* ---------- Assessment ---------- */
+const questions=[
+['Understand','The modulus of z=x+iy is:', ['x+y','√(x²+y²)','x−y','x²+y²'],1,'The modulus is the Euclidean distance from the origin.'],
+['Understand','The polar form of a complex number is:', ['z=x+y','z=re^{iθ}','z=r+iθ','z=θe^r'],1,'Polar form separates magnitude r and argument θ.'],
+['Understand','The Cauchy–Riemann equations are:', ['u_x=v_y and u_y=−v_x','u_x=v_x and u_y=v_y','u_x=−v_x and u_y=v_y','u=v'],0,'These are the standard Cauchy–Riemann relations for f=u+iv.'],
+['Apply','For f(z)=z², the derivative is:', ['z','2z','z²','2'],1,'Differentiation of a polynomial follows the usual power rule.'],
+['Understand','The equation z³=1 has how many roots counting multiplicity?', ['1','2','3','6'],2,'A degree-3 polynomial has three complex roots counting multiplicity.'],
+['Apply','The roots of z²+1=0 are:', ['±1','±i','1±i','0,1'],1,'z²=−1 gives z=±i.'],
+['Understand','For a polynomial with real coefficients, a non-real root generally has:', ['no relation to other roots','its complex conjugate as a root','only its negative as a root','only its reciprocal as a root'],1,'Complex conjugate symmetry follows from real coefficients.'],
+['Understand','The mapping w=1/z is undefined at:', ['z=1','z=i','z=0','z=−1'],2,'Division by zero is undefined.'],
+['Apply','Under w=z², the argument approximately becomes:', ['θ/2','θ','2θ','θ²'],2,'If z=re^{iθ}, then z²=r²e^{i2θ}.'],
+['Understand','Where f′(z) exists and is non-zero, an analytic mapping is locally:', ['angle-preserving','always length-preserving','always area-preserving','constant'],0,'Non-zero analytic derivatives give local conformal behaviour.'],
+['Apply','A small residual |P(z)| for a numerical root means:', ['the point is likely close to a root','the polynomial is constant','the root is definitely exact','the domain is empty'],0,'Residual size is a numerical measure of how well P(z)=0 is satisfied.'],
+['Understand','A branch choice is especially important for:', ['z²','z³','log z','z+1'],2,'The complex logarithm is multivalued and requires a branch for a single-valued function.'],
+['Apply','For z=re^{iθ}, multiplication by e^{iφ} rotates z by:', ['r','θ','φ','rφ'],2,'The new argument is θ+φ.'],
+['Understand','AI-generated mathematics should be:', ['accepted automatically','independently verified','used without checking domains','treated as a proof'],1,'AI is useful for exploration but mathematical claims require verification.']
+];
+let score=0,answered=new Set(),report={};
+function renderQuiz(){
+ document.getElementById('quiz').innerHTML=questions.map((q,i)=>`
+ <div class="q"><b>Q${i+1} · ${q[0]}</b><p>${q[1]}</p>
+ ${q[2].map((o,j)=>`<label class="option"><input type="radio" name="q${i}" value="${j}"> ${String.fromCharCode(65+j)}. ${o}</label>`).join('')}
+ <div class="feedback" id="fb${i}"></div></div>`).join('');
+ document.querySelectorAll('.option input').forEach(x=>x.addEventListener('change',gradeOne));
+}
+function gradeOne(e){
+ const i=+e.target.name.substring(1);if(answered.has(i))return;answered.add(i);
+ const selected=+e.target.value,correct=questions[i][3],fb=document.getElementById('fb'+i);
+ if(selected===correct){score++;fb.className='feedback show right';fb.innerHTML='<b>Correct.</b> '+questions[i][4]}
+ else{fb.className='feedback show wrong';fb.innerHTML='<b>Review.</b> '+questions[i][4]}
+ report['Q'+(i+1)]=selected===correct?'Correct':'Incorrect';
+ document.getElementById('score').textContent=score;
+}
+document.getElementById('resetQuiz').onclick=()=>{score=0;answered.clear();report={};document.getElementById('score').textContent=0;renderQuiz();document.getElementById('excel').style.display='none'};
+document.getElementById('prepareReport').onclick=()=>{
+ report['Short Assessment']=document.getElementById('shortAnswer').value||'Not attempted';
+ report['Score']=score+' / '+questions.length;
+ document.getElementById('excel').style.display='block';
+ alert('Assessment report prepared. Click “Download Excel Report” to save it.');
+};
+document.getElementById('excel').onclick=()=>{
+ const data=[report];const ws=XLSX.utils.json_to_sheet(data);const wb=XLSX.utils.book_new();
+ XLSX.utils.book_append_sheet(wb,ws,'Assessment');XLSX.writeFile(wb,'Complex_Analysis_Assessment_Report.xlsx');
+};
+
+/* ---------- Initial state ---------- */
+renderQuiz();
+drawRoots();
+updateMapping();
+document.getElementById('makePrompt').click();
+</script>
+</body>
+</html>

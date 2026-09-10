@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Advanced Photovoltaic Physics Simulator</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.2/gsap.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --bg: #050508;
+            --panel: rgba(15, 18, 25, 0.98);
+            --accent: #ffcc00;
+            --cyan: #00f2ff;
+            --text: #e0e6ed;
+            --border: #2d3343;
+        }
+
+        body, html {
+            margin: 0; padding: 0; width: 100%; height: 100%;
+            background: var(--bg); color: var(--text);
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            overflow: hidden;
+        }
+
+        #app-layout {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            grid-template-rows: 1fr 1fr;
+            height: 100vh; width: 100vw; gap: 6px; padding: 6px; box-sizing: border-box;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            display: flex; flex-direction: column;
+            position: relative; overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 10px 15px;
+            background: rgba(255, 255, 255, 0.03);
+            border-bottom: 1px solid var(--border);
+            font-size: 0.7rem; font-weight: 800;
+            text-transform: uppercase; letter-spacing: 2px;
+            color: var(--accent);
+            display: flex; justify-content: space-between;
+        }
+
+        #device-3d { grid-column: 1; grid-row: 1; }
+        #carrier-dynamics { grid-column: 2; grid-row: 1; }
+        #electrical-analysis { grid-column: 1; grid-row: 2; }
+        #controls { grid-column: 2; grid-row: 2; padding: 20px; display: grid; grid-template-columns: 1fr 1fr; gap: 20px; }
+
+        .canvas-container { flex: 1; width: 100%; cursor: move; }
+
+        .control-group { margin-bottom: 15px; }
+        label { display: block; font-size: 0.75rem; margin-bottom: 6px; color: #8892b0; }
+        select, input[type=range] {
+            width: 100%; background: #0a0c12; color: #fff; border: 1px solid var(--border);
+            padding: 8px; border-radius: 4px; accent-color: var(--accent);
+        }
+
+        .stat-card {
+            background: rgba(0,0,0,0.3); border: 1px solid var(--border);
+            padding: 12px; border-radius: 6px; margin-bottom: 10px;
+        }
+        .stat-val { font-family: 'monospace'; font-size: 1.1rem; color: var(--cyan); }
+        
+        .btn {
+            background: #1a1f2e; border: 1px solid var(--accent); color: var(--accent);
+            padding: 10px; border-radius: 4px; cursor: pointer; font-size: 0.7rem;
+            transition: 0.3s; font-weight: bold; width: 100%;
+        }
+        .btn:hover { background: var(--accent); color: #000; }
+
+        #formula-overlay { font-size: 0.65rem; color: #667; line-height: 1.4; margin-top: 10px; }
+    </style>
+</head>
+<body>
+
+<div id="app-layout">
+    <div class="panel" id="device-3d">
+        <div class="panel-header">1. Solar Cell Architecture <span>p-n Junction Geometry</span></div>
+        <div id="canvas1" class="canvas-container"></div>
+    </div>
+
+    <div class="panel" id="carrier-dynamics">
+        <div class="panel-header">2. Exciton & Carrier Dynamics <span>Dissociation & Drift</span></div>
+        <div id="canvas2" class="canvas-container"></div>
+    </div>
+
+    <div class="panel" id="electrical-analysis">
+        <div class="panel-header">3. J-V Characteristic <span>Performance Metrics</span></div>
+        <div style="flex:1; padding: 10px;">
+            <canvas id="jvChart"></canvas>
+        </div>
+    </div>
+
+    <div class="panel" id="controls">
+        <div style="border-right: 1px solid var(--border); padding-right: 20px;">
+            <div class="control-group">
+                <label>Semiconductor System</label>
+                <select id="mat-select" onchange="solar.updateMaterial()">
+                    <option value="Si">Silicon (Si)</option>
+                    <option value="GaAs">Gallium Arsenide (GaAs)</option>
+                    <option value="CdTe">Cadmium Telluride (CdTe)</option>
+                    <option value="Perovskite">Perovskite (MAPbI3)</option>
+                    <option value="CIGS">CIGS</option>
+                </select>
+            </div>
+            <div class="control-group">
+                <label>Solar Intensity ($G$): <span id="val-sun">1.0</span> Suns</label>
+                <input type="range" id="sun-slider" min="0" max="2" step="0.1" value="1">
+            </div>
+            <div class="control-group">
+                <label>Cell Temp ($T$): <span id="val-temp">300</span> K</label>
+                <input type="range" id="temp-slider" min="200" max="450" value="300">
+            </div>
+            <button class="btn" onclick="solar.toggleLight()">Toggle Light Source</button>
+        </div>
+
+        <div>
+            <div class="stat-card">
+                <label>Current Density ($J_{sc}$)</label>
+                <div class="stat-val" id="read-jsc">--</div>
+            </div>
+            <div class="stat-card">
+                <label>Open Circuit Voltage ($V_{oc}$)</label>
+                <div class="stat-val" id="read-voc">--</div>
+            </div>
+            <div id="formula-overlay">
+                $J = J_0 [\exp(\frac{qV}{nkT}) - 1] - J_{ph}$
+                <br><br>
+                <i>Exciton separation occurs at the depletion region interface via the built-in potential $V_{bi}$.</i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+/** * PHYSICAL CONSTANTS & MATERIAL DATA */
+const MATERIALS = {
+    Si: { eg: 1.12, vbi: 0.7, mu_e: 1400, mu_h: 450, color: 0x2c3e50, name: "Silicon" },
+    GaAs: { eg: 1.42, vbi: 0.9, mu_e: 8500, mu_h: 400, color: 0x34495e, name: "Gallium Arsenide" },
+    CdTe: { eg: 1.50, vbi: 0.85, mu_e: 1000, mu_h: 100, color: 0x1a1a1a, name: "Cadmium Telluride" },
+    Perovskite: { eg: 1.55, vbi: 1.05, mu_e: 60, mu_h: 60, color: 0x000000, name: "Perovskite" },
+    CIGS: { eg: 1.15, vbi: 0.65, mu_e: 100, mu_h: 20, color: 0x2d3436, name: "CIGS" }
+};
+
+const solar = {
+    scene1: null, scene2: null,
+    renderer1: null, renderer2: null,
+    camera1: null, camera2: null,
+    chart: null,
+    lightOn: true,
+    
+    init() {
+        this.setupScenes();
+        this.createDevice();
+        this.initCharts();
+        this.animate();
+        this.updateMaterial();
+        
+        window.addEventListener('resize', () => this.resize());
+        document.getElementById('sun-slider').oninput = () => this.updateMaterial();
+        document.getElementById('temp-slider').oninput = () => this.updateMaterial();
+    },
+
+    setupScenes() {
+        const c1 = document.getElementById('canvas1');
+        const c2 = document.getElementById('canvas2');
+
+        this.scene1 = new THREE.Scene();
+        this.camera1 = new THREE.PerspectiveCamera(45, c1.clientWidth/c1.clientHeight, 0.1, 1000);
+        this.camera1.position.set(12, 10, 15);
+        this.renderer1 = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        this.renderer1.setSize(c1.clientWidth, c1.clientHeight);
+        c1.appendChild(this.renderer1.domElement);
+
+        this.scene2 = new THREE.Scene();
+        this.camera2 = new THREE.PerspectiveCamera(45, c2.clientWidth/c2.clientHeight, 0.1, 1000);
+        this.camera2.position.set(0, 0, 15);
+        this.renderer2 = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+        this.renderer2.setSize(c2.clientWidth, c2.clientHeight);
+        c2.appendChild(this.renderer2.domElement);
+
+        const amb = new THREE.AmbientLight(0xffffff, 0.6);
+        this.scene1.add(amb);
+        this.scene2.add(amb.clone());
+        
+        const dir = new THREE.DirectionalLight(0xffffff, 1);
+        dir.position.set(5, 20, 10);
+        this.scene1.add(dir);
+    },
+
+    createDevice() {
+        const nGeo = new THREE.BoxGeometry(8, 1, 8);
+        const nMat = new THREE.MeshPhongMaterial({ color: 0x3366ff, transparent: true, opacity: 0.8 });
+        const nLayer = new THREE.Mesh(nGeo, nMat);
+        nLayer.position.y = 0.5;
+        this.scene1.add(nLayer);
+
+        const pGeo = new THREE.BoxGeometry(8, 4, 8);
+        const pMat = new THREE.MeshPhongMaterial({ color: 0xff4400, transparent: true, opacity: 0.8 });
+        const pLayer = new THREE.Mesh(pGeo, pMat);
+        pLayer.position.y = -2;
+        this.scene1.add(pLayer);
+
+        const dGeo = new THREE.BoxGeometry(8.1, 0.2, 8.1);
+        const dMat = new THREE.MeshBasicMaterial({ color: 0xbc13fe, transparent: true, opacity: 0.4 });
+        this.scene1.add(new THREE.Mesh(dGeo, dMat));
+
+        const grid = new THREE.GridHelper(8, 8, 0x444444, 0x222222);
+        grid.position.y = 1.01;
+        this.scene1.add(grid);
+    },
+
+    updateMaterial() {
+        const mat = MATERIALS[document.getElementById('mat-select').value];
+        const sun = parseFloat(document.getElementById('sun-slider').value);
+        const temp = parseFloat(document.getElementById('temp-slider').value);
+        
+        document.getElementById('val-sun').innerText = sun.toFixed(1);
+        document.getElementById('val-temp').innerText = temp;
+
+        const q = 1.6e-19;
+        const k = 1.38e-23;
+        const jl = sun * (38 * (1.1 / mat.eg)); // Approx photogenerated current
+        const j0 = 1e-12 * Math.exp(mat.eg * q / (k * 300) * (1 - 300/temp)); 
+        const voc = (k * temp / q) * Math.log((jl / j0) + 1);
+        
+        document.getElementById('read-jsc').innerText = (this.lightOn ? jl.toFixed(1) : "0.0") + " mA/cm²";
+        document.getElementById('read-voc').innerText = (this.lightOn ? voc.toFixed(3) : "0.000") + " V";
+
+        this.updateCharts(jl, j0, voc, temp);
+    },
+
+    initCharts() {
+        const ctx = document.getElementById('jvChart').getContext('2d');
+        this.chart = new Chart(ctx, {
+            type: 'line',
+            data: { datasets: [
+                { label: 'J-V Curve', data: [], borderColor: '#ffcc00', borderWidth: 3, yAxisID: 'y' },
+                { label: 'Power', data: [], borderColor: '#00f2ff', borderDash: [5,5], yAxisID: 'y1' }
+            ]},
+            options: {
+                responsive: true, maintainAspectRatio: false,
+                scales: {
+                    x: { type: 'linear', title: { display: true, text: 'Voltage (V)' }, grid: { color: '#222' } },
+                    y: { title: { display: true, text: 'J (mA/cm²)' }, grid: { color: '#222' } },
+                    y1: { position: 'right', title: { display: true, text: 'Power (mW/cm²)' }, grid: { display: false } }
+                }
+            }
+        });
+    },
+
+    updateCharts(jl, j0, voc, temp) {
+        const q = 1.6e-19, k = 1.38e-23;
+        const jPts = [], pPts = [];
+        if (this.lightOn) {
+            for (let v = 0; v <= voc + 0.05; v += voc/40) {
+                const j = jl - j0 * (Math.exp(q * v / (k * temp)) - 1);
+                jPts.push({ x: v, y: Math.max(0, j) });
+                pPts.push({ x: v, y: Math.max(0, j * v) });
+            }
+        }
+        this.chart.data.datasets[0].data = jPts;
+        this.chart.data.datasets[1].data = pPts;
+        this.chart.update('none');
+    },
+
+    spawnDynamics() {
+        if (!this.lightOn || Math.random() > 0.15) return;
+
+        // Create Exciton (Yellow sphere)
+        const exciton = new THREE.Mesh(new THREE.SphereGeometry(0.15), new THREE.MeshBasicMaterial({ color: 0xffff00 }));
+        exciton.position.set((Math.random()-0.5)*8, 5, 0);
+        this.scene2.add(exciton);
+
+        // Animation: Absorption -> Diffusion -> Dissociation -> Drift
+        const tl = gsap.timeline();
+        tl.to(exciton.position, { y: 0, duration: 1.5, ease: "none" }); // Diffusion to junction
+        tl.add(() => {
+            // Dissociate into Electron (Blue) and Hole (Red)
+            this.scene2.remove(exciton);
+            const e = new THREE.Mesh(new THREE.SphereGeometry(0.12), new THREE.MeshBasicMaterial({ color: 0x3366ff }));
+            const h = new THREE.Mesh(new THREE.SphereGeometry(0.12), new THREE.MeshBasicMaterial({ color: 0xff4400 }));
+            e.position.set(exciton.position.x, 0, 0);
+            h.position.set(exciton.position.x, 0, 0);
+            this.scene2.add(e, h);
+
+            gsap.to(e.position, { y: 5, duration: 1, ease: "power1.in", onComplete: () => this.scene2.remove(e) });
+            gsap.to(h.position, { y: -5, duration: 1, ease: "power1.in", onComplete: () => this.scene2.remove(h) });
+        });
+    },
+
+    toggleLight() {
+        this.lightOn = !this.lightOn;
+        this.updateMaterial();
+    },
+
+    animate() {
+        requestAnimationFrame(() => this.animate());
+        this.renderer1.render(this.scene1, this.camera1);
+        this.renderer2.render(this.scene2, this.camera2);
+        this.scene1.rotation.y += 0.005;
+        this.spawnDynamics();
+    },
+
+    resize() {
+        const c1 = document.getElementById('canvas1');
+        this.camera1.aspect = c1.clientWidth / c1.clientHeight;
+        this.camera1.updateProjectionMatrix();
+        this.renderer1.setSize(c1.clientWidth, c1.clientHeight);
+    }
+};
+
+window.onload = () => solar.init();
+</script>
+</body>
+</html>

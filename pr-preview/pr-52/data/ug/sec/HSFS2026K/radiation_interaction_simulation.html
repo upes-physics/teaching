@@ -1,0 +1,1090 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Virtual Physics Lab: Interaction of Radiation with Matter</title>
+    <style>
+        :root {
+            --bg-main: #0a0e17;
+            --bg-card: #141c2b;
+            --bg-card-hover: #1b263b;
+            --accent-blue: #00d2ff;
+            --accent-cyan: #00f5d4;
+            --accent-purple: #7b2cbf;
+            --accent-red: #ff4d6d;
+            --accent-orange: #ff9e00;
+            --accent-green: #38b000;
+            --text-main: #e2e8f0;
+            --text-muted: #94a3b8;
+            --border-color: #24344d;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            font-family: 'Segoe UI', -apple-system, BlinkMacSystemFont, Roboto, sans-serif;
+        }
+
+        body {
+            background-color: var(--bg-main);
+            color: var(--text-main);
+            line-height: 1.5;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .header {
+            text-align: center;
+            padding: 20px;
+            background: linear-gradient(135deg, #101726 0%, #1a253b 100%);
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            margin-bottom: 20px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.4);
+        }
+
+        .header h1 {
+            font-size: 2.2rem;
+            color: #ffffff;
+            letter-spacing: 1px;
+            margin-bottom: 8px;
+            background: linear-gradient(90deg, #00d2ff, #00f5d4);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .header p {
+            color: var(--text-muted);
+            font-size: 1.05rem;
+        }
+
+        .nav-tabs {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            overflow-x: auto;
+            padding-bottom: 5px;
+        }
+
+        .tab-btn {
+            background-color: var(--bg-card);
+            color: var(--text-muted);
+            border: 1px solid var(--border-color);
+            padding: 12px 24px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.25s ease;
+            white-space: nowrap;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .tab-btn:hover {
+            background-color: var(--bg-card-hover);
+            color: var(--text-main);
+            border-color: var(--accent-blue);
+        }
+
+        .tab-btn.active {
+            background: linear-gradient(135deg, #0077b6, #0096c7);
+            color: #ffffff;
+            border-color: var(--accent-blue);
+            box-shadow: 0 0 15px rgba(0, 210, 255, 0.3);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .grid-layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 20px;
+        }
+
+        @media (max-width: 992px) {
+            .grid-layout {
+                grid-template-columns: 1fr;
+            }
+        }
+
+        .panel {
+            background-color: var(--bg-card);
+            border: 1px solid var(--border-color);
+            border-radius: 12px;
+            padding: 20px;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.25);
+        }
+
+        .panel h2 {
+            font-size: 1.25rem;
+            color: var(--accent-blue);
+            margin-bottom: 15px;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 8px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .control-group {
+            margin-bottom: 18px;
+        }
+
+        .control-group label {
+            display: block;
+            font-size: 0.88rem;
+            font-weight: 600;
+            color: var(--text-muted);
+            margin-bottom: 6px;
+        }
+
+        .control-group select, .control-group input[type="range"], .control-group input[type="number"] {
+            width: 100%;
+            padding: 10px;
+            background-color: #0d131f;
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            color: var(--text-main);
+            font-size: 0.95rem;
+            outline: none;
+            transition: border 0.2s;
+        }
+
+        .control-group select:focus, .control-group input:focus {
+            border-color: var(--accent-blue);
+        }
+
+        .val-display {
+            display: inline-block;
+            float: right;
+            color: var(--accent-cyan);
+            font-weight: bold;
+        }
+
+        .btn-action {
+            width: 100%;
+            padding: 12px;
+            border: none;
+            border-radius: 6px;
+            font-weight: bold;
+            font-size: 1rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            margin-top: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #00b4d8, #0077b6);
+            color: #fff;
+        }
+
+        .btn-primary:hover {
+            background: linear-gradient(135deg, #90e0ef, #00b4d8);
+            color: #000;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #e63946, #d62828);
+            color: #fff;
+            margin-top: 8px;
+        }
+
+        .btn-danger:hover {
+            opacity: 0.9;
+        }
+
+        .sim-container {
+            position: relative;
+            width: 100%;
+            height: 380px;
+            background-color: #05080f;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            overflow: hidden;
+        }
+
+        canvas {
+            width: 100%;
+            height: 100%;
+            display: block;
+        }
+
+        .metrics-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+            gap: 12px;
+            margin-top: 20px;
+        }
+
+        .metric-card {
+            background-color: #0d131f;
+            padding: 14px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            text-align: center;
+        }
+
+        .metric-card .title {
+            font-size: 0.78rem;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metric-card .value {
+            font-size: 1.35rem;
+            font-weight: bold;
+            color: var(--accent-cyan);
+            margin-top: 4px;
+        }
+
+        .metric-card .unit {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+        }
+
+        .info-box {
+            background-color: #0d131f;
+            border-left: 4px solid var(--accent-blue);
+            padding: 15px;
+            border-radius: 0 8px 8px 0;
+            margin-top: 20px;
+            font-size: 0.92rem;
+            line-height: 1.6;
+        }
+
+        .info-box h4 {
+            color: var(--accent-cyan);
+            margin-bottom: 6px;
+        }
+
+        .chart-container {
+            margin-top: 20px;
+            height: 250px;
+            background-color: #05080f;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+            padding: 10px;
+            position: relative;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 15px;
+            font-size: 0.9rem;
+        }
+
+        th, td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        th {
+            background-color: #0d131f;
+            color: var(--accent-blue);
+        }
+
+        tr:hover {
+            background-color: rgba(255, 255, 255, 0.03);
+        }
+
+        .legend {
+            display: flex;
+            gap: 15px;
+            margin-top: 10px;
+            font-size: 0.85rem;
+            justify-content: center;
+        }
+
+        .legend-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+    </style>
+    <!-- Include Chart.js via CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+
+    <div class="header">
+        <h1>Virtual Physics Lab: Interaction of Radiation with Matter</h1>
+        <p>Interactive Simulation, Energy Loss Profiling, and Range Calculations across Various Radiations & Media</p>
+    </div>
+
+    <div class="nav-tabs">
+        <button class="tab-btn active" onclick="switchTab('simulator')">
+            <svg width="18" height="18" fill="none" stroke="currentColor" stroke-width="2" viewBox="0 0 24 24"><path d="M14.7 6.3a1 1 0 0 0 0 1.4l1.6 1.6a1 1 0 0 0 1.4 0l3.77-3.77a6 6 0 0 1-7.94 7.94l-6.91 6.91a2.12 2.12 0 0 1-3-3l6.91-6.91a6 6 0 0 1 7.94-7.94l-3.76 3.76z"></path></svg>
+            Interactive Lab Simulator
+        </button>
+        <button class="tab-btn" onclick="switchTab('alpha')">Alpha Particles (α)</button>
+        <button class="tab-btn" onclick="switchTab('beta')">Beta Particles (β)</button>
+        <button class="tab-btn" onclick="switchTab('gamma')">Gamma / X-Rays (γ)</button>
+        <button class="tab-btn" onclick="switchTab('neutrons')">Neutrons (n)</button>
+        <button class="tab-btn" onclick="switchTab('comparison')">Comparative Media Guide</button>
+    </div>
+
+    <!-- MAIN SIMULATOR TAB -->
+    <div id="tab-simulator" class="tab-content active">
+        <div class="grid-layout">
+            <div class="panel">
+                <h2>Experimental Controls</h2>
+                
+                <div class="control-group">
+                    <label for="radType">Radiation Type</label>
+                    <select id="radType" onchange="updateSimulation()">
+                        <option value="alpha">Alpha (α) - Heavy Charged Ion</option>
+                        <option value="beta">Beta (β⁻) - Fast Electron</option>
+                        <option value="gamma">Gamma (γ) - High Energy Photon</option>
+                        <option value="neutron">Neutron (n) - Uncharged Particle</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label for="mediaType">Target Medium</label>
+                    <select id="mediaType" onchange="updateSimulation()">
+                        <option value="air">Air (ρ = 0.0012 g/cm³)</option>
+                        <option value="water">Water / Tissue (ρ = 1.0 g/cm³)</option>
+                        <option value="aluminum">Aluminum (Z=13, ρ = 2.7 g/cm³)</option>
+                        <option value="lead">Lead (Z=82, ρ = 11.35 g/cm³)</option>
+                        <option value="polyethylene">Polyethylene (High H Content)</option>
+                    </select>
+                </div>
+
+                <div class="control-group">
+                    <label for="energy">Initial Kinetic Energy: <span id="energyVal" class="val-display">5.0 MeV</span></label>
+                    <input type="range" id="energy" min="0.5" max="20" step="0.5" value="5" oninput="updateSimulation()">
+                </div>
+
+                <div class="control-group">
+                    <label for="intensity">Beam Intensity (particles/s): <span id="intensityVal" class="val-display">25</span></label>
+                    <input type="range" id="intensity" min="5" max="60" step="5" value="25" oninput="updateSimulation()">
+                </div>
+
+                <div class="control-group">
+                    <label for="thickness">Medium Thickness: <span id="thicknessVal" class="val-display">5.0 cm</span></label>
+                    <input type="range" id="thickness" min="0.5" max="20" step="0.5" value="5" oninput="updateSimulation()">
+                </div>
+
+                <button class="btn-action btn-primary" onclick="toggleFire()">Fire Beam / Pause</button>
+                <button class="btn-action btn-danger" onclick="resetSim()">Clear / Reset</button>
+            </div>
+
+            <div>
+                <div class="panel">
+                    <h2>
+                        Real-Time Chamber Visualizer
+                        <span style="font-size: 0.85rem; font-weight: normal; color: var(--accent-cyan);" id="statusIndicator">Ready</span>
+                    </h2>
+                    <div class="sim-container">
+                        <canvas id="simCanvas"></canvas>
+                    </div>
+
+                    <div class="legend">
+                        <div class="legend-item"><span class="dot" style="background:#00f5d4"></span> Incident Beam</div>
+                        <div class="legend-item"><span class="dot" style="background:#ff4d6d"></span> Ionization / Energy Loss</div>
+                        <div class="legend-item"><span class="dot" style="background:#ff9e00"></span> Scattered / Secondary</div>
+                        <div class="legend-item"><span class="dot" style="background:#7b2cbf"></span> Bremsstrahlung / Photon</div>
+                    </div>
+
+                    <div class="metrics-grid">
+                        <div class="metric-card">
+                            <div class="title">Mean Range</div>
+                            <div class="value" id="calcRange">--</div>
+                            <div class="unit">cm</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="title">Initial dE/dx</div>
+                            <div class="value" id="calcDedx">--</div>
+                            <div class="unit">MeV / cm</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="title">Transmission</div>
+                            <div class="value" id="calcTrans">--</div>
+                            <div class="unit">%</div>
+                        </div>
+                        <div class="metric-card">
+                            <div class="title">Dominant Process</div>
+                            <div class="value" id="calcProc" style="font-size: 0.95rem; margin-top: 8px;">--</div>
+                            <div class="unit">Mechanism</div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="panel" style="margin-top: 20px;">
+                    <h2>Energy Loss Profile (dE/dx vs Penetration Depth)</h2>
+                    <div class="chart-container">
+                        <canvas id="profileChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- ALPHA PARTICLES TAB -->
+    <div id="tab-alpha" class="tab-content">
+        <div class="panel">
+            <h2>Alpha Particle (α) Interactions</h2>
+            <div class="info-box">
+                <h4>Heavy Charged Particle Physics (Bethe-Bloch Formula)</h4>
+                <p>Alpha particles ($^4	ext{He}^{2+}$) are heavy, doubly charged particles. They interact primarily through inelastic Coulomb scattering with atomic electrons, producing intense ionization along a short, straight track.</p>
+                <p style="margin-top:8px;">Key Features:</p>
+                <ul style="margin-left:20px; margin-top:5px;">
+                    <td>• <strong>Bragg Peak:</strong> As the particle slows down, its rate of energy loss ($dE/dx$) increases, reaching a maximum near the end of its range before dropping rapidly to zero.</td>
+                    <td>• <strong>Minimal Deflection:</strong> Due to their large mass (~7300x electron mass), alphas suffer negligible elastic scattering and travel in nearly straight paths.</td>
+                    <td>• <strong>High Linear Energy Transfer (LET):</strong> High ionization density leads to severe localized damage in biological tissue. Short range (a few cm in air, micrometers in tissue).</td>
+                </ul>
+            </div>
+            
+            <h3 style="margin-top: 20px; color: var(--accent-cyan);">Alpha Range in Common Media (5 MeV Alpha)</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Medium</th>
+                        <th>Density (g/cm³)</th>
+                        <th>Calculated Range</th>
+                        <th>Stopping Power (MeV/cm)</th>
+                        <th>Primary Shielding Requirement</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Air</td>
+                        <td>0.0012</td>
+                        <td>3.5 cm</td>
+                        <td>1.43</td>
+                        <td>Paper / Single sheet of paper stops completely</td>
+                    </tr>
+                    <tr>
+                        <td>Water / Tissue</td>
+                        <td>1.00</td>
+                        <td>38.0 µm</td>
+                        <td>1250</td>
+                        <td>Outer dead layer of skin (epidermis) fully absorbs</td>
+                    </tr>
+                    <tr>
+                        <td>Aluminum</td>
+                        <td>2.70</td>
+                        <td>16.5 µm</td>
+                        <td>2900</td>
+                        <td>Thin foil</td>
+                    </tr>
+                    <tr>
+                        <td>Lead</td>
+                        <td>11.35</td>
+                        <td>5.8 µm</td>
+                        <td>7800</td>
+                        <td>Micro-layer sheet</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- BETA PARTICLES TAB -->
+    <div id="tab-beta" class="tab-content">
+        <div class="panel">
+            <h2>Beta Particle (β⁻ / β⁺) Interactions</h2>
+            <div class="info-box">
+                <h4>Light Charged Particle Physics</h4>
+                <p>Beta particles are energetic electrons or positrons emitted during nuclear decay. Because of their light mass (1/1836 u), their interaction profile differs significantly from heavy ions:</p>
+                <ul style="margin-left:20px; margin-top:5px;">
+                    <td>• <strong>Multiple Coulomb Scattering:</strong> Beta particles undergo significant elastic scattering with target nuclei, resulting in erratic, tortuous trajectories.</td>
+                    <td>• <strong>Collisional vs Radiative Loss:</strong> Energy loss occurs via ionization (collisional) and Bremsstrahlung (radiative X-ray emission when accelerating near heavy Z nuclei).</td>
+                    <td>• <strong>Bremsstrahlung Yield:</strong> Scaled by $E \cdot Z / 800$. High-Z absorbers like Lead emit high secondary X-ray radiation. Therefore, <em>Low-Z materials (e.g. Acrylic/Lucite, Plastic) are preferred for Beta shielding</em>.</td>
+                </ul>
+            </div>
+
+            <h3 style="margin-top: 20px; color: var(--accent-cyan);">Beta Energy Loss & Range comparison (1 MeV Electron)</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Medium</th>
+                        <th>Z (Atomic Number)</th>
+                        <th>Collisional dE/dx</th>
+                        <th>Radiative Fraction</th>
+                        <th>Max Range (cm)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Air</td>
+                        <td>~7.2</td>
+                        <td>1.82 MeV/cm</td>
+                        <td>&lt; 1%</td>
+                        <td>410 cm</td>
+                    </tr>
+                    <tr>
+                        <td>Polyethylene</td>
+                        <td>~5.5</td>
+                        <td>1.95 MeV/cm</td>
+                        <td> &lt; 1%</td>
+                        <td>0.43 cm</td>
+                    </tr>
+                    <tr>
+                        <td>Aluminum</td>
+                        <td>13</td>
+                        <td>4.25 MeV/cm</td>
+                        <td>~1.6%</td>
+                        <td>0.18 cm</td>
+                    </tr>
+                    <tr>
+                        <td>Lead</td>
+                        <td>82</td>
+                        <td>14.8 MeV/cm</td>
+                        <td>~10.2%</td>
+                        <td>0.06 cm (Produces high Bremsstrahlung)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- GAMMA / X-RAYS TAB -->
+    <div id="tab-gamma" class="tab-content">
+        <div class="panel">
+            <h2>Gamma & X-Ray Photon Interactions</h2>
+            <div class="info-box">
+                <h4>Exponential Attenuation: $I(x) = I_0 \, e^{-\mu x}$</h4>
+                <p>Photons are uncharged and do not experience continuous deceleration like charged particles. Instead, they are removed from the primary beam via single probabilistic events. The three primary mechanisms are:</p>
+                <ol style="margin-left:20px; margin-top:5px;">
+                    <td>1. <strong>Photoelectric Effect:</strong> Photon is completely absorbed by a bound electron. Dominates at low energies ($E &lt; 0.1$ MeV) and high Z ($\sigma \propto Z^4 / E^3$).</td>
+                    <td>2. <strong>Compton Scattering:</strong> Photon scatters elastically off a loosely bound electron, losing part of its energy. Dominates at intermediate energies (0.5 - 5 MeV).</td>
+                    <td>3. <strong>Pair Production:</strong> Photon transforms into an electron-positron pair near a nucleus. Occurs only above threshold $E &gt; 1.022$ MeV ($\sigma \propto Z^2$).</td>
+                </ol>
+            </div>
+
+            <h3 style="margin-top: 20px; color: var(--accent-cyan);">Linear Attenuation & Half-Value Layer (HVL) for 1 MeV Gammas</h3>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Material</th>
+                        <th>Density (g/cm³)</th>
+                        <th>Linear Attenuation Coeff μ (cm⁻¹)</th>
+                        <th>Half-Value Layer (HVL = ln2 / μ)</th>
+                        <th>Tenth-Value Layer (TVL)</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>Air</td>
+                        <td>0.0012</td>
+                        <td>0.00008 cm⁻¹</td>
+                        <td>8660 cm</td>
+                        <td>28700 cm</td>
+                    </tr>
+                    <tr>
+                        <td>Water</td>
+                        <td>1.00</td>
+                        <td>0.070 cm⁻¹</td>
+                        <td>9.9 cm</td>
+                        <td>32.9 cm</td>
+                    </tr>
+                    <tr>
+                        <td>Concrete</td>
+                        <td>2.35</td>
+                        <td>0.150 cm⁻¹</td>
+                        <td>4.6 cm</td>
+                        <td>15.3 cm</td>
+                    </tr>
+                    <tr>
+                        <td>Lead</td>
+                        <td>11.35</td>
+                        <td>0.795 cm⁻¹</td>
+                        <td>0.87 cm</td>
+                        <td>2.90 cm</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <!-- NEUTRONS TAB -->
+    <div id="tab-neutrons" class="tab-content">
+        <div class="panel">
+            <h2>Neutron Interactions with Matter</h2>
+            <div class="info-box">
+                <h4>Nuclear Interactions (Uncharged Heavy Particles)</h4>
+                <p>Neutrons have no electric charge and interact exclusively through nuclear forces with target atomic nuclei, rather than atomic electrons.</p>
+                <ul style="margin-left:20px; margin-top:5px;">
+                    <td>• <strong>Elastic Scattering (n, n):</strong> Neutron bounces off nucleus, transferring kinetic energy. Energy transfer is maximized when target mass matches neutron mass ($A pprox 1$, e.g., Hydrogen in Water/Polyethylene).</td>
+                    <td>• <strong>Inelastic Scattering (n, n'γ):</strong> Energetic neutron excites the nucleus, emitting gamma photons upon target de-excitation. Heavy nuclei (Lead) slow fast neutrons efficiently via inelastic collisions.</td>
+                    <td>• <strong>Neutron Capture (n, γ):</strong> Thermalized (slow) neutrons are absorbed by nuclei (e.g. Boron-10, Cadmium, Hydrogen), releasing capture gammas.</td>
+                </ul>
+            </div>
+
+            <h3 style="margin-top: 20px; color: var(--accent-cyan);">Effective Neutron Shielding Strategy</h3>
+            <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 15px; margin-top: 15px;">
+                <div style="background:#0d131f; padding:15px; border-radius:8px; border:1px solid var(--border-color);">
+                    <h4 style="color:var(--accent-orange);">Step 1: Moderation</h4>
+                    <p style="font-size:0.88rem; margin-top:5px;">Slow down fast neutrons using light-element moderators high in Hydrogen (Water, Paraffin Wax, Polyethylene).</p>
+                </div>
+                <div style="background:#0d131f; padding:15px; border-radius:8px; border:1px solid var(--border-color);">
+                    <h4 style="color:var(--accent-cyan);">Step 2: Capture</h4>
+                    <p style="font-size:0.88rem; margin-top:5px;">Absorb thermal neutrons using elements with large thermal neutron capture cross-sections (Boron-10, Cadmium).</p>
+                </div>
+                <div style="background:#0d131f; padding:15px; border-radius:8px; border:1px solid var(--border-color);">
+                    <h4 style="color:var(--accent-purple);">Step 3: Secondary Gamma Shielding</h4>
+                    <p style="font-size:0.88rem; margin-top:5px;">Attenuate secondary capture gammas using high-Z materials (Lead or Heavy Concrete outer layer).</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- COMPARISON TAB -->
+    <div id="tab-comparison" class="tab-content">
+        <div class="panel">
+            <h2>Comparative Shielding & Energy Loss Matrix</h2>
+            <p style="margin-bottom: 15px; color: var(--text-muted);">Summary of shielding effectiveness across different radiation types:</p>
+            <table>
+                <thead>
+                    <tr>
+                        <th>Radiation Type</th>
+                        <th>Mass & Charge</th>
+                        <th>Primary Interaction Mode</th>
+                        <th>Penetration Ability</th>
+                        <th>Optimal Shielding Material</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td><strong>Alpha (α)</strong></td>
+                        <td>4 u, +2e</td>
+                        <td>Coulomb Ionization / Excitation</td>
+                        <td>Very Low (&lt; 5 cm in air)</td>
+                        <td>Paper, Skin, Thin Plastic</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Beta (β⁻/β⁺)</strong></td>
+                        <td>~1/1836 u, ±1e</td>
+                        <td>Ionization & Bremsstrahlung</td>
+                        <td>Moderate (~few meters in air, mm in solids)</td>
+                        <td>Low-Z Materials (Lucite, Acrylic, Polyethylene)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Gamma / X-Ray</strong></td>
+                        <td>0, 0</td>
+                        <td>Photoelectric, Compton, Pair Production</td>
+                        <td>High (Exponential attenuation)</td>
+                        <td>High-Z Materials (Lead, Dense Concrete, Steel)</td>
+                    </tr>
+                    <tr>
+                        <td><strong>Fast Neutron</strong></td>
+                        <td>1 u, 0</td>
+                        <td>Elastic & Inelastic Scattering</td>
+                        <td>Very High (Deep penetration)</td>
+                        <td>Hydrogenous Materials (Water, HDPE) + Boron</td>
+                    </tr>
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // Tab Navigation System
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            event.currentTarget.classList.add('active');
+            document.getElementById('tab-' + tabId).classList.add('active');
+
+            if (tabId === 'simulator') {
+                updateSimulation();
+            }
+        }
+
+        // Canvas & Physics Engine setup
+        const canvas = document.getElementById('simCanvas');
+        const ctx = canvas.getContext('2d');
+        let animationFrameId;
+        let particles = [];
+        let isRunning = true;
+
+        // Chart Setup
+        let profileChart;
+
+        function initChart() {
+            const chartCtx = document.getElementById('profileChart').getContext('2d');
+            profileChart = new Chart(chartCtx, {
+                type: 'line',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Energy Loss Rate dE/dx (Relative)',
+                        data: [],
+                        borderColor: '#00f5d4',
+                        backgroundColor: 'rgba(0, 245, 212, 0.15)',
+                        borderWidth: 2,
+                        fill: true,
+                        tension: 0.3,
+                        pointRadius: 0
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { labels: { color: '#e2e8f0' } }
+                    },
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Penetration Depth into Medium (cm)', color: '#94a3b8' },
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: '#1b263b' }
+                        },
+                        y: {
+                            title: { display: true, text: 'dE/dx (Energy Loss Rate)', color: '#94a3b8' },
+                            ticks: { color: '#94a3b8' },
+                            grid: { color: '#1b263b' }
+                        }
+                    }
+                }
+            });
+        }
+
+        function resizeCanvas() {
+            canvas.width = canvas.parentElement.clientWidth;
+            canvas.height = canvas.parentElement.clientHeight;
+        }
+
+        window.addEventListener('resize', () => {
+            resizeCanvas();
+            updateSimulation();
+        });
+
+        // Radiation Physics Parameters & Calculations
+        const mediaProperties = {
+            air: { density: 0.0012, zEff: 7.2, stoppingFactor: 0.002, name: 'Air' },
+            water: { density: 1.0, zEff: 7.4, stoppingFactor: 1.0, name: 'Water' },
+            aluminum: { density: 2.7, zEff: 13, stoppingFactor: 2.2, name: 'Aluminum' },
+            lead: { density: 11.35, zEff: 82, stoppingFactor: 6.5, name: 'Lead' },
+            polyethylene: { density: 0.94, zEff: 5.5, stoppingFactor: 0.9, name: 'Polyethylene' }
+        };
+
+        function getPhysicsMetrics(rad, media, energy, thickness) {
+            const med = mediaProperties[media];
+            let range = 0;
+            let dedx = 0;
+            let trans = 0;
+            let process = '';
+
+            if (rad === 'alpha') {
+                // Bragg peak behavior, very short range
+                // Empirical range formula ~ energy^1.5 / density
+                range = (0.3 * Math.pow(energy, 1.5)) / (med.stoppingFactor);
+                dedx = (energy / range) * 1.8; 
+                trans = thickness < range ? 100 : 0;
+                process = 'Coulomb Ionization (Bragg Peak)';
+            } else if (rad === 'beta') {
+                // Electron stopping power + scattering
+                range = (0.5 * energy) / (med.density * (med.zEff / 10 + 0.5));
+                dedx = energy / (range * 1.2);
+                trans = Math.max(0, Math.min(100, 100 * Math.exp(-3 * thickness / range)));
+                process = med.zEff > 30 ? 'Ionization + Bremsstrahlung' : 'Inelastic Coulomb Ionization';
+            } else if (rad === 'gamma') {
+                // Exponential attenuation
+                let mu = 0.07 * med.density * Math.pow(med.zEff, 0.4) / Math.sqrt(energy);
+                range = 3 / mu; // ~95% attenuation distance
+                dedx = energy * mu;
+                trans = 100 * Math.exp(-mu * thickness);
+                if (energy < 0.2) process = 'Photoelectric Effect';
+                else if (energy > 2.0 && med.zEff > 20) process = 'Pair Production';
+                else process = 'Compton Scattering';
+            } else if (rad === 'neutron') {
+                let sigma = (media === 'polyethylene' || media === 'water') ? 0.8 : 0.15;
+                let mu = sigma * med.density;
+                range = 3 / mu;
+                dedx = energy * mu * 0.5;
+                trans = 100 * Math.exp(-mu * thickness);
+                process = (media === 'polyethylene' || media === 'water') ? 'Elastic Scattering (H Moderation)' : 'Inelastic Nuclear Collision';
+            }
+
+            return {
+                range: range.toFixed(3),
+                dedx: dedx.toFixed(2),
+                trans: trans.toFixed(1),
+                process: process
+            };
+        }
+
+        function updateChartData(rad, energy, thickness) {
+            const depthSteps = 50;
+            const labels = [];
+            const data = [];
+            const stepSize = thickness / depthSteps;
+
+            const metrics = getPhysicsMetrics(rad, document.getElementById('mediaType').value, energy, thickness);
+            const R = parseFloat(metrics.range);
+
+            for (let i = 0; i <= depthSteps; i++) {
+                let x = i * stepSize;
+                labels.push(x.toFixed(2));
+                let val = 0;
+
+                if (rad === 'alpha') {
+                    // Bragg Peak curve
+                    if (x <= R) {
+                        let normX = x / R;
+                        val = 1 + 3.5 * Math.pow(normX, 4) * Math.exp(-Math.pow(normX - 0.95, 2) / 0.01);
+                    } else {
+                        val = 0;
+                    }
+                } else if (rad === 'beta') {
+                    if (x <= R) {
+                        val = (1 - x / (R * 1.2));
+                    } else val = 0;
+                } else if (rad === 'gamma') {
+                    val = Math.exp(-2.5 * x / R);
+                } else if (rad === 'neutron') {
+                    val = Math.exp(-1.8 * x / R);
+                }
+                data.push(Math.max(0, val));
+            }
+
+            profileChart.data.labels = labels;
+            profileChart.data.datasets[0].data = data;
+            profileChart.update();
+        }
+
+        class Particle {
+            constructor(rad, media, energy, thickness, startX, startY) {
+                this.rad = rad;
+                this.media = media;
+                this.energy = energy;
+                this.x = startX;
+                this.y = startY;
+                this.vx = 4 + energy * 0.3;
+                this.vy = (Math.random() - 0.5) * 0.5;
+                this.active = true;
+                this.trail = [];
+                this.secondaries = [];
+                this.initialX = startX;
+                this.thickness = thickness;
+                
+                // Physics metrics calculation
+                const metrics = getPhysicsMetrics(rad, media, energy, thickness);
+                this.rangePx = (parseFloat(metrics.range) / thickness) * (canvas.width * 0.6); // Scale range to medium block size
+                this.distInMedia = 0;
+            }
+
+            update(mediumStartX, mediumWidth) {
+                if (!this.active) return;
+
+                this.trail.push({ x: this.x, y: this.y });
+                if (this.trail.length > 20) this.trail.shift();
+
+                this.x += this.vx;
+                this.y += this.vy;
+
+                // Check inside medium
+                if (this.x >= mediumStartX && this.x <= mediumStartX + mediumWidth) {
+                    this.distInMedia += this.vx;
+
+                    if (this.rad === 'alpha') {
+                        // Bragg peak behavior: sudden stop at range
+                        if (this.distInMedia >= this.rangePx) {
+                            this.active = false;
+                            this.createIonizationCluster(this.x, this.y, 12);
+                        } else if (Math.random() < 0.3) {
+                            this.secondaries.push({ x: this.x, y: this.y, r: 2, color: '#ff4d6d' });
+                        }
+                    } else if (this.rad === 'beta') {
+                        // Random scattering + Bremsstrahlung
+                        this.vy += (Math.random() - 0.5) * 1.8;
+                        this.vx *= 0.99;
+                        if (Math.random() < 0.15) {
+                            this.secondaries.push({ x: this.x, y: this.y, r: 3, color: '#ff9e00' });
+                        }
+                        if (this.distInMedia >= this.rangePx || this.vx < 0.5) {
+                            this.active = false;
+                        }
+                    } else if (this.rad === 'gamma') {
+                        // Exponential absorption or Compton scatter
+                        let prob = 0.008 * mediaProperties[this.media].density * mediaProperties[this.media].zEff;
+                        if (Math.random() < prob) {
+                            this.secondaries.push({ x: this.x, y: this.y, r: 4, color: '#7b2cbf' });
+                            if (Math.random() < 0.4) {
+                                this.active = false; // Photoelectric absorption
+                            } else {
+                                this.vy += (Math.random() - 0.5) * 4; // Compton scatter angle
+                            }
+                        }
+                    } else if (this.rad === 'neutron') {
+                        // Scattering
+                        if (Math.random() < 0.03) {
+                            this.vy += (Math.random() - 0.5) * 5;
+                            this.secondaries.push({ x: this.x, y: this.y, r: 3, color: '#38b000' });
+                        }
+                        if (this.distInMedia >= this.rangePx * 1.5) {
+                            this.active = false;
+                        }
+                    }
+                }
+
+                if (this.x > canvas.width) this.active = false;
+            }
+
+            createIonizationCluster(x, y, count) {
+                for (let i = 0; i < count; i++) {
+                    this.secondaries.push({
+                        x: x + (Math.random() - 0.5) * 15,
+                        y: y + (Math.random() - 0.5) * 15,
+                        r: Math.random() * 3 + 1,
+                        color: '#ff4d6d'
+                    });
+                }
+            }
+
+            draw() {
+                // Draw trail
+                ctx.beginPath();
+                ctx.strokeStyle = this.rad === 'alpha' ? 'rgba(0, 245, 212, 0.6)' :
+                                  this.rad === 'beta' ? 'rgba(255, 158, 0, 0.6)' :
+                                  this.rad === 'gamma' ? 'rgba(0, 210, 255, 0.6)' : 'rgba(56, 176, 0, 0.6)';
+                ctx.lineWidth = 2;
+                for (let i = 0; i < this.trail.length; i++) {
+                    let pt = this.trail[i];
+                    if (i === 0) ctx.moveTo(pt.x, pt.y);
+                    else ctx.lineTo(pt.x, pt.y);
+                }
+                ctx.stroke();
+
+                // Draw main particle head
+                if (this.active) {
+                    ctx.beginPath();
+                    ctx.arc(this.x, this.y, 4, 0, Math.PI * 2);
+                    ctx.fillStyle = '#ffffff';
+                    ctx.shadowBlur = 8;
+                    ctx.shadowColor = '#00f5d4';
+                    ctx.fill();
+                    ctx.shadowBlur = 0;
+                }
+
+                // Draw secondary ionizations/scattered particles
+                for (let sec of this.secondaries) {
+                    ctx.beginPath();
+                    ctx.arc(sec.x, sec.y, sec.r, 0, Math.PI * 2);
+                    ctx.fillStyle = sec.color;
+                    ctx.fill();
+                }
+            }
+        }
+
+        function updateSimulation() {
+            const rad = document.getElementById('radType').value;
+            const media = document.getElementById('mediaType').value;
+            const energy = parseFloat(document.getElementById('energy').value);
+            const thickness = parseFloat(document.getElementById('thickness').value);
+
+            document.getElementById('energyVal').innerText = energy.toFixed(1) + ' MeV';
+            document.getElementById('intensityVal').innerText = document.getElementById('intensity').value;
+            document.getElementById('thicknessVal').innerText = thickness.toFixed(1) + ' cm';
+
+            // Calculate physics metrics
+            const metrics = getPhysicsMetrics(rad, media, energy, thickness);
+            document.getElementById('calcRange').innerText = metrics.range;
+            document.getElementById('calcDedx').innerText = metrics.dedx;
+            document.getElementById('calcTrans').innerText = metrics.trans;
+            document.getElementById('calcProc').innerText = metrics.process;
+
+            // Update Chart
+            updateChartData(rad, energy, thickness);
+        }
+
+        function spawnParticles() {
+            if (!isRunning) return;
+
+            const rad = document.getElementById('radType').value;
+            const media = document.getElementById('mediaType').value;
+            const energy = parseFloat(document.getElementById('energy').value);
+            const thickness = parseFloat(document.getElementById('thickness').value);
+            const intensity = parseInt(document.getElementById('intensity').value);
+
+            if (Math.random() < intensity / 50) {
+                let startY = canvas.height / 2 + (Math.random() - 0.5) * (canvas.height * 0.4);
+                particles.push(new Particle(rad, media, energy, thickness, 30, startY));
+            }
+        }
+
+        function renderChamber() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+            const mediumStartX = canvas.width * 0.35;
+            const mediumWidth = canvas.width * 0.5;
+
+            // Draw Emitter Source Box
+            ctx.fillStyle = '#1e293b';
+            ctx.strokeStyle = '#00d2ff';
+            ctx.lineWidth = 2;
+            ctx.fillRect(5, canvas.height * 0.2, 40, canvas.height * 0.6);
+            ctx.strokeRect(5, canvas.height * 0.2, 40, canvas.height * 0.6);
+
+            ctx.fillStyle = '#00d2ff';
+            ctx.font = 'bold 11px sans-serif';
+            ctx.fillText('SOURCE', 7, canvas.height * 0.5);
+
+            // Draw Target Medium Block
+            ctx.fillStyle = 'rgba(30, 41, 59, 0.7)';
+            ctx.strokeStyle = '#24344d';
+            ctx.fillRect(mediumStartX, 20, mediumWidth, canvas.height - 40);
+            ctx.strokeRect(mediumStartX, 20, mediumWidth, canvas.height - 40);
+
+            // Medium Label Overlay
+            ctx.fillStyle = 'rgba(255, 255, 255, 0.4)';
+            ctx.font = 'bold 16px sans-serif';
+            ctx.fillText(mediaProperties[document.getElementById('mediaType').value].name.toUpperCase(), mediumStartX + 20, 50);
+
+            // Update & Render Particles
+            for (let i = particles.length - 1; i >= 0; i--) {
+                let p = particles[i];
+                p.update(mediumStartX, mediumWidth);
+                p.draw();
+                if (!p.active && p.secondaries.length === 0) {
+                    particles.splice(i, 1);
+                }
+            }
+
+            spawnParticles();
+            animationFrameId = requestAnimationFrame(renderChamber);
+        }
+
+        function toggleFire() {
+            isRunning = !isRunning;
+            document.getElementById('statusIndicator').innerText = isRunning ? 'Simulating...' : 'Paused';
+        }
+
+        function resetSim() {
+            particles = [];
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+        }
+
+        // Initialize Virtual Lab Interface
+        window.onload = function() {
+            resizeCanvas();
+            initChart();
+            updateSimulation();
+            renderChamber();
+        };
+    </script>
+</body>
+</html>

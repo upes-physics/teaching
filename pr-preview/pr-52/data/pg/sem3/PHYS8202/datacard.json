@@ -1,0 +1,36 @@
+{
+  "courseCode": "PHYS8202",
+  "courseName": "Computational Astrophysics",
+  "stream": "MSc Physics",
+  "semester": "3",
+  "faculty": {
+    "name": "Dr. Arka Chatterjee",
+    "email": "arka.chatterjee@ddn.upes.ac.in"
+  },
+  "simulators": [
+    {
+      "name": "Harmonic Oscillator",
+      "desc": "Solver for second order differential equation with variable frequencies.",
+      "link": "simple_harmonic_oscillator_ensemble.html",
+      "uploadFileLink": "simple_harmonic_oscillator_ensemble.html"
+    },
+    {
+      "name": "Damped Harmonic Oscillator",
+      "desc": "Solver for second order differential equation with variable frequencies and damping factors.",
+      "link": "damped_oscillator_animate.html",
+      "uploadFileLink": "damped_oscillator_animate.html"
+    },
+    {
+      "name": "Classical Chaos",
+      "desc": "Lorenz attractor solver with variable particle number, and constants.",
+      "link": "lorenz_attractor_simulation_updated.html",
+      "uploadFileLink": "lorenz_attractor_simulation_updated.html"
+    },
+    {
+      "name": "Monte-Carlo Integration",
+      "desc": "Integration with variable number of beamed particles to estimate the area under the curve.",
+      "link": "monte_carlo_pi_estimation.html",
+      "uploadFileLink": "monte_carlo_pi_estimation.html"
+    }
+  ]
+}

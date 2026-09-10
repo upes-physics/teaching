@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Alpha Decay – Complete Teaching Simulator</title>
+<script src="https://cdn.plot.ly/plotly-latest.min.js"></script>
+
+<style>
+body { font-family: Arial; margin:20px; }
+.container { display:flex; gap:20px; }
+.controls { width:320px; }
+.story { border:2px solid #444; padding:10px; background:#fafafa; }
+.box { border:1px solid #ccc; padding:10px; margin-top:10px; }
+canvas { border:1px solid black; }
+</style>
+</head>
+
+<body>
+
+<h2>Alpha Decay – Gamow Tunneling (Teaching Simulator)</h2>
+
+<div class="container">
+
+<div class="controls">
+
+Z: <span id="Zval">82</span><br>
+<input type="range" id="Z" min="20" max="100" value="82"><br><br>
+
+Q: <span id="Qval">6</span><br>
+<input type="range" id="Q" min="0.5" max="10" step="0.1" value="6"><br><br>
+
+R: <span id="Rval">60</span><br>
+<input type="range" id="R" min="40" max="90" value="60"><br><br>
+
+<button onclick="resetParticle()">Reset</button>
+<button onclick="skipToEscape()">Skip to Escape</button>
+
+<div class="story">
+<p><b>🎯 What’s happening?</b></p>
+<p>Only <b>1 in <span id="onein"></span></b> attempts succeeds.</p>
+<p>Tries <b>10²¹ times per second</b>.</p>
+<p>👉 Escape after <b><span id="tau"></span></b></p>
+<p>⏱ Half-life: <b><span id="half"></span></b></p>
+</div>
+
+<div class="box">
+<p><b>Attempts:</b> <span id="attempts">0</span></p>
+<p><b>Time:</b> <span id="time">0</span></p>
+<p><b>Random draw:</b> <span id="rand">-</span></p>
+<canvas id="probBar" width="220" height="25"></canvas>
+</div>
+
+</div>
+
+<canvas id="sim" width="420" height="420"></canvas>
+<div id="plot" style="width:520px;height:420px;"></div>
+
+</div>
+
+<script>
+// ---------------- DOM ----------------
+const canvas = document.getElementById("sim");
+const ctx = canvas.getContext("2d");
+
+const Zs = document.getElementById("Z");
+const Qs = document.getElementById("Q");
+const Rs = document.getElementById("R");
+
+const Zval = document.getElementById("Zval");
+const Qval = document.getElementById("Qval");
+const Rval = document.getElementById("Rval");
+
+const attemptsEl = document.getElementById("attempts");
+const timeEl = document.getElementById("time");
+const randEl = document.getElementById("rand");
+
+const probCanvas = document.getElementById("probBar");
+const pctx = probCanvas.getContext("2d");
+
+// ---------------- GLOBALS ----------------
+let nucleons = [];
+let particle;
+let attempts = 0;
+let targetEscape = null;
+
+const nu = 1e21;
+
+function initNucleus(Z,R){
+
+  nucleons = [];
+
+  let A = Math.floor(2 * Z);   // simple approximation
+  let N = A - Z;               // neutrons
+
+  for(let i=0;i<A;i++){
+
+    let r = Math.random()*R*0.7;
+    let t = Math.random()*Math.PI;
+    let p = Math.random()*2*Math.PI;
+
+    nucleons.push({
+      x:r*Math.sin(t)*Math.cos(p),
+      y:r*Math.sin(t)*Math.sin(p),
+      z:r*Math.cos(t),
+      proton: i < Z   // ✅ EXACT number of protons
+    });
+  }
+}
+function rotate(n){
+  let ry=0.01, rx=0.005;
+
+  let x=n.x*Math.cos(ry)-n.z*Math.sin(ry);
+  let z=n.x*Math.sin(ry)+n.z*Math.cos(ry);
+
+  let y=n.y*Math.cos(rx)-z*Math.sin(rx);
+  z=n.y*Math.sin(rx)+z*Math.cos(rx);
+
+  n.x=x; n.y=y; n.z=z;
+}
+
+function project(n){
+  let scale=300/(300+n.z);
+  return {x:210+n.x*scale, y:210+n.y*scale, r:5*scale};
+}
+
+function drawNucleus(){
+  nucleons.forEach(rotate);
+  nucleons.sort((a,b)=>a.z-b.z);
+
+  nucleons.forEach(n=>{
+    let p=project(n);
+    let shade=150+100*(1-p.r/5);
+
+    ctx.beginPath();
+    ctx.arc(p.x,p.y,p.r,0,2*Math.PI);
+    ctx.fillStyle=n.proton
+      ? `rgb(${shade},60,60)`
+      : `rgb(60,60,${shade})`;
+    ctx.fill();
+  });
+}
+
+// ---------------- PHYSICS ----------------
+function tunnelingProbability(Z,Q,R){
+  if(Q<=0) return 0;
+  return Math.exp(-Z/Math.sqrt(Q)*(R/50));
+}
+
+// ---------------- ENERGY DIAGRAM ----------------
+function updatePlot(){
+  let Z=+Zs.value, Q=+Qs.value, R=+Rs.value;
+
+  let r=[], V=[], psi=[];
+  let r2 = 1.44*Z/Q;
+
+  for(let i=1;i<200;i++){
+    let x=i*2;
+    let v=(x<R)?0:(1.44*Z/x);
+
+    r.push(x);
+    V.push(v);
+
+    if(x<R) psi.push(Math.sin(x/5));
+    else if(x<r2) psi.push(Math.exp(-(x-R)/10));
+    else psi.push(0.2*Math.sin(x/8));
+  }
+
+  Plotly.newPlot("plot",[
+    {x:r,y:V,mode:"lines",name:"V(r)"},
+    {x:r,y:Array(r.length).fill(Q),mode:"lines",name:"Q",line:{dash:"dash"}},
+    {x:r,y:psi,mode:"lines",name:"ψ"}
+  ],{
+    title:"Barrier + Wavefunction",
+    xaxis:{title:"r"},
+    yaxis:{title:"Energy / ψ"},
+    shapes:[
+      {type:"rect",x0:R,x1:r2,y0:0,y1:Math.max(...V),
+       fillcolor:"rgba(255,0,0,0.2)",line:{width:0}},
+      {type:"line",x0:R,x1:R,y0:0,y1:Math.max(...V),line:{dash:"dot"}},
+      {type:"line",x0:r2,x1:r2,y0:0,y1:Math.max(...V),line:{dash:"dot"}}
+    ]
+  });
+}
+
+// ---------------- UI ----------------
+function drawProbBar(p,success=false){
+  pctx.clearRect(0,0,220,25);
+  pctx.fillStyle="#ff9999";
+  pctx.fillRect(0,0,220,25);
+
+  pctx.fillStyle="#99ff99";
+  pctx.fillRect(0,0,220*p,25);
+
+  if(success){
+    pctx.fillStyle="black";
+    pctx.fillRect(220*p,0,3,25);
+  }
+}
+
+function resetParticle(){
+  particle={x:210,y:210,vx:2,vy:1.5,escaped:false};
+  attempts=0;
+  targetEscape=null;
+}
+
+function skipToEscape(){
+  let Z=+Zs.value, Q=+Qs.value, R=+Rs.value;
+  let p=tunnelingProbability(Z,Q,R);
+  if(p<=0) return;
+
+  targetEscape=Math.ceil(Math.log(1-Math.random())/Math.log(1-p));
+  attempts=targetEscape-5;
+}
+
+// ---------------- LOOP ----------------
+function draw(){
+
+  let Z=+Zs.value, Q=+Qs.value, R=+Rs.value;
+
+  Zval.innerText=Z;
+  Qval.innerText=Q;
+  Rval.innerText=R;
+
+  let p=tunnelingProbability(Z,Q,R);
+  let lambda=nu*p;
+  let tauVal=1/lambda;
+  let halfVal=tauVal*Math.log(2);
+
+  onein.innerText=(1/p).toExponential(2);
+  tau.innerText=tauVal.toExponential(2)+" s";
+  half.innerText=halfVal.toExponential(2)+" s";
+
+  attemptsEl.innerText=attempts;
+  timeEl.innerText=(attempts/nu).toExponential(2)+" s";
+
+  ctx.clearRect(0,0,420,420);
+  drawNucleus();
+
+  // motion
+  particle.x+=particle.vx;
+  particle.y+=particle.vy;
+
+  let dx=particle.x-210, dy=particle.y-210;
+  let dist=Math.sqrt(dx*dx+dy*dy);
+
+  if(!particle.escaped && Q>0){
+    if(dist>=R){
+      attempts++;
+
+      let r=Math.random();
+      randEl.innerText=r.toFixed(5);
+
+      drawProbBar(p);
+
+      let escape = targetEscape!==null
+        ? attempts>=targetEscape
+        : r<p;
+
+      if(escape){
+        drawProbBar(p,true);
+        particle.escaped=true;
+      } else {
+        particle.vx*=-1;
+        particle.vy*=-1;
+      }
+    }
+  } else if(particle.escaped){
+    particle.vx*=1.02;
+    particle.vy*=1.02;
+  }
+
+  ctx.beginPath();
+  ctx.arc(particle.x,particle.y,4,0,2*Math.PI);
+  ctx.fillStyle="limegreen";
+  ctx.fill();
+
+  requestAnimationFrame(draw);
+}
+
+// ---------------- EVENTS ----------------
+function updateAll(){
+  initNucleus(+Zs.value,+Rs.value);
+  updatePlot();
+}
+
+Zs.oninput=updateAll;
+Qs.oninput=updatePlot;
+Rs.oninput=updateAll;
+
+// ---------------- START ----------------
+updateAll();
+resetParticle();
+draw();
+
+</script>
+
+</body>
+</html>

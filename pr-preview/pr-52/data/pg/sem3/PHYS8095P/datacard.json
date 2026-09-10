@@ -1,0 +1,72 @@
+{
+  "courseCode": "PHYS8095P",
+  "courseName": "Nanomaterials And Nanotechnology",
+  "stream": "MSc Physics",
+  "semester": "3",
+  "faculty": {
+    "name": "Dr. Nirmal Kumar",
+    "email": "nirmal.kumar@ddn.upes.ac.in"
+  },
+  "simulators": [
+    {
+      "name": "M.Sc_3_nanoscale_Unit1_Lecture2_Melting of nanoparticles",
+      "desc": "surface energy impact the melting point of nanomaterials",
+      "link": "melting-nano.html",
+      "uploadFileLink": "melting-nano.html"
+    },
+    {
+      "name": "M.Sc_3_Materials And Nanotechnology_Unit1_Lecture6_Quantum confinement",
+      "desc": "Quantum confinement",
+      "link": "M.Sc_3_Materials And Nanotechnology_Unit1_Lecture6_Quantum confinement.html",
+      "uploadFileLink": "M.Sc_3_Materials And Nanotechnology_Unit1_Lecture6_Quantum confinement.html"
+    },
+    {
+      "name": "M.Sc_3_Materials And Nanotechnology_Unit1_Lecture7_Surface to volume ratio",
+      "desc": "Surface to volume ratio",
+      "link": "M.Sc_3_Materials And Nanotechnology_Unit1_Lecture7_Surface to volume ratio.html",
+      "uploadFileLink": "M.Sc_3_Materials And Nanotechnology_Unit1_Lecture7_Surface to volume ratio.html"
+    },
+    {
+      "name": "M.Sc_3_Materials And Nanotechnology_Unit1_Lecture8_Quantum dots",
+      "desc": "Quantum dots",
+      "link": "M.Sc_3_Materials And Nanotechnology_Unit1_Lecture8_Quantum dots.html",
+      "uploadFileLink": "M.Sc_3_Materials And Nanotechnology_Unit1_Lecture8_Quantum dots.html"
+    },
+    {
+      "name": "M.Sc_3_Materials And Nanotechnology_Unit2_Lecture31_Quantum size effect",
+      "desc": "Quantum size effect",
+      "link": "M.Sc_3_Materials And Nanotechnology_Unit2_Lecture31_Quantum size effect.html",
+      "uploadFileLink": "M.Sc_3_Materials And Nanotechnology_Unit2_Lecture31_Quantum size effect.html"
+    },
+    {
+      "name": "M.Sc_3_Materials And Nanotechnology_Unit3_Lecture34_Electriccal Transport",
+      "desc": "Electriccal Transport",
+      "link": "M.Sc_3_Materials And Nanotechnology_Unit3_Lecture34_Electriccal Transport.html",
+      "uploadFileLink": "M.Sc_3_Materials And Nanotechnology_Unit3_Lecture34_Electriccal Transport.html"
+    },
+    {
+      "name": "M.Sc_3_Materials And Nanotechnology_Unit3_Lecture43_Quantum Transport",
+      "desc": "Quantum Transport",
+      "link": "M.Sc_3_Materials And Nanotechnology_Unit3_Lecture43_Quantum Transport.html",
+      "uploadFileLink": "M.Sc_3_Materials And Nanotechnology_Unit3_Lecture43_Quantum Transport.html"
+    },
+    {
+      "name": "M.Sc_3_Materials And Nanotechnology_Unit3_Lecture45_Core Shell type wires",
+      "desc": "Core Shell type wires",
+      "link": "M.Sc_3_Materials And Nanotechnology_Unit3_Lecture45_Core Shell type wires.html",
+      "uploadFileLink": "M.Sc_3_Materials And Nanotechnology_Unit3_Lecture45_Core Shell type wires.html"
+    },
+    {
+      "name": "M.Sc_3_Materials And Nanotechnology_Unit4_Lecture53_Solar Cell",
+      "desc": "Solar Cell",
+      "link": "M.Sc_3_Materials And Nanotechnology_Unit4_Lecture53_Solar Cell.html",
+      "uploadFileLink": "M.Sc_3_Materials And Nanotechnology_Unit4_Lecture53_Solar Cell.html"
+    },
+    {
+      "name": "M.Sc_3_Materials And Nanotechnology_Unit4_Lecture54_Magnetic data storage",
+      "desc": "Magnetic data storage",
+      "link": "M.Sc_3_Materials And Nanotechnology_Unit4_Lecture54_Magnetic data storage.html",
+      "uploadFileLink": "M.Sc_3_Materials And Nanotechnology_Unit4_Lecture54_Magnetic data storage.html"
+    }
+  ]
+}

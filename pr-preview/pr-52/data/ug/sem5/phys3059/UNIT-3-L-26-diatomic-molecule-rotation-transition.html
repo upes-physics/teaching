@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Diatomic Molecule Rotational Transitions</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #f8fafc;
+            color: #0f172a;
+        }
+        .canvas-container {
+            position: relative;
+            width: 100%;
+            height: 300px;
+            background-color: #1e293b;
+            border-radius: 0.5rem;
+            overflow: hidden;
+        }
+        input[type="range"] {
+            accent-color: #3b82f6;
+        }
+        .tooltip {
+            position: absolute;
+            background: rgba(15, 23, 42, 0.9);
+            color: white;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 0.75rem;
+            pointer-events: none;
+            opacity: 0;
+            transition: opacity 0.2s;
+            z-index: 10;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8 max-w-7xl mx-auto">
+
+    <header class="mb-8 text-center relative">
+        <h1 class="text-3xl font-bold text-slate-800 mb-2">Diatomic Rotational Transitions</h1>
+        <p class="text-slate-600 max-w-2xl mx-auto">Interactive simulation exploring how physical properties affect the rotational energy levels, populations, and spectra of a rigid rotor diatomic molecule.</p>
+        <button onclick="downloadSimulation()" class="mt-4 inline-flex items-center gap-2 bg-blue-600 text-white px-4 py-2 rounded-md hover:bg-blue-700 transition-colors text-sm font-medium shadow-sm">
+            <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><polyline points="7 10 12 15 17 10"></polyline><line x1="12" y1="15" x2="12" y2="3"></line></svg>
+            Download HTML File
+        </button>
+    </header>
+
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+        
+        <!-- Controls Panel -->
+        <div class="bg-white p-6 rounded-xl shadow-sm border border-slate-200 col-span-1 lg:col-span-1 flex flex-col gap-5 h-fit">
+            <h2 class="text-xl font-semibold mb-2 border-b pb-2">Molecule Parameters</h2>
+            
+            <div class="control-group mb-2">
+                <label class="block text-sm font-medium mb-1">Molecule Preset</label>
+                <select id="moleculePreset" class="w-full p-2 border border-slate-300 rounded-md bg-slate-50 text-slate-700 text-sm focus:outline-none focus:ring-2 focus:ring-blue-500">
+                    <option value="custom">Custom...</option>
+                    <option value="H2">H₂ (Hydrogen)</option>
+                    <option value="N2">N₂ (Nitrogen)</option>
+                    <option value="CO">CO (Carbon Monoxide)</option>
+                    <option value="CO2">CO₂ (Carbon Dioxide)</option>
+                    <option value="H2O">H₂O (Water)</option>
+                    <option value="CHCl3">CHCl₃ (Chloroform)</option>
+                </select>
+                <p id="presetNote" class="text-xs text-amber-600 mt-2 hidden bg-amber-50 p-2 rounded border border-amber-200"></p>
+            </div>
+
+            <div class="control-group">
+                <label class="flex justify-between text-sm font-medium mb-1">
+                    <span>Bond Length (r)</span>
+                    <span id="bondLengthVal" class="text-blue-600 font-mono">1.2 Å</span>
+                </label>
+                <input type="range" id="bondLength" min="0.5" max="5.0" step="0.01" value="1.2" class="w-full">
+                <p class="text-xs text-slate-500 mt-1">Affects moment of inertia and rotational constant (B).</p>
+            </div>
+
+            <div class="control-group">
+                <label class="flex justify-between text-sm font-medium mb-1">
+                    <span>Mass of Atom 1 (m₁)</span>
+                    <span id="mass1Val" class="text-blue-600 font-mono">12 amu</span>
+                </label>
+                <input type="range" id="mass1" min="1" max="150" step="1" value="12" class="w-full">
+            </div>
+
+            <div class="control-group">
+                <label class="flex justify-between text-sm font-medium mb-1">
+                    <span>Mass of Atom 2 (m₂)</span>
+                    <span id="mass2Val" class="text-blue-600 font-mono">16 amu</span>
+                </label>
+                <input type="range" id="mass2" min="1" max="150" step="1" value="16" class="w-full">
+                <p class="text-xs text-slate-500 mt-1">Masses determine the reduced mass (μ).</p>
+            </div>
+
+            <div class="control-group">
+                <label class="flex justify-between text-sm font-medium mb-1">
+                    <span>Temperature (T)</span>
+                    <span id="tempVal" class="text-blue-600 font-mono">300 K</span>
+                </label>
+                <input type="range" id="temp" min="10" max="1000" step="10" value="300" class="w-full">
+                <p class="text-xs text-slate-500 mt-1">Determines population of energy levels (Boltzmann distribution).</p>
+            </div>
+
+            <div class="control-group">
+                <label class="flex justify-between text-sm font-medium mb-1">
+                    <span>Polarizability (α) proxy</span>
+                    <span id="polarVal" class="text-blue-600 font-mono">1.0 arb.u.</span>
+                </label>
+                <input type="range" id="polar" min="0.1" max="5.0" step="0.1" value="1.0" class="w-full">
+                <p class="text-xs text-slate-500 mt-1">In this simple model, affects visual scale of transition intensities (Raman activity analog).</p>
+            </div>
+
+            <div class="mt-4 p-4 bg-slate-50 rounded-lg border border-slate-200">
+                <h3 class="text-sm font-semibold text-slate-700 mb-2">Calculated Properties</h3>
+                <div class="grid grid-cols-2 gap-2 text-sm font-mono">
+                    <div class="text-slate-600">Reduced Mass (μ):</div>
+                    <div id="calcMu" class="text-right">-- amu</div>
+                    <div class="text-slate-600">Moment of Inertia (I):</div>
+                    <div id="calcI" class="text-right">-- x10⁻⁴⁷ kg·m²</div>
+                    <div class="text-slate-600">Rotational Const (B):</div>
+                    <div id="calcB" class="text-right">-- cm⁻¹</div>
+                    <div class="text-slate-600">J_max (most populated):</div>
+                    <div id="calcJmax" class="text-right">--</div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Visualizations Panel -->
+        <div class="col-span-1 lg:col-span-2 flex flex-col gap-6">
+            
+            <!-- 3D Molecule View -->
+            <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                <h2 class="text-lg font-semibold mb-2">3D Representation</h2>
+                <div id="molecule3D" class="canvas-container relative">
+                    <div class="absolute top-2 left-2 text-xs text-slate-300 font-mono bg-slate-800/50 px-2 py-1 rounded">
+                        Rotation Speed ≈ J_max energy
+                    </div>
+                </div>
+            </div>
+
+            <!-- Charts Row -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Energy Levels & Populations -->
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                    <h2 class="text-lg font-semibold mb-2">Energy Levels & Populations</h2>
+                    <div class="relative h-64">
+                        <canvas id="populationChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Spectrum -->
+                <div class="bg-white p-4 rounded-xl shadow-sm border border-slate-200">
+                    <h2 class="text-lg font-semibold mb-2">Rotational Spectrum (Absorption)</h2>
+                    <div class="relative h-64">
+                        <canvas id="spectrumChart"></canvas>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // --- Constants and Physics Engine ---
+        const CONSTANTS = {
+            h: 6.62607015e-34, // Planck constant (J.s)
+            c: 2.99792458e10,  // Speed of light (cm/s) for wavenumbers
+            k: 1.380649e-23,   // Boltzmann constant (J/K)
+            amu_to_kg: 1.66053906660e-27, // Atomic mass unit to kg
+            angstrom_to_m: 1e-10, // Angstrom to meters
+            max_J: 30 // Max rotational level to calculate
+        };
+
+        const PRESETS = {
+            'H2': { m1: 1, m2: 1, r: 0.74, note: 'Homonuclear diatomic. Has no permanent dipole, so transitions shown are Raman-active.' },
+            'N2': { m1: 14, m2: 14, r: 1.10, note: 'Homonuclear diatomic. Has no permanent dipole, so transitions shown are Raman-active.' },
+            'CO': { m1: 12, m2: 16, r: 1.13, note: 'Heteronuclear diatomic. Strong microwave rotational spectrum.' },
+            'CO2': { m1: 16, m2: 16, r: 2.32, note: 'Linear triatomic. Modeled here using the O-O distance to approximate the effective moment of inertia.' },
+            'H2O': { m1: 1, m2: 16, r: 1.10, note: 'Asymmetric top. Values approximated to match the primary effective rotational constant (B).' },
+            'CHCl3': { m1: 13, m2: 106, r: 3.82, note: 'Symmetric top. Modeled as a pseudo-diatomic (CH vs Cl3) to approximate its very small B constant.' }
+        };
+
+        // State variables
+        let params = {
+            r: 1.2, // Angstroms
+            m1: 12, // amu
+            m2: 16, // amu
+            T: 300, // Kelvin
+            alpha: 1.0 // Arbitrary polarizability proxy
+        };
+
+        let calculated = {
+            mu_kg: 0,
+            I_kgm2: 0,
+            B_J: 0,
+            B_cm1: 0,
+            J_max: 0,
+            populations: [],
+            transitions: [] // Delta J = +1
+        };
+
+        function calculatePhysics() {
+            // 1. Reduced Mass (mu) = m1*m2 / (m1+m2)
+            const m1_kg = params.m1 * CONSTANTS.amu_to_kg;
+            const m2_kg = params.m2 * CONSTANTS.amu_to_kg;
+            calculated.mu_kg = (m1_kg * m2_kg) / (m1_kg + m2_kg);
+            const mu_amu = (params.m1 * params.m2) / (params.m1 + params.m2);
+
+            // 2. Moment of Inertia (I) = mu * r^2
+            const r_m = params.r * CONSTANTS.angstrom_to_m;
+            calculated.I_kgm2 = calculated.mu_kg * Math.pow(r_m, 2);
+
+            // 3. Rotational Constant (B)
+            // In Joules: B_J = h^2 / (8 * pi^2 * I)
+            calculated.B_J = Math.pow(CONSTANTS.h, 2) / (8 * Math.pow(Math.PI, 2) * calculated.I_kgm2);
+            // In Wavenumbers (cm^-1): B_cm1 = h / (8 * pi^2 * I * c)
+            calculated.B_cm1 = CONSTANTS.h / (8 * Math.pow(Math.PI, 2) * calculated.I_kgm2 * CONSTANTS.c);
+
+            // 4. Most populated J level: J_max = sqrt(kT / 2hcB) - 1/2
+            // Using Joules for consistency: kT / 2B_J
+            const kT = CONSTANTS.k * params.T;
+            let jmax_val = Math.sqrt(kT / (2 * calculated.B_J)) - 0.5;
+            calculated.J_max = Math.max(0, Math.round(jmax_val)); // Can't be negative
+
+            // 5. Calculate Populations (Boltzmann distribution)
+            // N_J / N_0 \propto (2J+1) * exp(-E_J / kT)
+            // E_J = B_J * J(J+1)
+            calculated.populations = [];
+            let partition_function_approx = kT / calculated.B_J; // Valid for high T, but let's sum it
+            
+            let sum_pop = 0;
+            for (let J = 0; J <= CONSTANTS.max_J; J++) {
+                const E_J = calculated.B_J * J * (J + 1);
+                const degeneracy = 2 * J + 1;
+                const boltzmann_factor = Math.exp(-E_J / kT);
+                const relative_pop = degeneracy * boltzmann_factor;
+                calculated.populations.push({
+                    J: J,
+                    E_cm1: calculated.B_cm1 * J * (J + 1),
+                    pop: relative_pop
+                });
+                sum_pop += relative_pop;
+            }
+
+            // Normalize populations
+            calculated.populations.forEach(p => {
+                p.normalized_pop = p.pop / sum_pop;
+            });
+
+            // 6. Calculate Spectrum (Transitions J -> J+1)
+            // Delta E = E(J+1) - E(J) = 2B(J+1)
+            calculated.transitions = [];
+            for (let J = 0; J < CONSTANTS.max_J; J++) {
+                const wavenumber = 2 * calculated.B_cm1 * (J + 1);
+                // Intensity proportional to population of lower state (roughly) and transition probability
+                // Here we use polarizability alpha to scale overall intensity for visual effect
+                const intensity = calculated.populations[J].normalized_pop * params.alpha; 
+                calculated.transitions.push({
+                    J_lower: J,
+                    wavenumber: wavenumber,
+                    intensity: intensity
+                });
+            }
+
+            updateUI();
+            updateCharts();
+            update3DMolecule();
+        }
+
+        // --- UI Updates ---
+        const els = {
+            moleculePreset: document.getElementById('moleculePreset'),
+            presetNote: document.getElementById('presetNote'),
+            bondLength: document.getElementById('bondLength'),
+            bondLengthVal: document.getElementById('bondLengthVal'),
+            mass1: document.getElementById('mass1'),
+            mass1Val: document.getElementById('mass1Val'),
+            mass2: document.getElementById('mass2'),
+            mass2Val: document.getElementById('mass2Val'),
+            temp: document.getElementById('temp'),
+            tempVal: document.getElementById('tempVal'),
+            polar: document.getElementById('polar'),
+            polarVal: document.getElementById('polarVal'),
+            calcMu: document.getElementById('calcMu'),
+            calcI: document.getElementById('calcI'),
+            calcB: document.getElementById('calcB'),
+            calcJmax: document.getElementById('calcJmax')
+        };
+
+        function updateUI() {
+            els.bondLengthVal.textContent = `${params.r.toFixed(2)} Å`;
+            els.mass1Val.textContent = `${params.m1} amu`;
+            els.mass2Val.textContent = `${params.m2} amu`;
+            els.tempVal.textContent = `${params.T} K`;
+            els.polarVal.textContent = `${params.alpha.toFixed(1)} arb.`;
+
+            const mu_amu = (params.m1 * params.m2) / (params.m1 + params.m2);
+            els.calcMu.textContent = mu_amu.toFixed(2);
+            els.calcI.textContent = (calculated.I_kgm2 * 1e47).toFixed(2);
+            els.calcB.textContent = calculated.B_cm1.toFixed(3);
+            els.calcJmax.textContent = calculated.J_max;
+        }
+
+        // Event Listeners
+        function attachListeners() {
+            const updateParam = (key, valStr) => {
+                params[key] = parseFloat(valStr);
+                els.moleculePreset.value = 'custom'; // Reset dropdown if manually changed
+                els.presetNote.classList.add('hidden');
+                calculatePhysics();
+            };
+
+            els.bondLength.addEventListener('input', (e) => updateParam('r', e.target.value));
+            els.mass1.addEventListener('input', (e) => updateParam('m1', e.target.value));
+            els.mass2.addEventListener('input', (e) => updateParam('m2', e.target.value));
+            els.temp.addEventListener('input', (e) => updateParam('T', e.target.value));
+            els.polar.addEventListener('input', (e) => updateParam('alpha', e.target.value));
+
+            els.moleculePreset.addEventListener('change', (e) => {
+                const key = e.target.value;
+                if (PRESETS[key]) {
+                    const data = PRESETS[key];
+                    
+                    // Update state
+                    params.m1 = data.m1;
+                    params.m2 = data.m2;
+                    params.r = data.r;
+                    
+                    // Update sliders
+                    els.mass1.value = data.m1;
+                    els.mass2.value = data.m2;
+                    els.bondLength.value = data.r;
+                    
+                    // Update Note
+                    els.presetNote.textContent = data.note;
+                    els.presetNote.classList.remove('hidden');
+                    
+                    calculatePhysics();
+                } else {
+                    els.presetNote.classList.add('hidden');
+                }
+            });
+        }
+
+        // --- Chart.js Setup ---
+        let popChart, specChart;
+
+        function initCharts() {
+            Chart.defaults.font.family = "'Inter', sans-serif";
+            Chart.defaults.color = '#64748b';
+
+            // Population Chart (Bar chart rotated, showing energy levels)
+            const ctxPop = document.getElementById('populationChart').getContext('2d');
+            popChart = new Chart(ctxPop, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Relative Population',
+                        data: [],
+                        backgroundColor: 'rgba(59, 130, 246, 0.7)',
+                        borderColor: 'rgb(59, 130, 246)',
+                        borderWidth: 1,
+                        borderRadius: 4
+                    }]
+                },
+                options: {
+                    indexAxis: 'y', // Horizontal bars
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Population Fraction' },
+                            beginAtZero: true,
+                            max: 0.2 // Fix max to see changes better, or let auto
+                        },
+                        y: {
+                            title: { display: true, text: 'Rotational Level (J)' }
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: (ctx) => `Pop: ${(ctx.raw * 100).toFixed(1)}%`
+                            }
+                        }
+                    }
+                }
+            });
+
+            // Spectrum Chart (Stem plot approximation)
+            const ctxSpec = document.getElementById('spectrumChart').getContext('2d');
+            specChart = new Chart(ctxSpec, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [{
+                        label: 'Intensity',
+                        data: [],
+                        backgroundColor: 'rgba(239, 68, 68, 0.8)',
+                        barThickness: 3 // Make them look like lines
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        x: {
+                            title: { display: true, text: 'Wavenumber (cm⁻¹)' },
+                            type: 'linear', // Use linear scale for x axis to show spacing
+                            position: 'bottom',
+                            min: 0
+                        },
+                        y: {
+                            title: { display: true, text: 'Relative Intensity' },
+                            beginAtZero: true,
+                            max: 0.2 * 5.0 // Max pop * max alpha approx
+                        }
+                    },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                title: (ctx) => `Transition: J=${ctx[0].raw.J} → ${ctx[0].raw.J + 1}`,
+                                label: (ctx) => `Position: ${ctx.raw.x.toFixed(2)} cm⁻¹`
+                            }
+                        }
+                    }
+                }
+            });
+        }
+
+        function updateCharts() {
+            // Update Population Chart
+            // Filter to show up to J=20 or J_max*2 for clarity
+            const limit = Math.min(CONSTANTS.max_J, Math.max(15, calculated.J_max * 2));
+            const popData = calculated.populations.slice(0, limit);
+            
+            popChart.data.labels = popData.map(p => `J=${p.J}`);
+            popChart.data.datasets[0].data = popData.map(p => p.normalized_pop);
+            
+            // Highlight J_max
+            const bgColors = popData.map(p => 
+                p.J === calculated.J_max ? 'rgba(245, 158, 11, 0.9)' : 'rgba(59, 130, 246, 0.7)'
+            );
+            popChart.data.datasets[0].backgroundColor = bgColors;
+            popChart.update();
+
+            // Update Spectrum Chart
+            // Format data for linear x scale
+            const specData = calculated.transitions.filter(t => t.intensity > 0.001).map(t => ({
+                x: t.wavenumber,
+                y: t.intensity,
+                J: t.J_lower
+            }));
+            
+            specChart.data.datasets[0].data = specData;
+            
+            // Adjust x-axis max based on data
+            if(specData.length > 0) {
+                 const maxX = specData[specData.length-1].x;
+                 specChart.options.scales.x.max = Math.ceil(maxX + calculated.B_cm1*4);
+                 // Adjust y max dynamically based on max intensity to keep it visible
+                 const maxY = Math.max(...specData.map(d => d.y));
+                 specChart.options.scales.y.max = maxY * 1.2;
+            }
+            specChart.update();
+        }
+
+
+        // --- Three.js 3D Visualization ---
+        let scene, camera, renderer, moleculeGroup;
+        let atom1Mesh, atom2Mesh, bondMesh;
+        let animationId;
+        let baseRotationSpeed = 0;
+
+        function init3D() {
+            const container = document.getElementById('molecule3D');
+            const width = container.clientWidth;
+            const height = container.clientHeight;
+
+            scene = new THREE.Scene();
+            scene.background = new THREE.Color('#1e293b'); // Tailwind slate-800
+
+            camera = new THREE.PerspectiveCamera(45, width / height, 0.1, 100);
+            camera.position.z = 12;
+
+            renderer = new THREE.WebGLRenderer({ antialias: true });
+            renderer.setSize(width, height);
+            container.appendChild(renderer.domElement);
+
+            // Lighting
+            const ambientLight = new THREE.AmbientLight(0xffffff, 0.6);
+            scene.add(ambientLight);
+            const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
+            dirLight.position.set(5, 5, 5);
+            scene.add(dirLight);
+
+            // Molecule Group
+            moleculeGroup = new THREE.Group();
+            scene.add(moleculeGroup);
+
+            // Geometries & Materials
+            const sphereGeo = new THREE.SphereGeometry(1, 32, 32);
+            const cylGeo = new THREE.CylinderGeometry(0.15, 0.15, 1, 16);
+            // Rotate cylinder to align with X axis
+            cylGeo.rotateZ(Math.PI / 2);
+
+            const mat1 = new THREE.MeshPhongMaterial({ color: 0xef4444, shininess: 60 }); // Red for m1
+            const mat2 = new THREE.MeshPhongMaterial({ color: 0x3b82f6, shininess: 60 }); // Blue for m2
+            const matBond = new THREE.MeshPhongMaterial({ color: 0x94a3b8 }); // Gray bond
+
+            atom1Mesh = new THREE.Mesh(sphereGeo, mat1);
+            atom2Mesh = new THREE.Mesh(sphereGeo, mat2);
+            bondMesh = new THREE.Mesh(cylGeo, matBond);
+
+            moleculeGroup.add(atom1Mesh);
+            moleculeGroup.add(atom2Mesh);
+            moleculeGroup.add(bondMesh);
+
+            // Handle Resize
+            window.addEventListener('resize', () => {
+                const w = container.clientWidth;
+                const h = container.clientHeight;
+                renderer.setSize(w, h);
+                camera.aspect = w / h;
+                camera.updateProjectionMatrix();
+            });
+
+            animate3D();
+        }
+
+        function update3DMolecule() {
+            if (!moleculeGroup) return;
+
+            // Visual scaling factors
+            const visual_r = params.r * 1.5; // Scale bond length for visibility
+            
+            // Radius roughly proportional to cube root of mass (assuming uniform density)
+            const r1 = 0.3 * Math.cbrt(params.m1 / 10); 
+            const r2 = 0.3 * Math.cbrt(params.m2 / 10);
+
+            atom1Mesh.scale.set(r1, r1, r1);
+            atom2Mesh.scale.set(r2, r2, r2);
+
+            // Center of mass calculation for visual origin
+            // x1 * m1 + x2 * m2 = 0 (origin at COM)
+            // x2 - x1 = r
+            // => x1 = -r * m2 / (m1 + m2)
+            // => x2 = r * m1 / (m1 + m2)
+            
+            const totalMass = params.m1 + params.m2;
+            const x1 = -visual_r * (params.m2 / totalMass);
+            const x2 = visual_r * (params.m1 / totalMass);
+
+            atom1Mesh.position.x = x1;
+            atom2Mesh.position.x = x2;
+
+            // Bond scale and position
+            bondMesh.scale.x = visual_r;
+            bondMesh.position.x = (x1 + x2) / 2;
+
+            // Update rotation speed based on J_max (energy roughly proportional to J_max^2)
+            // Or roughly proportional to temperature / sqrt(I) for visual feel
+            // Let's make it proportional to sqrt(T/I)
+            // I is tiny (10^-47), let's scale it to visual speed
+            const scaled_I = calculated.I_kgm2 * 1e47; 
+            baseRotationSpeed = 0.05 * Math.sqrt(params.T / (scaled_I * 100));
+            
+            // Optional: Show polarizability effect by squashing/stretching slightly, 
+            // but might be too complex. Let's just adjust color intensity slightly or leave it.
+            atom1Mesh.material.color.setHSL(0, 0.8, 0.3 + (params.alpha * 0.05));
+            atom2Mesh.material.color.setHSL(0.6, 0.8, 0.3 + (params.alpha * 0.05));
+        }
+
+        function animate3D() {
+            animationId = requestAnimationFrame(animate3D);
+
+            // Rotate around Z axis (perpendicular to internuclear axis X) and slightly around Y for 3D effect
+            if (moleculeGroup) {
+                // Molecule rotates in a plane perpendicular to angular momentum vector
+                // We'll simulate a tumble
+                moleculeGroup.rotation.y += baseRotationSpeed;
+                moleculeGroup.rotation.z += baseRotationSpeed * 0.5;
+                moleculeGroup.rotation.x += baseRotationSpeed * 0.2;
+            }
+
+            renderer.render(scene, camera);
+        }
+
+        // --- Download Feature ---
+        function downloadSimulation() {
+            const htmlContent = "<!DOCTYPE html>\n" + document.documentElement.outerHTML;
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'diatomic_simulation.html';
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+
+        // --- Initialization ---
+        window.onload = () => {
+            initCharts();
+            init3D();
+            attachListeners();
+            calculatePhysics(); // Initial calculation and render
+        };
+
+    </script>
+</body>
+</html>

@@ -1,0 +1,72 @@
+{
+  "courseCode": "PHYS3059",
+  "courseName": "Atomic and Molecular Physics",
+  "stream": "BSc Physics",
+  "semester": "5",
+  "faculty": {
+    "name": "Dr. Prasanta Mandal",
+    "email": "pmandal@ddn.upes.ac.in"
+  },
+  "simulators": [
+    {
+      "name": "hydrogen atom, transition",
+      "desc": "atomic structure, transition and emission absorption series",
+      "link": "UNIT-1-L-2-L-5-hydrogen-atom-transition.html",
+      "uploadFileLink": "UNIT-1-L-2-L-5-hydrogen-atom-transition.html"
+    },
+    {
+      "name": "harmonic oscillator",
+      "desc": "harmonic oscillator, energy levels, transition",
+      "link": "UNIT-1-L-4-harmonic-oscillator.html",
+      "uploadFileLink": "UNIT-1-L-4-harmonic-oscillator.html"
+    },
+    {
+      "name": "Space quantization",
+      "desc": "space quantization, quantization of orbital angular momentum, orientation, precision",
+      "link": "UNIT-1-L-9-space-quantization.html",
+      "uploadFileLink": "UNIT-1-L-9-space-quantization.html"
+    },
+    {
+      "name": "space quantization and couplings",
+      "desc": "space quantization, coupling of spin momentum and orbital angular momentum, LS coupling, jj coupling",
+      "link": "UNIT-2-L-16-L-18-space-quantization-LS-jj-coupling-Bmagnetic-field.html",
+      "uploadFileLink": "UNIT-2-L-16-L-18-space-quantization-LS-jj-coupling-Bmagnetic-field.html"
+    },
+    {
+      "name": "Zeeman effect",
+      "desc": "Zeeman effect, anomalous Zeeman effect, Paschen-Back effect",
+      "link": "UNIT-2-L-20-L-21-L-23-zeeman-effect-anomalous-zeeman-effect-paschen-back-effect.html",
+      "uploadFileLink": "UNIT-2-L-20-L-21-L-23-zeeman-effect-anomalous-zeeman-effect-paschen-back-effect.html"
+    },
+    {
+      "name": "Diatomic molecule, rotational energy",
+      "desc": "Diatomic molecule, rotational energy levels, transition, selection rule",
+      "link": "UNIT-3-L-26-diatomic-molecule-rotation-transition.html",
+      "uploadFileLink": "UNIT-3-L-26-diatomic-molecule-rotation-transition.html"
+    },
+    {
+      "name": "Diatomic molecule as anharmonic oscillator",
+      "desc": "Diatomic molecule as anharmonic oscillator, changes in vibrational energy levels, selection rules, transitions",
+      "link": "UNIT-3-L-32-anharmonic_oscillator_simulation.html",
+      "uploadFileLink": "UNIT-3-L-32-anharmonic_oscillator_simulation.html"
+    },
+    {
+      "name": "Rotational and vibrational transition",
+      "desc": "rotational and vibrational motion of diatomic molecules, selection rule of combined effect, transitions",
+      "link": "UNIT-3-L-34-rotational-vibrational_transitions_simulation.html",
+      "uploadFileLink": "UNIT-3-L-34-rotational-vibrational_transitions_simulation.html"
+    },
+    {
+      "name": "Raman scattering",
+      "desc": "Raman scattering of molecules, Raman transition of selective molecules, peaks, temperature, polarizability effect etc",
+      "link": "UNIT-3-L-39-Raman-scattering.html",
+      "uploadFileLink": "UNIT-3-L-39-Raman-scattering.html"
+    },
+    {
+      "name": "electron spin resonance, nuclear magnetic resonance and nuclear quadrupole resonance",
+      "desc": "electron spin resonance, nuclear magnetic resonance and nuclear quadrupole resonance characteristics, basic mechanics",
+      "link": "UNIT-4-L-41-L-42-L-43-ESR-NMR-NQR.html",
+      "uploadFileLink": "UNIT-4-L-41-L-42-L-43-ESR-NMR-NQR.html"
+    }
+  ]
+}

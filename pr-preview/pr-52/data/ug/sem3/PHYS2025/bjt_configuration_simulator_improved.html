@@ -1,0 +1,2961 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Interactive educational simulator for common-emitter, common-base, and common-collector BJT configurations.">
+  <title>BJT Configuration Lab - CE, CB and CC</title>
+  <style>
+    :root {
+      --bg: #f5f7fb;
+      --surface: rgba(255, 255, 255, 0.92);
+      --surface-solid: #ffffff;
+      --surface-2: #eef2f8;
+      --surface-3: #e5eaf2;
+      --text: #172033;
+      --muted: #5f6b7d;
+      --border: #d7deea;
+      --grid: rgba(83, 101, 128, 0.14);
+      --accent: #4757d6;
+      --accent-strong: #3542b6;
+      --accent-soft: rgba(71, 87, 214, 0.12);
+      --accent-2: #0e9f8a;
+      --accent-2-soft: rgba(14, 159, 138, 0.12);
+      --warning: #b56a00;
+      --warning-soft: rgba(181, 106, 0, 0.12);
+      --danger: #c13d4a;
+      --danger-soft: rgba(193, 61, 74, 0.12);
+      --success: #16794f;
+      --success-soft: rgba(22, 121, 79, 0.12);
+      --shadow: 0 18px 45px rgba(25, 39, 75, 0.10);
+      --shadow-sm: 0 8px 22px rgba(25, 39, 75, 0.08);
+      --radius-lg: 24px;
+      --radius-md: 16px;
+      --radius-sm: 11px;
+      --focus: 0 0 0 4px rgba(71, 87, 214, 0.22);
+      --scope-bg: #101722;
+      --scope-grid: rgba(180, 205, 230, 0.14);
+      --scope-text: #d7e4f2;
+      --scope-input: #8ea0ff;
+      --scope-output: #4ddbc2;
+    }
+
+    html[data-theme="dark"] {
+      --bg: #0d111a;
+      --surface: rgba(22, 28, 40, 0.92);
+      --surface-solid: #161c28;
+      --surface-2: #1d2533;
+      --surface-3: #263043;
+      --text: #edf2fb;
+      --muted: #a8b3c6;
+      --border: #303b4f;
+      --grid: rgba(176, 193, 218, 0.11);
+      --accent: #8d9aff;
+      --accent-strong: #a8b1ff;
+      --accent-soft: rgba(141, 154, 255, 0.14);
+      --accent-2: #4ddbc2;
+      --accent-2-soft: rgba(77, 219, 194, 0.14);
+      --warning: #f0aa47;
+      --warning-soft: rgba(240, 170, 71, 0.14);
+      --danger: #ff7e8a;
+      --danger-soft: rgba(255, 126, 138, 0.14);
+      --success: #63d4a7;
+      --success-soft: rgba(99, 212, 167, 0.14);
+      --shadow: 0 20px 52px rgba(0, 0, 0, 0.34);
+      --shadow-sm: 0 9px 26px rgba(0, 0, 0, 0.26);
+      --focus: 0 0 0 4px rgba(141, 154, 255, 0.24);
+      --scope-bg: #080c13;
+      --scope-grid: rgba(186, 210, 232, 0.12);
+      --scope-text: #dbe8f7;
+      --scope-input: #9eabff;
+      --scope-output: #59e4ca;
+    }
+
+    * {
+      box-sizing: border-box;
+    }
+
+    html {
+      scroll-behavior: smooth;
+    }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background:
+        radial-gradient(circle at 12% 8%, var(--accent-soft), transparent 27rem),
+        radial-gradient(circle at 88% 2%, var(--accent-2-soft), transparent 25rem),
+        var(--bg);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.55;
+      transition: background-color 180ms ease, color 180ms ease;
+    }
+
+    button,
+    input {
+      font: inherit;
+    }
+
+    button {
+      color: inherit;
+    }
+
+    a {
+      color: var(--accent-strong);
+    }
+
+    .skip-link {
+      position: fixed;
+      left: 1rem;
+      top: -4rem;
+      z-index: 1000;
+      padding: 0.75rem 1rem;
+      border-radius: 10px;
+      color: #fff;
+      background: var(--accent-strong);
+      transition: top 160ms ease;
+    }
+
+    .skip-link:focus {
+      top: 1rem;
+    }
+
+    .page-shell {
+      width: min(1480px, calc(100% - 32px));
+      margin: 0 auto;
+      padding: 28px 0 54px;
+    }
+
+    .topbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 22px;
+    }
+
+    .brand {
+      display: flex;
+      align-items: center;
+      gap: 0.8rem;
+      font-weight: 800;
+      letter-spacing: -0.02em;
+    }
+
+    .brand-mark {
+      display: grid;
+      width: 42px;
+      height: 42px;
+      place-items: center;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      color: var(--accent-strong);
+      background: var(--surface);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .brand-mark svg {
+      width: 26px;
+      height: 26px;
+    }
+
+    .top-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.65rem;
+    }
+
+    .theme-toggle,
+    .ghost-button,
+    .primary-button,
+    .preset-button {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.45rem;
+      min-height: 42px;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 0.65rem 0.9rem;
+      cursor: pointer;
+      background: var(--surface);
+      box-shadow: var(--shadow-sm);
+      transition: transform 150ms ease, border-color 150ms ease, background 150ms ease;
+    }
+
+    .theme-toggle:hover,
+    .ghost-button:hover,
+    .preset-button:hover {
+      transform: translateY(-1px);
+      border-color: var(--accent);
+    }
+
+    .primary-button {
+      border-color: transparent;
+      color: #fff;
+      background: var(--accent-strong);
+    }
+
+    html[data-theme="dark"] .primary-button {
+      color: #0d111a;
+      background: var(--accent);
+    }
+
+    .primary-button:hover {
+      transform: translateY(-1px);
+      filter: brightness(1.04);
+    }
+
+    button:focus-visible,
+    input:focus-visible,
+    summary:focus-visible {
+      outline: none;
+      box-shadow: var(--focus);
+    }
+
+    .hero {
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: minmax(0, 1.45fr) minmax(300px, 0.55fr);
+      gap: 1.5rem;
+      align-items: center;
+      min-height: 310px;
+      padding: clamp(1.6rem, 4vw, 3.5rem);
+      border: 1px solid var(--border);
+      border-radius: 30px;
+      background: linear-gradient(135deg, var(--surface-solid), var(--surface));
+      box-shadow: var(--shadow);
+    }
+
+    .hero::after {
+      content: "";
+      position: absolute;
+      width: 340px;
+      height: 340px;
+      right: -115px;
+      top: -145px;
+      border-radius: 50%;
+      background: linear-gradient(145deg, var(--accent-soft), var(--accent-2-soft));
+      pointer-events: none;
+    }
+
+    .eyebrow {
+      margin: 0 0 0.7rem;
+      color: var(--accent-strong);
+      font-size: 0.78rem;
+      font-weight: 800;
+      letter-spacing: 0.13em;
+      text-transform: uppercase;
+    }
+
+    h1,
+    h2,
+    h3,
+    p {
+      margin-top: 0;
+    }
+
+    h1 {
+      max-width: 860px;
+      margin-bottom: 1rem;
+      font-size: clamp(2.35rem, 5vw, 5rem);
+      line-height: 0.98;
+      letter-spacing: -0.055em;
+    }
+
+    .hero-copy {
+      max-width: 800px;
+      margin-bottom: 1.4rem;
+      color: var(--muted);
+      font-size: clamp(1rem, 1.7vw, 1.2rem);
+    }
+
+    .hero-chips {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.55rem;
+    }
+
+    .chip {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      padding: 0.5rem 0.7rem;
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      color: var(--muted);
+      background: var(--surface-2);
+      font-size: 0.88rem;
+      font-weight: 650;
+    }
+
+    .hero-visual {
+      position: relative;
+      z-index: 1;
+      display: grid;
+      place-items: center;
+      min-height: 220px;
+    }
+
+    .transistor-orbit {
+      position: relative;
+      display: grid;
+      width: 205px;
+      height: 205px;
+      place-items: center;
+      border: 1px solid var(--border);
+      border-radius: 50%;
+      background: radial-gradient(circle, var(--accent-soft), transparent 66%);
+      animation: breathe 4.5s ease-in-out infinite;
+    }
+
+    .transistor-orbit::before,
+    .transistor-orbit::after {
+      content: "";
+      position: absolute;
+      inset: 20px;
+      border: 1px dashed var(--border);
+      border-radius: 50%;
+    }
+
+    .transistor-orbit::after {
+      inset: 42px;
+      border-style: solid;
+      opacity: 0.72;
+    }
+
+    .transistor-symbol {
+      width: 110px;
+      height: 110px;
+      color: var(--accent-strong);
+      filter: drop-shadow(0 10px 20px var(--accent-soft));
+    }
+
+    .orbit-label {
+      position: absolute;
+      display: grid;
+      min-width: 46px;
+      min-height: 34px;
+      place-items: center;
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      background: var(--surface-solid);
+      box-shadow: var(--shadow-sm);
+      font-weight: 800;
+    }
+
+    .orbit-label:nth-of-type(1) { top: -8px; left: 78px; }
+    .orbit-label:nth-of-type(2) { right: -10px; bottom: 42px; }
+    .orbit-label:nth-of-type(3) { left: -10px; bottom: 42px; }
+
+    @keyframes breathe {
+      0%, 100% { transform: scale(1); }
+      50% { transform: scale(1.025); }
+    }
+
+    .section {
+      margin-top: 30px;
+    }
+
+    .section-heading {
+      display: flex;
+      align-items: end;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 14px;
+    }
+
+    .section-heading h2 {
+      margin-bottom: 0.2rem;
+      font-size: clamp(1.55rem, 3vw, 2.2rem);
+      letter-spacing: -0.035em;
+    }
+
+    .section-heading p {
+      max-width: 720px;
+      margin-bottom: 0;
+      color: var(--muted);
+    }
+
+    .config-tabs {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.8rem;
+      margin-bottom: 14px;
+    }
+
+    .config-tab {
+      position: relative;
+      overflow: hidden;
+      display: grid;
+      grid-template-columns: auto 1fr;
+      gap: 0.85rem;
+      align-items: center;
+      min-height: 98px;
+      padding: 1rem;
+      border: 1px solid var(--border);
+      border-radius: var(--radius-md);
+      text-align: left;
+      cursor: pointer;
+      background: var(--surface);
+      box-shadow: var(--shadow-sm);
+      transition: transform 160ms ease, border-color 160ms ease, background 160ms ease;
+    }
+
+    .config-tab:hover {
+      transform: translateY(-2px);
+      border-color: var(--accent);
+    }
+
+    .config-tab[aria-selected="true"] {
+      border-color: var(--accent);
+      background: linear-gradient(135deg, var(--accent-soft), var(--surface));
+    }
+
+    .config-tab[aria-selected="true"]::after {
+      content: "";
+      position: absolute;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      height: 4px;
+      background: linear-gradient(90deg, var(--accent), var(--accent-2));
+    }
+
+    .tab-code {
+      display: grid;
+      width: 54px;
+      height: 54px;
+      place-items: center;
+      border-radius: 15px;
+      color: var(--accent-strong);
+      background: var(--accent-soft);
+      font-weight: 900;
+      letter-spacing: -0.03em;
+    }
+
+    .tab-copy strong,
+    .tab-copy small {
+      display: block;
+    }
+
+    .tab-copy strong {
+      margin-bottom: 0.15rem;
+      font-size: 1rem;
+    }
+
+    .tab-copy small {
+      color: var(--muted);
+      line-height: 1.35;
+    }
+
+    .lab-grid {
+      display: grid;
+      grid-template-columns: minmax(315px, 0.84fr) minmax(450px, 1.25fr) minmax(280px, 0.72fr);
+      gap: 14px;
+      align-items: start;
+    }
+
+    .lab-grid > * {
+      min-width: 0;
+    }
+
+    .panel {
+      border: 1px solid var(--border);
+      border-radius: var(--radius-lg);
+      background: var(--surface);
+      box-shadow: var(--shadow-sm);
+    }
+
+    .panel-header {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      padding: 1rem 1.05rem 0;
+    }
+
+    .panel-header h3 {
+      margin-bottom: 0.1rem;
+      font-size: 1.05rem;
+      letter-spacing: -0.02em;
+    }
+
+    .panel-header p {
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: 0.85rem;
+    }
+
+    .status-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+      flex: 0 0 auto;
+      padding: 0.34rem 0.58rem;
+      border-radius: 999px;
+      color: var(--success);
+      background: var(--success-soft);
+      font-size: 0.76rem;
+      font-weight: 800;
+    }
+
+    .status-pill::before {
+      content: "";
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background: currentColor;
+      box-shadow: 0 0 0 4px color-mix(in srgb, currentColor 18%, transparent);
+    }
+
+    .status-pill.warning {
+      color: var(--warning);
+      background: var(--warning-soft);
+    }
+
+    .status-pill.danger {
+      color: var(--danger);
+      background: var(--danger-soft);
+    }
+
+    .controls-panel {
+      padding-bottom: 1rem;
+    }
+
+    .controls {
+      display: grid;
+      gap: 0.85rem;
+      padding: 1rem 1.05rem 0;
+    }
+
+    .control {
+      padding: 0.86rem;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--surface-2);
+    }
+
+    .control-top {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 0.6rem;
+    }
+
+    .control label {
+      font-size: 0.86rem;
+      font-weight: 750;
+    }
+
+    .control output {
+      min-width: 78px;
+      color: var(--accent-strong);
+      font-size: 0.84rem;
+      font-weight: 850;
+      text-align: right;
+    }
+
+    input[type="range"] {
+      width: 100%;
+      height: 8px;
+      margin: 0;
+      border-radius: 999px;
+      cursor: pointer;
+      appearance: none;
+      background: linear-gradient(90deg, var(--accent) var(--fill, 50%), var(--surface-3) var(--fill, 50%));
+    }
+
+    input[type="range"]::-webkit-slider-thumb {
+      width: 19px;
+      height: 19px;
+      border: 3px solid var(--surface-solid);
+      border-radius: 50%;
+      appearance: none;
+      background: var(--accent);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.20);
+    }
+
+    input[type="range"]::-moz-range-thumb {
+      width: 14px;
+      height: 14px;
+      border: 3px solid var(--surface-solid);
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.20);
+    }
+
+    .control-hint {
+      display: block;
+      margin-top: 0.45rem;
+      color: var(--muted);
+      font-size: 0.75rem;
+      line-height: 1.35;
+    }
+
+    .controls-footer {
+      display: flex;
+      gap: 0.6rem;
+      padding: 0.95rem 1.05rem 0;
+    }
+
+    .controls-footer button {
+      flex: 1;
+    }
+
+    .visual-panel {
+      overflow: hidden;
+    }
+
+    .schematic-wrap {
+      width: 100%;
+      max-width: 100%;
+      min-width: 0;
+      min-height: 430px;
+      padding: 0.35rem 0.55rem 0;
+    }
+
+    #schematic {
+      display: block;
+      width: 100%;
+      height: auto;
+      min-height: 405px;
+    }
+
+    .diagram-toolbar {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 0.65rem;
+      margin: 0 1rem 0.15rem;
+      padding: 0.65rem 0.72rem;
+      border: 1px solid var(--border);
+      border-radius: 13px;
+      background: var(--surface-2);
+    }
+
+    .diagram-toggle-group,
+    .diagram-legend {
+      display: flex;
+      align-items: center;
+      flex-wrap: wrap;
+      gap: 0.45rem;
+    }
+
+    .diagram-toggle {
+      min-height: 34px;
+      padding: 0.38rem 0.64rem;
+      border: 1px solid var(--border);
+      border-radius: 9px;
+      color: var(--muted);
+      background: var(--surface-solid);
+      cursor: pointer;
+      font-size: 0.76rem;
+      font-weight: 760;
+      box-shadow: none;
+      transition: border-color 150ms ease, color 150ms ease, background 150ms ease, transform 150ms ease;
+    }
+
+    .diagram-toggle:hover {
+      transform: translateY(-1px);
+      border-color: var(--accent);
+      color: var(--text);
+    }
+
+    .diagram-toggle[aria-pressed="true"] {
+      border-color: var(--accent);
+      color: var(--accent-strong);
+      background: var(--accent-soft);
+    }
+
+    .diagram-legend {
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 700;
+    }
+
+    .diagram-key {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.3rem;
+      white-space: nowrap;
+    }
+
+    .diagram-key::before {
+      content: "";
+      width: 18px;
+      height: 4px;
+      border-radius: 999px;
+      background: var(--key-color);
+    }
+
+    .diagram-key.input { --key-color: var(--accent); }
+    .diagram-key.output { --key-color: var(--accent-2); }
+    .diagram-key.common { --key-color: var(--warning); }
+
+    .diagram-pan-hint {
+      display: none;
+      margin: 0.45rem 1rem 0;
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 650;
+      text-align: center;
+    }
+
+    .schematic-caption {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.6rem;
+      margin: 0 1rem 1rem;
+    }
+
+    .port-card {
+      padding: 0.72rem;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      background: var(--surface-2);
+    }
+
+    .port-card span,
+    .port-card strong {
+      display: block;
+    }
+
+    .port-card span {
+      margin-bottom: 0.2rem;
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 750;
+      letter-spacing: 0.06em;
+      text-transform: uppercase;
+    }
+
+    .port-card strong {
+      font-size: 0.85rem;
+    }
+
+    .scope-panel {
+      overflow: hidden;
+      margin-top: 14px;
+    }
+
+    .scope-wrap {
+      position: relative;
+      padding: 0.85rem 1rem 1rem;
+    }
+
+    #scopeCanvas {
+      display: block;
+      width: 100%;
+      height: 292px;
+      border: 1px solid rgba(255, 255, 255, 0.09);
+      border-radius: 15px;
+      background: var(--scope-bg);
+    }
+
+    .scope-legend {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.9rem;
+      margin-top: 0.7rem;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .legend-item {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.4rem;
+    }
+
+    .legend-line {
+      width: 24px;
+      height: 3px;
+      border-radius: 999px;
+      background: var(--scope-input);
+    }
+
+    .legend-line.output {
+      background: var(--scope-output);
+    }
+
+    .metrics-panel {
+      padding-bottom: 1rem;
+    }
+
+    .metrics {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.65rem;
+      padding: 1rem 1.05rem 0;
+    }
+
+    .metric {
+      min-height: 92px;
+      padding: 0.82rem;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--surface-2);
+    }
+
+    .metric span,
+    .metric strong,
+    .metric small {
+      display: block;
+    }
+
+    .metric span {
+      margin-bottom: 0.24rem;
+      color: var(--muted);
+      font-size: 0.72rem;
+      font-weight: 760;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    .metric strong {
+      margin-bottom: 0.12rem;
+      color: var(--accent-strong);
+      font-size: 1.12rem;
+      line-height: 1.2;
+    }
+
+    .metric small {
+      color: var(--muted);
+      font-size: 0.72rem;
+      line-height: 1.32;
+    }
+
+    .qpoint-card,
+    .insight-card {
+      margin: 0.7rem 1.05rem 0;
+      padding: 0.9rem;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--surface-2);
+    }
+
+    .qpoint-row {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 0.55rem;
+      font-size: 0.82rem;
+      font-weight: 750;
+    }
+
+    .qpoint-track {
+      position: relative;
+      height: 12px;
+      overflow: hidden;
+      border-radius: 999px;
+      background: linear-gradient(90deg, var(--danger-soft), var(--success-soft) 24%, var(--success-soft) 76%, var(--danger-soft));
+    }
+
+    .qpoint-marker {
+      position: absolute;
+      top: 50%;
+      width: 18px;
+      height: 18px;
+      border: 3px solid var(--surface-solid);
+      border-radius: 50%;
+      background: var(--accent);
+      box-shadow: 0 2px 8px rgba(0,0,0,0.22);
+      transform: translate(-50%, -50%);
+      transition: left 180ms ease;
+    }
+
+    .qpoint-labels {
+      display: flex;
+      justify-content: space-between;
+      margin-top: 0.35rem;
+      color: var(--muted);
+      font-size: 0.67rem;
+    }
+
+    .insight-card {
+      border-left: 4px solid var(--accent-2);
+    }
+
+    .insight-card strong {
+      display: block;
+      margin-bottom: 0.3rem;
+      font-size: 0.86rem;
+    }
+
+    .insight-card p {
+      margin-bottom: 0;
+      color: var(--muted);
+      font-size: 0.8rem;
+    }
+
+    .learn-grid {
+      display: grid;
+      grid-template-columns: minmax(0, 1.25fr) minmax(300px, 0.75fr);
+      gap: 14px;
+    }
+
+    .concept-panel,
+    .formula-panel,
+    .comparison-panel,
+    .experiments-panel,
+    .quiz-panel {
+      padding: clamp(1rem, 2.3vw, 1.5rem);
+    }
+
+    .concept-title-row {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 0.8rem;
+    }
+
+    .concept-title-row h3 {
+      margin-bottom: 0.2rem;
+      font-size: 1.35rem;
+    }
+
+    .concept-badge {
+      flex: 0 0 auto;
+      padding: 0.4rem 0.65rem;
+      border-radius: 999px;
+      color: var(--accent-strong);
+      background: var(--accent-soft);
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    .lead-note {
+      margin-bottom: 1rem;
+      color: var(--muted);
+    }
+
+    .concept-list {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.75rem;
+      margin: 0;
+      padding: 0;
+      list-style: none;
+    }
+
+    .concept-list li {
+      padding: 0.86rem;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--surface-2);
+    }
+
+    .concept-list strong,
+    .concept-list span {
+      display: block;
+    }
+
+    .concept-list strong {
+      margin-bottom: 0.2rem;
+      font-size: 0.82rem;
+    }
+
+    .concept-list span {
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .formula-box {
+      margin-top: 0.9rem;
+      padding: 0.95rem;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: linear-gradient(135deg, var(--accent-soft), var(--surface-2));
+    }
+
+    .formula-box code {
+      display: block;
+      overflow-wrap: anywhere;
+      color: var(--accent-strong);
+      font-family: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+      font-size: 0.87rem;
+      font-weight: 750;
+      white-space: normal;
+    }
+
+    .formula-box p {
+      margin: 0.45rem 0 0;
+      color: var(--muted);
+      font-size: 0.76rem;
+    }
+
+    details {
+      border: 1px solid var(--border);
+      border-radius: 14px;
+      background: var(--surface-2);
+    }
+
+    details + details {
+      margin-top: 0.65rem;
+    }
+
+    summary {
+      padding: 0.85rem 0.95rem;
+      cursor: pointer;
+      font-weight: 800;
+    }
+
+    details p {
+      margin: 0;
+      padding: 0 0.95rem 0.95rem;
+      color: var(--muted);
+      font-size: 0.84rem;
+    }
+
+    .table-wrap {
+      overflow-x: auto;
+      margin-top: 0.8rem;
+      border: 1px solid var(--border);
+      border-radius: 14px;
+    }
+
+    table {
+      width: 100%;
+      min-width: 770px;
+      border-collapse: collapse;
+      background: var(--surface-2);
+    }
+
+    th,
+    td {
+      padding: 0.78rem 0.85rem;
+      border-bottom: 1px solid var(--border);
+      text-align: left;
+      vertical-align: top;
+      font-size: 0.82rem;
+    }
+
+    th {
+      color: var(--muted);
+      background: var(--surface-3);
+      font-size: 0.72rem;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+    }
+
+    tr:last-child td {
+      border-bottom: 0;
+    }
+
+    tbody tr[data-config-row].active-row {
+      background: var(--accent-soft);
+    }
+
+    .experiment-grid {
+      display: grid;
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap: 0.75rem;
+      margin-top: 0.9rem;
+    }
+
+    .experiment-card {
+      display: flex;
+      flex-direction: column;
+      min-height: 205px;
+      padding: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      background: var(--surface-2);
+    }
+
+    .experiment-card .step {
+      display: inline-flex;
+      align-self: flex-start;
+      margin-bottom: 0.65rem;
+      padding: 0.28rem 0.48rem;
+      border-radius: 8px;
+      color: var(--accent-strong);
+      background: var(--accent-soft);
+      font-size: 0.72rem;
+      font-weight: 850;
+    }
+
+    .experiment-card h3 {
+      margin-bottom: 0.4rem;
+      font-size: 1rem;
+    }
+
+    .experiment-card p {
+      flex: 1;
+      margin-bottom: 0.9rem;
+      color: var(--muted);
+      font-size: 0.82rem;
+    }
+
+    .preset-button {
+      width: 100%;
+      box-shadow: none;
+      background: var(--surface-solid);
+      font-size: 0.82rem;
+      font-weight: 800;
+    }
+
+    .quiz-intro {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-bottom: 0.9rem;
+    }
+
+    .quiz-intro p {
+      max-width: 760px;
+      margin-bottom: 0;
+      color: var(--muted);
+    }
+
+    .quiz-progress {
+      flex: 0 0 auto;
+      padding: 0.45rem 0.68rem;
+      border-radius: 999px;
+      color: var(--accent-strong);
+      background: var(--accent-soft);
+      font-size: 0.78rem;
+      font-weight: 800;
+    }
+
+    .quiz-list {
+      display: grid;
+      gap: 0.85rem;
+    }
+
+    .question-card {
+      margin: 0;
+      padding: 1rem;
+      border: 1px solid var(--border);
+      border-radius: 15px;
+      background: var(--surface-2);
+    }
+
+    .question-card.correct {
+      border-color: var(--success);
+      background: var(--success-soft);
+    }
+
+    .question-card.incorrect {
+      border-color: var(--danger);
+      background: var(--danger-soft);
+    }
+
+    .question-card legend {
+      width: 100%;
+      margin-bottom: 0.7rem;
+      padding: 0;
+      font-weight: 820;
+    }
+
+    .question-number {
+      color: var(--accent-strong);
+    }
+
+    .options {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 0.55rem;
+    }
+
+    .option {
+      display: flex;
+      align-items: flex-start;
+      gap: 0.55rem;
+      padding: 0.72rem;
+      border: 1px solid var(--border);
+      border-radius: 11px;
+      cursor: pointer;
+      background: var(--surface-solid);
+      font-size: 0.82rem;
+    }
+
+    .option:hover {
+      border-color: var(--accent);
+    }
+
+    .option input {
+      margin-top: 0.15rem;
+      accent-color: var(--accent);
+    }
+
+    .feedback {
+      display: none;
+      margin: 0.75rem 0 0;
+      padding: 0.68rem 0.75rem;
+      border-radius: 10px;
+      color: var(--muted);
+      background: var(--surface-solid);
+      font-size: 0.8rem;
+    }
+
+    .question-card.correct .feedback,
+    .question-card.incorrect .feedback {
+      display: block;
+    }
+
+    .quiz-actions {
+      display: flex;
+      align-items: center;
+      gap: 0.7rem;
+      margin-top: 1rem;
+    }
+
+    .quiz-result {
+      flex: 1;
+      min-height: 48px;
+      display: flex;
+      align-items: center;
+      padding: 0.65rem 0.8rem;
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      color: var(--muted);
+      background: var(--surface-2);
+      font-size: 0.86rem;
+      font-weight: 750;
+    }
+
+    .footer {
+      display: flex;
+      justify-content: space-between;
+      gap: 1rem;
+      margin-top: 24px;
+      padding: 1.1rem 0.2rem 0;
+      color: var(--muted);
+      font-size: 0.78rem;
+    }
+
+    .sr-only {
+      position: absolute;
+      width: 1px;
+      height: 1px;
+      padding: 0;
+      margin: -1px;
+      overflow: hidden;
+      clip: rect(0, 0, 0, 0);
+      white-space: nowrap;
+      border: 0;
+    }
+
+    @media (max-width: 1180px) {
+      .lab-grid {
+        grid-template-columns: minmax(280px, 0.72fr) minmax(460px, 1.28fr);
+      }
+
+      .metrics-panel {
+        grid-column: 1 / -1;
+      }
+
+      .metrics {
+        grid-template-columns: repeat(4, minmax(0, 1fr));
+      }
+
+      .metrics-panel .qpoint-card,
+      .metrics-panel .insight-card {
+        display: inline-block;
+        width: calc(50% - 1.7rem);
+        vertical-align: top;
+      }
+    }
+
+    @media (max-width: 880px) {
+      .hero,
+      .learn-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .hero-visual {
+        display: none;
+      }
+
+      .lab-grid {
+        grid-template-columns: 1fr;
+      }
+
+      .metrics-panel {
+        grid-column: auto;
+      }
+
+      .metrics {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+      }
+
+      .metrics-panel .qpoint-card,
+      .metrics-panel .insight-card {
+        display: block;
+        width: auto;
+      }
+
+      .experiment-grid {
+        grid-template-columns: 1fr;
+      }
+    }
+
+    @media (max-width: 680px) {
+      .page-shell {
+        width: min(100% - 20px, 1480px);
+        padding-top: 12px;
+      }
+
+      .topbar {
+        align-items: flex-start;
+      }
+
+      .brand span:last-child {
+        display: none;
+      }
+
+      .theme-toggle .theme-label {
+        display: none;
+      }
+
+      .hero {
+        padding: 1.4rem;
+        border-radius: 22px;
+      }
+
+      h1 {
+        font-size: clamp(2.2rem, 13vw, 3.6rem);
+      }
+
+      .config-tabs {
+        grid-template-columns: 1fr;
+      }
+
+      .config-tab {
+        min-height: 78px;
+      }
+
+      .diagram-toolbar {
+        align-items: flex-start;
+        margin-left: 0.65rem;
+        margin-right: 0.65rem;
+      }
+
+      .diagram-toggle-group,
+      .diagram-legend {
+        width: 100%;
+      }
+
+      .diagram-pan-hint {
+        display: block;
+      }
+
+      .schematic-wrap {
+        min-height: 365px;
+        padding-left: 0;
+        padding-right: 0;
+        overflow-x: auto;
+        overflow-y: hidden;
+        overscroll-behavior-inline: contain;
+        scrollbar-width: thin;
+        scrollbar-color: var(--border) transparent;
+      }
+
+      #schematic {
+        width: 560px;
+        max-width: none;
+        min-width: 560px;
+        min-height: 352px;
+      }
+
+      .schematic-caption,
+      .concept-list,
+      .options {
+        grid-template-columns: 1fr;
+      }
+
+      .metrics {
+        grid-template-columns: 1fr 1fr;
+      }
+
+      .scope-wrap {
+        padding-left: 0.65rem;
+        padding-right: 0.65rem;
+      }
+
+      #scopeCanvas {
+        height: 260px;
+      }
+
+      .quiz-intro,
+      .section-heading,
+      .footer {
+        align-items: flex-start;
+        flex-direction: column;
+      }
+
+      .quiz-actions {
+        align-items: stretch;
+        flex-direction: column;
+      }
+
+      .quiz-result {
+        width: 100%;
+      }
+
+      .quiz-actions button {
+        width: 100%;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *,
+      *::before,
+      *::after {
+        scroll-behavior: auto !important;
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+      }
+    }
+
+    @media print {
+      .theme-toggle,
+      .controls-panel,
+      .scope-panel,
+      .quiz-actions,
+      .preset-button,
+      .hero-visual {
+        display: none !important;
+      }
+
+      body {
+        background: #fff;
+      }
+
+      .panel,
+      .hero {
+        box-shadow: none;
+      }
+    }
+  </style>
+</head>
+<body>
+  <a class="skip-link" href="#simulator">Skip to simulator</a>
+
+  <div class="page-shell">
+    <header class="topbar">
+      <div class="brand" aria-label="BJT Configuration Lab">
+        <span class="brand-mark" aria-hidden="true">
+          <svg viewBox="0 0 32 32" fill="none">
+            <path d="M5 16h8M13 8v16M13 11l9-5v6M13 21l9 5v-6M22 6h5M22 26h5" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/>
+            <path d="M21 22l4 2-3.5 2.4" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+          </svg>
+        </span>
+        <span>BJT Configuration Lab</span>
+      </div>
+      <div class="top-actions">
+        <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false">
+          <span id="themeIcon" aria-hidden="true">Moon</span>
+          <span class="theme-label" id="themeLabel">Dark theme</span>
+        </button>
+      </div>
+    </header>
+
+    <main>
+      <section class="hero" aria-labelledby="pageTitle">
+        <div>
+          <p class="eyebrow">Interactive analog electronics lesson</p>
+          <h1 id="pageTitle">Explore CE, CB and CC transistor stages.</h1>
+          <p class="hero-copy">
+            Change bias current, source resistance, load and input signal. Watch the circuit, gain, impedance, phase and clipping respond in real time.
+          </p>
+          <div class="hero-chips" aria-label="Learning features">
+            <span class="chip">Live waveform scope</span>
+            <span class="chip">Approximate small-signal model</span>
+            <span class="chip">Guided experiments</span>
+            <span class="chip">5-question quiz</span>
+          </div>
+        </div>
+        <div class="hero-visual" aria-hidden="true">
+          <div class="transistor-orbit">
+            <svg class="transistor-symbol" viewBox="0 0 120 120" fill="none">
+              <circle cx="60" cy="60" r="48" stroke="currentColor" stroke-width="4" opacity="0.24"/>
+              <path d="M32 60h25M57 32v56M57 42l28-16v20M57 78l28 16V74M85 26h14M85 94h14" stroke="currentColor" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+              <path d="M79 79l12 7-11 6" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"/>
+            </svg>
+            <span class="orbit-label">CE</span>
+            <span class="orbit-label">CB</span>
+            <span class="orbit-label">CC</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="section" id="simulator" aria-labelledby="simulatorTitle">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Virtual lab</p>
+            <h2 id="simulatorTitle">Choose a transistor configuration</h2>
+          </div>
+          <p>The word <strong>common</strong> names the transistor terminal shared by both the input and output circuits as their reference.</p>
+        </div>
+
+        <div class="config-tabs" role="tablist" aria-label="BJT configurations">
+          <button class="config-tab" id="tab-CE" type="button" role="tab" aria-selected="true" aria-controls="labPanel" data-config="CE">
+            <span class="tab-code">CE</span>
+            <span class="tab-copy"><strong>Common emitter</strong><small>High gain, 180 degree inversion</small></span>
+          </button>
+          <button class="config-tab" id="tab-CB" type="button" role="tab" aria-selected="false" aria-controls="labPanel" data-config="CB" tabindex="-1">
+            <span class="tab-code">CB</span>
+            <span class="tab-copy"><strong>Common base</strong><small>Low input impedance, no inversion</small></span>
+          </button>
+          <button class="config-tab" id="tab-CC" type="button" role="tab" aria-selected="false" aria-controls="labPanel" data-config="CC" tabindex="-1">
+            <span class="tab-code">CC</span>
+            <span class="tab-copy"><strong>Common collector</strong><small>Voltage buffer, no inversion</small></span>
+          </button>
+        </div>
+
+        <div class="lab-grid" id="labPanel" role="tabpanel" aria-labelledby="tab-CE">
+          <aside class="panel controls-panel" aria-labelledby="controlsTitle">
+            <div class="panel-header">
+              <div>
+                <h3 id="controlsTitle">Experiment controls</h3>
+                <p>Move a slider and observe the stage.</p>
+              </div>
+              <span class="status-pill" id="regionStatus">Active region</span>
+            </div>
+
+            <div class="controls">
+              <div class="control">
+                <div class="control-top">
+                  <label for="vccControl">Supply voltage VCC</label>
+                  <output id="vccOutput" for="vccControl">9.0 V</output>
+                </div>
+                <input id="vccControl" type="range" min="5" max="15" step="0.5" value="9" data-key="vcc">
+                <small class="control-hint">Sets the available DC voltage and output swing.</small>
+              </div>
+
+              <div class="control">
+                <div class="control-top">
+                  <label for="icControl">Bias collector current IC</label>
+                  <output id="icOutput" for="icControl">1.0 mA</output>
+                </div>
+                <input id="icControl" type="range" min="0.2" max="3" step="0.1" value="1" data-key="ic">
+                <small class="control-hint">Higher IC raises transconductance gm and usually raises gain.</small>
+              </div>
+
+              <div class="control">
+                <div class="control-top">
+                  <label for="betaControl">Current gain beta</label>
+                  <output id="betaOutput" for="betaControl">100</output>
+                </div>
+                <input id="betaControl" type="range" min="50" max="250" step="10" value="100" data-key="beta">
+                <small class="control-hint">Beta mainly changes base current and input resistance.</small>
+              </div>
+
+              <div class="control">
+                <div class="control-top">
+                  <label for="vinControl" id="vinLabel">Source signal peak</label>
+                  <output id="vinOutput" for="vinControl">20 mV</output>
+                </div>
+                <input id="vinControl" type="range" min="5" max="500" step="5" value="20" data-key="vin">
+                <small class="control-hint" id="vinHint">Applied through the source resistance to the base input.</small>
+              </div>
+
+              <div class="control">
+                <div class="control-top">
+                  <label for="frequencyControl">Signal frequency</label>
+                  <output id="frequencyOutput" for="frequencyControl">1.00 kHz</output>
+                </div>
+                <input id="frequencyControl" type="range" min="2" max="4" step="0.01" value="3" data-key="frequencyExponent">
+                <small class="control-hint">The simplified model assumes midband operation.</small>
+              </div>
+
+              <div class="control">
+                <div class="control-top">
+                  <label for="stageResistanceControl" id="stageResistanceLabel">Collector resistor RC</label>
+                  <output id="stageResistanceOutput" for="stageResistanceControl">2.2 kOhm</output>
+                </div>
+                <input id="stageResistanceControl" type="range" min="0.5" max="10" step="0.1" value="2.2" data-key="rstage">
+                <small class="control-hint" id="stageResistanceHint">Converts collector-current variation into output voltage.</small>
+              </div>
+
+              <div class="control">
+                <div class="control-top">
+                  <label for="sourceResistanceControl">Source resistance RS</label>
+                  <output id="sourceResistanceOutput" for="sourceResistanceControl">600 Ohm</output>
+                </div>
+                <input id="sourceResistanceControl" type="range" min="0.05" max="10" step="0.05" value="0.6" data-key="rs">
+                <small class="control-hint">Forms an input divider with the stage input impedance.</small>
+              </div>
+            </div>
+
+            <div class="controls-footer">
+              <button class="ghost-button" id="resetMode" type="button">Reset this mode</button>
+            </div>
+          </aside>
+
+          <div>
+            <section class="panel visual-panel" aria-labelledby="schematicTitle">
+              <div class="panel-header">
+                <div>
+                  <h3 id="schematicTitle">Circuit view</h3>
+                  <p id="schematicSubtitle">Emitter is the common reference.</p>
+                </div>
+                <span class="concept-badge" id="configBadge">CE</span>
+              </div>
+              <div class="diagram-toolbar" aria-label="Circuit diagram display options">
+                <div class="diagram-toggle-group" role="group" aria-label="Diagram overlays">
+                  <button class="diagram-toggle" type="button" data-diagram-option="currents" aria-pressed="true">Current flow</button>
+                  <button class="diagram-toggle" type="button" data-diagram-option="bias" aria-pressed="true">Bias annotations</button>
+                </div>
+                <div class="diagram-legend" aria-label="Signal path legend">
+                  <span class="diagram-key input">Input path</span>
+                  <span class="diagram-key output">Output path</span>
+                  <span class="diagram-key common">Common reference</span>
+                </div>
+              </div>
+              <p class="diagram-pan-hint" aria-hidden="true">Swipe left or right to inspect the full annotated circuit.</p>
+              <div class="schematic-wrap" id="schematicWrap" role="region" tabindex="0" aria-label="Scrollable annotated BJT circuit diagram"></div>
+              <div class="schematic-caption">
+                <div class="port-card"><span>Input port</span><strong id="inputPortText">Base to emitter</strong></div>
+                <div class="port-card"><span>Output port</span><strong id="outputPortText">Collector to emitter</strong></div>
+                <div class="port-card"><span>Common terminal</span><strong id="commonPortText">Emitter</strong></div>
+              </div>
+            </section>
+
+            <section class="panel scope-panel" aria-labelledby="scopeTitle">
+              <div class="panel-header">
+                <div>
+                  <h3 id="scopeTitle">Dual-channel oscilloscope</h3>
+                  <p>Channels are auto-scaled separately so phase and waveform shape stay visible.</p>
+                </div>
+                <span class="status-pill" id="signalStatus">Clean output</span>
+              </div>
+              <div class="scope-wrap">
+                <canvas id="scopeCanvas" role="img" aria-label="Animated input and output waveforms"></canvas>
+                <div class="scope-legend" aria-hidden="true">
+                  <span class="legend-item"><span class="legend-line"></span>CH1: transistor input</span>
+                  <span class="legend-item"><span class="legend-line output"></span>CH2: stage output</span>
+                </div>
+              </div>
+            </section>
+          </div>
+
+          <aside class="panel metrics-panel" aria-labelledby="metricsTitle">
+            <div class="panel-header">
+              <div>
+                <h3 id="metricsTitle">Live stage estimates</h3>
+                <p>Midband, small-signal approximations.</p>
+              </div>
+            </div>
+
+            <div class="metrics">
+              <div class="metric"><span>Voltage gain AV</span><strong id="voltageGainMetric">-88.0</strong><small id="voltageGainNote">Inverting</small></div>
+              <div class="metric"><span>Current gain AI</span><strong id="currentGainMetric">100</strong><small id="currentGainNote">Approximately beta</small></div>
+              <div class="metric"><span>Input impedance</span><strong id="inputImpedanceMetric">2.50 kOhm</strong><small id="inputImpedanceNote">Moderate</small></div>
+              <div class="metric"><span>Output impedance</span><strong id="outputImpedanceMetric">2.20 kOhm</strong><small id="outputImpedanceNote">Moderate to high</small></div>
+              <div class="metric"><span>Input at transistor</span><strong id="deviceInputMetric">16.1 mVpk</strong><small id="inputAttenuationNote">80.6% of source</small></div>
+              <div class="metric"><span>Output amplitude</span><strong id="outputAmplitudeMetric">1.42 Vpk</strong><small id="outputAmplitudeNote">Ideal small-signal result</small></div>
+              <div class="metric"><span>Phase shift</span><strong id="phaseMetric">180 deg</strong><small id="phaseNote">Output is inverted</small></div>
+              <div class="metric"><span>Power-gain trend</span><strong id="powerGainMetric">High</strong><small id="powerGainNote">Voltage and current gain</small></div>
+            </div>
+
+            <div class="qpoint-card">
+              <div class="qpoint-row"><span>DC output operating point</span><strong id="qpointValue">6.80 V</strong></div>
+              <div class="qpoint-track" aria-hidden="true"><span class="qpoint-marker" id="qpointMarker"></span></div>
+              <div class="qpoint-labels"><span>Cutoff side</span><span>Best swing near center</span><span>Saturation side</span></div>
+            </div>
+
+            <div class="insight-card">
+              <strong id="insightTitle">What to notice</strong>
+              <p id="insightText">The CE stage provides both voltage and current gain, but its output reverses phase.</p>
+            </div>
+          </aside>
+        </div>
+      </section>
+
+      <section class="section" aria-labelledby="learnTitle">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Concept knowledge</p>
+            <h2 id="learnTitle">Understand what the simulator is showing</h2>
+          </div>
+          <p>These relationships are first-order approximations. Real circuits also depend on bias networks, transistor capacitances, temperature and Early effect.</p>
+        </div>
+
+        <div class="learn-grid">
+          <article class="panel concept-panel">
+            <div class="concept-title-row">
+              <div>
+                <h3 id="conceptTitle">Common-emitter amplifier</h3>
+                <p class="lead-note" id="conceptLead">A general-purpose voltage amplifier with useful current gain and an inverted output.</p>
+              </div>
+              <span class="concept-badge" id="conceptBadge">CE</span>
+            </div>
+            <ul class="concept-list" id="conceptList"></ul>
+            <div class="formula-box">
+              <code id="formulaText">gm = IC / VT, rpi = beta / gm, AV approximately -gm RC</code>
+              <p id="formulaNote">The negative sign indicates a 180 degree phase inversion.</p>
+            </div>
+          </article>
+
+          <aside class="panel formula-panel" aria-labelledby="foundationTitle">
+            <h3 id="foundationTitle">Small-signal foundations</h3>
+            <details open>
+              <summary>What does "common" mean?</summary>
+              <p>The common terminal is shared by the input and output circuits. It is usually treated as an AC reference, even when it sits at a nonzero DC bias voltage.</p>
+            </details>
+            <details>
+              <summary>Why does transconductance matter?</summary>
+              <p>Transconductance gm tells how strongly a small base-emitter voltage change controls collector current. Near room temperature, gm is approximately IC divided by 25 mV.</p>
+            </details>
+            <details>
+              <summary>Why can the output clip?</summary>
+              <p>The quiescent point must leave room for the output to move in both directions. Too much signal, current or resistance pushes the transistor toward cutoff or saturation.</p>
+            </details>
+            <details>
+              <summary>What is missing from this model?</summary>
+              <p>Coupling capacitors, transistor output resistance, junction capacitances, exact bias networks and frequency roll-off are omitted to keep the learning model clear.</p>
+            </details>
+          </aside>
+        </div>
+      </section>
+
+      <section class="section panel comparison-panel" aria-labelledby="comparisonTitle">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">At a glance</p>
+            <h2 id="comparisonTitle">Configuration comparison</h2>
+          </div>
+          <p>The highlighted row follows the configuration selected in the virtual lab.</p>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th>Configuration</th>
+                <th>Input / output</th>
+                <th>Voltage gain</th>
+                <th>Current gain</th>
+                <th>Input Z</th>
+                <th>Output Z</th>
+                <th>Phase</th>
+                <th>Typical use</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr data-config-row="CE" class="active-row">
+                <td><strong>CE</strong> - common emitter</td>
+                <td>B-E / C-E</td>
+                <td>High</td>
+                <td>High, about beta</td>
+                <td>Medium</td>
+                <td>Medium-high</td>
+                <td>180 degree inversion</td>
+                <td>Voltage and power amplification</td>
+              </tr>
+              <tr data-config-row="CB">
+                <td><strong>CB</strong> - common base</td>
+                <td>E-B / C-B</td>
+                <td>High</td>
+                <td>Near 1, about alpha</td>
+                <td>Very low</td>
+                <td>High</td>
+                <td>0 degree, non-inverting</td>
+                <td>High-frequency stages, impedance matching</td>
+              </tr>
+              <tr data-config-row="CC">
+                <td><strong>CC</strong> - common collector</td>
+                <td>B-C / E-C</td>
+                <td>Near 1</td>
+                <td>High, about beta + 1</td>
+                <td>High</td>
+                <td>Low</td>
+                <td>0 degree, non-inverting</td>
+                <td>Buffering and load driving</td>
+              </tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+
+      <section class="section panel experiments-panel" aria-labelledby="experimentsTitle">
+        <div class="section-heading">
+          <div>
+            <p class="eyebrow">Guided exploration</p>
+            <h2 id="experimentsTitle">Try three revealing experiments</h2>
+          </div>
+          <p>Each button loads a useful setup. Read the observation prompt, then keep moving the sliders.</p>
+        </div>
+        <div class="experiment-grid">
+          <article class="experiment-card">
+            <span class="step">Experiment 1</span>
+            <h3>Make a CE stage clip</h3>
+            <p>Increase input amplitude and collector resistance. The ideal gain rises, but the DC operating point leaves too little clean output swing.</p>
+            <button class="preset-button" type="button" data-preset="ceClip">Load CE clipping setup</button>
+          </article>
+          <article class="experiment-card">
+            <span class="step">Experiment 2</span>
+            <h3>Challenge the CB input</h3>
+            <p>Use a large source resistance with the common-base input. Its very low input impedance absorbs most of the source signal.</p>
+            <button class="preset-button" type="button" data-preset="cbMismatch">Load CB mismatch setup</button>
+          </article>
+          <article class="experiment-card">
+            <span class="step">Experiment 3</span>
+            <h3>Use CC as a buffer</h3>
+            <p>Drive the emitter follower from a high-resistance source. Its high input impedance preserves the signal while its output impedance stays low.</p>
+            <button class="preset-button" type="button" data-preset="ccBuffer">Load CC buffer setup</button>
+          </article>
+        </div>
+      </section>
+
+      <section class="section panel quiz-panel" aria-labelledby="quizTitle">
+        <div class="quiz-intro">
+          <div>
+            <p class="eyebrow">Knowledge check</p>
+            <h2 id="quizTitle">Five-question BJT quiz</h2>
+            <p>Select one answer for each question, then check your score. Explanations appear after grading.</p>
+          </div>
+          <span class="quiz-progress" id="quizProgress">0 of 5 answered</span>
+        </div>
+
+        <form id="quizForm">
+          <div class="quiz-list" id="quizList"></div>
+          <div class="quiz-actions">
+            <div class="quiz-result" id="quizResult" role="status" aria-live="polite">Your score will appear here.</div>
+            <button class="primary-button" type="submit">Check answers</button>
+            <button class="ghost-button" id="resetQuiz" type="button">Reset quiz</button>
+          </div>
+        </form>
+      </section>
+    </main>
+
+    <footer class="footer">
+      <span>Educational model: NPN transistor, room-temperature midband approximation.</span>
+      <span>Tip: begin with the operating point near the middle for the cleanest output swing.</span>
+    </footer>
+  </div>
+
+  <script>
+    "use strict";
+
+    const VT = 0.025;
+
+    const configInfo = {
+      CE: {
+        name: "Common-emitter amplifier",
+        nickname: "Voltage and power amplifier",
+        subtitle: "Emitter is the common reference.",
+        inputPort: "Base to emitter",
+        outputPort: "Collector to emitter",
+        commonPort: "Emitter",
+        vinLabel: "Base-source signal peak",
+        vinHint: "Applied through the source resistance to the base input.",
+        resistorLabel: "Collector resistor RC",
+        resistorHint: "Converts collector-current variation into output voltage.",
+        lead: "A general-purpose voltage amplifier with useful current gain and an inverted output.",
+        formula: "gm = IC / VT, rpi = beta / gm, AV approximately -gm RC",
+        formulaNote: "The negative sign indicates a 180 degree phase inversion.",
+        concepts: [
+          ["Signal path", "Input is applied at the base; output is taken from the collector."],
+          ["Phase", "A rise in base current increases the RC drop, so collector voltage falls: 180 degree inversion."],
+          ["Impedance", "Input impedance is moderate; output impedance is roughly the collector resistance."],
+          ["Best use", "Voltage amplification, audio stages and general-purpose gain blocks."]
+        ],
+        insight: "The CE stage provides both voltage and current gain, but its output reverses phase."
+      },
+      CB: {
+        name: "Common-base amplifier",
+        nickname: "Low-Z input amplifier",
+        subtitle: "Base is the common AC reference.",
+        inputPort: "Emitter to base",
+        outputPort: "Collector to base",
+        commonPort: "Base",
+        vinLabel: "Emitter-source signal peak",
+        vinHint: "Applied through the source resistance to the low-impedance emitter input.",
+        resistorLabel: "Collector resistor RC",
+        resistorHint: "Turns collector-current variation into a non-inverted output voltage.",
+        lead: "A non-inverting voltage amplifier with very low input impedance and current gain slightly below one.",
+        formula: "re approximately VT / IC, alpha = beta / (beta + 1), AV approximately +gm RC",
+        formulaNote: "The positive sign indicates that input and output are in phase.",
+        concepts: [
+          ["Signal path", "Input enters the emitter; output is taken from the collector while the base is AC-grounded."],
+          ["Phase", "An emitter-voltage rise reduces current and RC drop, allowing collector voltage to rise: no inversion."],
+          ["Impedance", "Input impedance is about re = 1/gm, often only a few tens of ohms."],
+          ["Best use", "High-frequency stages and matching a low-resistance source to a higher-resistance load."]
+        ],
+        insight: "The CB stage can have high voltage gain, but a high source resistance loses most of the input signal."
+      },
+      CC: {
+        name: "Common-collector amplifier",
+        nickname: "Emitter follower / buffer",
+        subtitle: "Collector is the common AC reference.",
+        inputPort: "Base to collector",
+        outputPort: "Emitter to collector",
+        commonPort: "Collector",
+        vinLabel: "Base-source signal peak",
+        vinHint: "Applied at the base; the emitter output follows it without phase inversion.",
+        resistorLabel: "Emitter resistor RE",
+        resistorHint: "Sets emitter current and acts as the stage load in this simplified model.",
+        lead: "A non-inverting voltage buffer with gain just below one, high input impedance and low output impedance.",
+        formula: "AV approximately gm RE / (1 + gm RE), AI approximately beta + 1",
+        formulaNote: "Voltage gain is slightly less than one, but current gain makes the stage a strong buffer.",
+        concepts: [
+          ["Signal path", "Input is applied at the base; output is taken from the emitter."],
+          ["Phase", "The emitter voltage follows the base voltage, so there is no inversion."],
+          ["Impedance", "Input impedance is high and output impedance is low - ideal for isolation."],
+          ["Best use", "Buffers, level shifting and driving a lower-resistance load from a weak source."]
+        ],
+        insight: "The CC stage trades voltage gain for excellent buffering: high input impedance and low output impedance."
+      }
+    };
+
+    const defaultStates = {
+      CE: { vcc: 9, ic: 1, beta: 100, vin: 20, frequencyExponent: 3, rstage: 2.2, rs: 0.6 },
+      CB: { vcc: 9, ic: 1, beta: 100, vin: 20, frequencyExponent: 3, rstage: 2.2, rs: 0.05 },
+      CC: { vcc: 9, ic: 1, beta: 100, vin: 200, frequencyExponent: 3, rstage: 2.2, rs: 0.6 }
+    };
+
+    const states = JSON.parse(JSON.stringify(defaultStates));
+    let activeConfig = "CE";
+    let lastModel = null;
+    let animationFrame = 0;
+    const diagramOptions = { currents: true, bias: true };
+
+    const controls = [...document.querySelectorAll('input[type="range"][data-key]')];
+    const tabButtons = [...document.querySelectorAll(".config-tab")];
+    const scopeCanvas = document.getElementById("scopeCanvas");
+    const scopeContext = scopeCanvas.getContext("2d");
+
+    const quizQuestions = [
+      {
+        question: "Which BJT configuration normally produces a 180 degree phase reversal between input and output?",
+        options: ["Common emitter", "Common base", "Common collector", "All three"],
+        answer: 0,
+        explanation: "In a common-emitter stage, more collector current creates a larger drop across RC, so collector voltage moves opposite to the input."
+      },
+      {
+        question: "The current gain of a common-base stage is approximately:",
+        options: ["Zero", "Alpha, slightly less than 1", "Beta", "Beta squared"],
+        answer: 1,
+        explanation: "Collector current is nearly equal to emitter current, so AI is alpha = beta/(beta + 1), a value just below one."
+      },
+      {
+        question: "Which configuration is usually the best voltage buffer?",
+        options: ["Common emitter", "Common base", "Common collector", "A reverse-biased transistor"],
+        answer: 2,
+        explanation: "The common-collector or emitter-follower stage has high input impedance, low output impedance and voltage gain near one."
+      },
+      {
+        question: "In a common-emitter stage, where are the input and output taken?",
+        options: ["Input at emitter, output at base", "Input at base, output at collector", "Input at collector, output at emitter", "Both at the collector"],
+        answer: 1,
+        explanation: "The input is between base and emitter, while the output is between collector and emitter; the emitter is common to both."
+      },
+      {
+        question: "What does the word 'common' identify in CE, CB and CC names?",
+        options: ["The largest transistor terminal", "The terminal shared as the input/output reference", "The terminal carrying the most current", "The terminal always connected directly to ground"],
+        answer: 1,
+        explanation: "The common terminal is shared by the input and output circuits as an AC reference. It does not have to be at zero volts DC."
+      }
+    ];
+
+    function parallel(a, b) {
+      if (!Number.isFinite(a)) return b;
+      if (!Number.isFinite(b)) return a;
+      return (a * b) / (a + b);
+    }
+
+    function clamp(value, min, max) {
+      return Math.min(max, Math.max(min, value));
+    }
+
+    function formatResistance(ohms) {
+      if (ohms >= 1e6) return (ohms / 1e6).toFixed(2) + " MOhm";
+      if (ohms >= 1000) return (ohms / 1000).toFixed(ohms >= 10000 ? 1 : 2) + " kOhm";
+      return ohms.toFixed(ohms >= 100 ? 0 : 1) + " Ohm";
+    }
+
+    function formatVoltage(volts) {
+      const abs = Math.abs(volts);
+      if (abs < 0.001) return (volts * 1e6).toFixed(1) + " uV";
+      if (abs < 1) return (volts * 1000).toFixed(abs < 0.1 ? 1 : 0) + " mV";
+      return volts.toFixed(abs < 10 ? 2 : 1) + " V";
+    }
+
+    function formatCurrent(amps) {
+      const abs = Math.abs(amps);
+      if (abs < 1e-6) return (amps * 1e9).toFixed(1) + " nA";
+      if (abs < 1e-3) return (amps * 1e6).toFixed(abs < 100e-6 ? 1 : 0) + " uA";
+      return (amps * 1e3).toFixed(abs < 10e-3 ? 2 : 1) + " mA";
+    }
+
+    function formatGain(value) {
+      const abs = Math.abs(value);
+      if (abs >= 100) return value.toFixed(0);
+      if (abs >= 10) return value.toFixed(1);
+      return value.toFixed(2);
+    }
+
+    function formatFrequency(exponent) {
+      const hz = Math.pow(10, exponent);
+      if (hz >= 1000) return (hz / 1000).toFixed(hz >= 9900 ? 1 : 2) + " kHz";
+      return Math.round(hz) + " Hz";
+    }
+
+    function getFrequency(state) {
+      return Math.pow(10, state.frequencyExponent);
+    }
+
+    function calculateModel(config, state) {
+      const ic = state.ic / 1000;
+      const beta = state.beta;
+      const gm = ic / VT;
+      const re = 1 / gm;
+      const rpi = beta / gm;
+      const alpha = beta / (beta + 1);
+      const stageR = state.rstage * 1000;
+      const sourceR = state.rs * 1000;
+      const sourcePeak = state.vin / 1000;
+
+      let av;
+      let ai;
+      let zin;
+      let zout;
+      let qpoint;
+      let positiveHeadroom;
+      let negativeHeadroom;
+      let phase;
+      let powerTrend;
+      let voltageNote;
+      let currentNote;
+      let inputZNote;
+      let outputZNote;
+      let powerNote;
+
+      if (config === "CE") {
+        av = -gm * stageR;
+        ai = beta;
+        zin = rpi;
+        zout = stageR;
+        qpoint = state.vcc - ic * stageR;
+        positiveHeadroom = Math.max(0, state.vcc - qpoint);
+        negativeHeadroom = Math.max(0, qpoint - 0.2);
+        phase = 180;
+        powerTrend = "High";
+        voltageNote = "Inverting";
+        currentNote = "Approximately beta";
+        inputZNote = "Moderate";
+        outputZNote = "Moderate to high";
+        powerNote = "Voltage and current gain";
+      } else if (config === "CB") {
+        av = gm * stageR;
+        ai = alpha;
+        zin = re;
+        zout = stageR;
+        qpoint = state.vcc - ic * stageR;
+        positiveHeadroom = Math.max(0, state.vcc - qpoint);
+        negativeHeadroom = Math.max(0, qpoint - 0.2);
+        phase = 0;
+        powerTrend = "Medium";
+        voltageNote = "Non-inverting";
+        currentNote = "Approximately alpha";
+        inputZNote = "Very low";
+        outputZNote = "High";
+        powerNote = "Voltage gain, little current gain";
+      } else {
+        const emitterLoad = stageR;
+        av = (gm * emitterLoad) / (1 + gm * emitterLoad);
+        ai = beta + 1;
+        zin = rpi + (beta + 1) * emitterLoad;
+        const transistorZout = re + parallel(sourceR, rpi) / (beta + 1);
+        zout = parallel(transistorZout, emitterLoad);
+        qpoint = ic * emitterLoad;
+        positiveHeadroom = Math.max(0, state.vcc - 0.25 - qpoint);
+        negativeHeadroom = Math.max(0, qpoint - 0.05);
+        phase = 0;
+        powerTrend = "Medium";
+        voltageNote = "Near unity";
+        currentNote = "Approximately beta + 1";
+        inputZNote = "High";
+        outputZNote = "Low";
+        powerNote = "Strong current buffering";
+      }
+
+      const attenuation = zin / (zin + sourceR);
+      const deviceInputPeak = sourcePeak * attenuation;
+      const idealOutputPeak = Math.abs(av) * deviceInputPeak;
+      const cleanHeadroom = Math.max(0, Math.min(positiveHeadroom, negativeHeadroom));
+      const biasValid = positiveHeadroom > 0.02 && negativeHeadroom > 0.02 && qpoint > 0 && qpoint < state.vcc;
+      const clipping = !biasValid || idealOutputPeak > cleanHeadroom;
+      const outputPeak = biasValid
+        ? Math.max(Math.min(idealOutputPeak, positiveHeadroom), Math.min(idealOutputPeak, negativeHeadroom))
+        : 0;
+
+      return {
+        config,
+        state,
+        ic,
+        beta,
+        gm,
+        re,
+        rpi,
+        alpha,
+        stageR,
+        sourceR,
+        sourcePeak,
+        av,
+        ai,
+        zin,
+        zout,
+        qpoint,
+        positiveHeadroom,
+        negativeHeadroom,
+        cleanHeadroom,
+        phase,
+        attenuation,
+        deviceInputPeak,
+        idealOutputPeak,
+        outputPeak,
+        biasValid,
+        clipping,
+        powerTrend,
+        voltageNote,
+        currentNote,
+        inputZNote,
+        outputZNote,
+        powerNote
+      };
+    }
+
+    function updateSliderFill(input) {
+      const min = Number(input.min);
+      const max = Number(input.max);
+      const value = Number(input.value);
+      const percent = ((value - min) / (max - min)) * 100;
+      input.style.setProperty("--fill", percent.toFixed(2) + "%");
+    }
+
+    function syncControlsFromState() {
+      const state = states[activeConfig];
+      controls.forEach((control) => {
+        control.value = state[control.dataset.key];
+        updateSliderFill(control);
+      });
+      updateControlOutputs();
+    }
+
+    function updateControlOutputs() {
+      const state = states[activeConfig];
+      document.getElementById("vccOutput").textContent = state.vcc.toFixed(1) + " V";
+      document.getElementById("icOutput").textContent = state.ic.toFixed(1) + " mA";
+      document.getElementById("betaOutput").textContent = Math.round(state.beta).toString();
+      document.getElementById("vinOutput").textContent = Math.round(state.vin) + " mV";
+      document.getElementById("frequencyOutput").textContent = formatFrequency(state.frequencyExponent);
+      document.getElementById("stageResistanceOutput").textContent = state.rstage.toFixed(1) + " kOhm";
+      document.getElementById("sourceResistanceOutput").textContent = state.rs < 0.1
+        ? Math.round(state.rs * 1000) + " Ohm"
+        : state.rs.toFixed(state.rs < 1 ? 2 : 1) + " kOhm";
+    }
+
+    function setStatus(element, text, kind) {
+      element.textContent = text;
+      element.classList.remove("warning", "danger");
+      if (kind) element.classList.add(kind);
+    }
+
+    function updateMetrics(model) {
+      document.getElementById("voltageGainMetric").textContent = formatGain(model.av);
+      document.getElementById("voltageGainNote").textContent = model.voltageNote;
+      document.getElementById("currentGainMetric").textContent = formatGain(model.ai);
+      document.getElementById("currentGainNote").textContent = model.currentNote;
+      document.getElementById("inputImpedanceMetric").textContent = formatResistance(model.zin);
+      document.getElementById("inputImpedanceNote").textContent = model.inputZNote;
+      document.getElementById("outputImpedanceMetric").textContent = formatResistance(model.zout);
+      document.getElementById("outputImpedanceNote").textContent = model.outputZNote;
+      document.getElementById("deviceInputMetric").textContent = formatVoltage(model.deviceInputPeak) + "pk";
+      document.getElementById("inputAttenuationNote").textContent = (model.attenuation * 100).toFixed(1) + "% of source";
+      document.getElementById("outputAmplitudeMetric").textContent = model.biasValid ? formatVoltage(model.outputPeak) + "pk" : "No linear swing";
+      document.getElementById("outputAmplitudeNote").textContent = model.clipping
+        ? "Limited by cutoff or saturation"
+        : "Ideal small-signal result";
+      document.getElementById("phaseMetric").textContent = model.phase + " deg";
+      document.getElementById("phaseNote").textContent = model.phase === 180 ? "Output is inverted" : "Output is in phase";
+      document.getElementById("powerGainMetric").textContent = model.powerTrend;
+      document.getElementById("powerGainNote").textContent = model.powerNote;
+      document.getElementById("qpointValue").textContent = model.qpoint.toFixed(2) + " V";
+      document.getElementById("qpointMarker").style.left = clamp((model.qpoint / model.state.vcc) * 100, 0, 100) + "%";
+
+      const regionStatus = document.getElementById("regionStatus");
+      const signalStatus = document.getElementById("signalStatus");
+      if (!model.biasValid) {
+        setStatus(regionStatus, "Bias outside active region", "danger");
+        setStatus(signalStatus, "No clean linear output", "danger");
+      } else {
+        const centeredness = Math.min(model.positiveHeadroom, model.negativeHeadroom) / Math.max(model.positiveHeadroom, model.negativeHeadroom);
+        setStatus(regionStatus, centeredness < 0.25 ? "Active, poor headroom" : "Active region", centeredness < 0.25 ? "warning" : "");
+        setStatus(signalStatus, model.clipping ? "Output clipping" : "Clean output", model.clipping ? "warning" : "");
+      }
+    }
+
+    function updateDynamicText(model) {
+      const info = configInfo[activeConfig];
+      document.getElementById("schematicSubtitle").textContent = info.subtitle;
+      document.getElementById("configBadge").textContent = activeConfig;
+      document.getElementById("inputPortText").textContent = info.inputPort;
+      document.getElementById("outputPortText").textContent = info.outputPort;
+      document.getElementById("commonPortText").textContent = info.commonPort;
+      document.getElementById("vinLabel").textContent = info.vinLabel;
+      document.getElementById("vinHint").textContent = info.vinHint;
+      document.getElementById("stageResistanceLabel").textContent = info.resistorLabel;
+      document.getElementById("stageResistanceHint").textContent = info.resistorHint;
+      document.getElementById("conceptTitle").textContent = info.name;
+      document.getElementById("conceptBadge").textContent = activeConfig;
+      document.getElementById("conceptLead").textContent = info.lead;
+      document.getElementById("formulaText").textContent = info.formula;
+      document.getElementById("formulaNote").textContent = info.formulaNote;
+      document.getElementById("insightText").textContent = buildInsight(model);
+
+      const conceptList = document.getElementById("conceptList");
+      conceptList.innerHTML = info.concepts.map(([title, text]) =>
+        '<li><strong>' + title + '</strong><span>' + text + '</span></li>'
+      ).join("");
+    }
+
+    function buildInsight(model) {
+      if (!model.biasValid) {
+        return "The selected current and resistor place the DC output outside the useful active region. Reduce IC or the stage resistor, or raise VCC.";
+      }
+      if (model.clipping) {
+        return "The ideal small-signal output is larger than the available headroom. Reduce the source amplitude or rebalance the operating point.";
+      }
+      if (activeConfig === "CB" && model.attenuation < 0.25) {
+        return "Most of the source signal is lost across RS because the common-base input impedance is very low. Try reducing RS.";
+      }
+      if (activeConfig === "CC" && model.attenuation > 0.9) {
+        return "The high input impedance barely loads the source, while the emitter follows the base with low output impedance.";
+      }
+      return configInfo[activeConfig].insight;
+    }
+
+    function schematicStyles(flowDuration) {
+      return `
+        <defs>
+          <filter id="softShadow" x="-30%" y="-30%" width="160%" height="160%">
+            <feDropShadow dx="0" dy="4" stdDeviation="5" flood-color="#000000" flood-opacity="0.13"/>
+          </filter>
+          <marker id="npnArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="7" markerHeight="7" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--text)"/>
+          </marker>
+          <marker id="inputArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--accent)"/>
+          </marker>
+          <marker id="collectorArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--accent-2)"/>
+          </marker>
+          <marker id="emitterArrow" viewBox="0 0 10 10" refX="8" refY="5" markerWidth="6" markerHeight="6" orient="auto">
+            <path d="M 0 0 L 10 5 L 0 10 z" fill="var(--warning)"/>
+          </marker>
+          <marker id="outputBracketArrow" viewBox="0 0 10 10" refX="5" refY="5" markerWidth="5" markerHeight="5" orient="auto-start-reverse">
+            <path d="M 0 5 L 10 0 L 10 10 z" fill="var(--accent-2)"/>
+          </marker>
+        </defs>
+        <style>
+          .wire, .component { fill:none; stroke:var(--text); stroke-width:2.8; stroke-linecap:round; stroke-linejoin:round; }
+          .wire-muted { fill:none; stroke:var(--muted); stroke-width:2.2; stroke-linecap:round; stroke-linejoin:round; }
+          .input-wire { fill:none; stroke:var(--accent); stroke-width:4; stroke-linecap:round; stroke-linejoin:round; }
+          .output-wire { fill:none; stroke:var(--accent-2); stroke-width:4; stroke-linecap:round; stroke-linejoin:round; }
+          .common-wire { fill:none; stroke:var(--warning); stroke-width:4.5; stroke-linecap:round; stroke-linejoin:round; }
+          .bias-wire { fill:none; stroke:var(--muted); stroke-width:2.2; stroke-dasharray:6 5; stroke-linecap:round; stroke-linejoin:round; }
+          .transistor-shell { fill:var(--surface-solid); stroke:var(--border); stroke-width:2; filter:url(#softShadow); }
+          .terminal { fill:var(--surface-solid); stroke:var(--text); stroke-width:2.3; }
+          .terminal.input { fill:var(--accent); stroke:var(--surface-solid); stroke-width:3; }
+          .terminal.output { fill:var(--accent-2); stroke:var(--surface-solid); stroke-width:3; }
+          .terminal.common { fill:var(--warning); stroke:var(--surface-solid); stroke-width:3; }
+          .terminal-halo { fill:none; stroke:var(--warning); stroke-width:2.2; stroke-dasharray:5 4; }
+          .label { fill:var(--text); font:750 15px system-ui, sans-serif; }
+          .small { fill:var(--muted); font:650 12.5px system-ui, sans-serif; }
+          .tiny { fill:var(--muted); font:650 10.5px system-ui, sans-serif; }
+          .micro { fill:var(--muted); font:700 9.5px system-ui, sans-serif; letter-spacing:.02em; }
+          .input-label { fill:var(--accent-strong); font:800 13px system-ui, sans-serif; }
+          .output-label { fill:var(--accent-2); font:800 13px system-ui, sans-serif; }
+          .common-label { fill:var(--warning); font:800 12.5px system-ui, sans-serif; }
+          .current-label { font:800 12px system-ui, sans-serif; }
+          .current-value { fill:var(--muted); font:650 10px system-ui, sans-serif; }
+          .equation { fill:var(--text); font:750 11.5px system-ui, sans-serif; }
+          .pill { fill:var(--surface-2); stroke:var(--border); stroke-width:1.5; filter:url(#softShadow); }
+          .pill.input { fill:var(--accent-soft); stroke:var(--accent); }
+          .pill.output { fill:var(--accent-2-soft); stroke:var(--accent-2); }
+          .pill.common { fill:var(--warning-soft); stroke:var(--warning); }
+          .bias-pill { fill:var(--surface-2); stroke:var(--border); stroke-width:1.5; }
+          .bias-pill.forward { fill:var(--success-soft); stroke:var(--success); }
+          .bias-pill.reverse { fill:var(--accent-soft); stroke:var(--accent); }
+          .status-good { fill:var(--success-soft); stroke:var(--success); stroke-width:1.5; }
+          .status-warn { fill:var(--warning-soft); stroke:var(--warning); stroke-width:1.5; }
+          .status-bad { fill:var(--danger-soft); stroke:var(--danger); stroke-width:1.5; }
+          .status-good-text { fill:var(--success); font:800 10.5px system-ui, sans-serif; }
+          .status-warn-text { fill:var(--warning); font:800 10.5px system-ui, sans-serif; }
+          .status-bad-text { fill:var(--danger); font:800 10.5px system-ui, sans-serif; }
+          .output-bracket { fill:none; stroke:var(--accent-2); stroke-width:2.4; marker-start:url(#outputBracketArrow); marker-end:url(#outputBracketArrow); }
+          .current-path { fill:none; stroke-width:3.2; stroke-linecap:round; stroke-dasharray:7 7; animation:flow ${flowDuration}s linear infinite; }
+          .current-path.ib { stroke:var(--accent); marker-end:url(#inputArrow); }
+          .current-path.ic { stroke:var(--accent-2); marker-end:url(#collectorArrow); }
+          .current-path.ie { stroke:var(--warning); marker-end:url(#emitterArrow); }
+          @keyframes flow { to { stroke-dashoffset:-28; } }
+          @media (prefers-reduced-motion: reduce) { .current-path { animation:none; stroke-dasharray:none; } }
+        </style>
+      `;
+    }
+
+    function horizontalResistor(x1, x2, y, cssClass = "component") {
+      const mid = (x1 + x2) / 2;
+      return `<path d="M ${x1} ${y} L ${mid - 36} ${y} L ${mid - 28} ${y - 10} L ${mid - 18} ${y + 10} L ${mid - 8} ${y - 10} L ${mid + 2} ${y + 10} L ${mid + 12} ${y - 10} L ${mid + 22} ${y + 10} L ${mid + 30} ${y} L ${x2} ${y}" class="${cssClass}"/>`;
+    }
+
+    function verticalResistor(x, y1, y2, cssClass = "component") {
+      const mid = (y1 + y2) / 2;
+      return `<path d="M ${x} ${y1} L ${x} ${mid - 36} L ${x - 10} ${mid - 28} L ${x + 10} ${mid - 18} L ${x - 10} ${mid - 8} L ${x + 10} ${mid + 2} L ${x - 10} ${mid + 12} L ${x + 10} ${mid + 22} L ${x} ${mid + 30} L ${x} ${y2}" class="${cssClass}"/>`;
+    }
+
+    function horizontalCapacitor(x, y, cssClass = "component") {
+      return `
+        <path d="M ${x - 25} ${y} H ${x - 7} M ${x - 7} ${y - 18} V ${y + 18} M ${x + 7} ${y - 18} V ${y + 18} M ${x + 7} ${y} H ${x + 25}" class="${cssClass}"/>
+      `;
+    }
+
+    function verticalCapacitor(x, y, cssClass = "component") {
+      return `
+        <path d="M ${x} ${y - 25} V ${y - 7} M ${x - 18} ${y - 7} H ${x + 18} M ${x - 18} ${y + 7} H ${x + 18} M ${x} ${y + 7} V ${y + 25}" class="${cssClass}"/>
+      `;
+    }
+
+    function groundSymbol(x, y, cssClass = "wire") {
+      return `
+        <path d="M ${x} ${y} v 8 M ${x - 16} ${y + 8} h 32 M ${x - 10} ${y + 15} h 20 M ${x - 5} ${y + 22} h 10" class="${cssClass}"/>
+      `;
+    }
+
+    function acSource(x, y, label, value) {
+      return `
+        <circle cx="${x}" cy="${y}" r="27" class="terminal"/>
+        <path d="M ${x - 18} ${y} C ${x - 12} ${y - 13}, ${x - 5} ${y - 13}, ${x + 1} ${y} C ${x + 7} ${y + 13}, ${x + 14} ${y + 13}, ${x + 19} ${y}" class="input-wire"/>
+        <text x="${x}" y="${y - 40}" text-anchor="middle" class="input-label">${label}</text>
+        <text x="${x}" y="${y + 44}" text-anchor="middle" class="tiny">${value}</text>
+      `;
+    }
+
+    function valuePill(x, y, width, title, value, kind = "") {
+      return `
+        <g>
+          <rect x="${x}" y="${y}" width="${width}" height="38" rx="10" class="pill ${kind}"/>
+          <text x="${x + 10}" y="${y + 15}" class="micro">${title}</text>
+          <text x="${x + 10}" y="${y + 30}" class="small">${value}</text>
+        </g>
+      `;
+    }
+
+    function transistorSymbol(config) {
+      const roles = {
+        CE: { B: "input", C: "output", E: "common" },
+        CB: { B: "common", C: "output", E: "input" },
+        CC: { B: "input", C: "common", E: "output" }
+      }[config];
+      const commonPoint = config === "CE" ? [410, 285] : config === "CB" ? [270, 215] : [410, 145];
+      return `
+        <circle cx="350" cy="215" r="73" class="transistor-shell"/>
+        <path d="M 270 215 H 315" class="wire"/>
+        <path d="M 315 164 V 266" class="wire"/>
+        <path d="M 315 181 L 410 145" class="wire"/>
+        <path d="M 315 249 L 410 285" class="wire"/>
+        <path d="M 360 266 L 393 279" class="wire" marker-end="url(#npnArrow)"/>
+        <circle cx="270" cy="215" r="7" class="terminal ${roles.B}"/>
+        <circle cx="410" cy="145" r="7" class="terminal ${roles.C}"/>
+        <circle cx="410" cy="285" r="7" class="terminal ${roles.E}"/>
+        <circle cx="${commonPoint[0]}" cy="${commonPoint[1]}" r="13" class="terminal-halo"/>
+        <text x="282" y="198" class="label">B</text>
+        <text x="420" y="138" class="label">C</text>
+        <text x="420" y="303" class="label">E</text>
+        <text x="350" y="220" text-anchor="middle" class="tiny">NPN</text>
+        <text x="350" y="235" text-anchor="middle" class="micro">emitter arrow points out</text>
+      `;
+    }
+
+    function currentOverlay(model, config) {
+      if (!diagramOptions.currents) return "";
+      const ib = model.ic / model.beta;
+      const ie = model.ic + ib;
+      const relation = config === "CE"
+        ? `β = ΔIC/ΔIB ≈ ${Math.round(model.beta)}`
+        : config === "CB"
+          ? `α = ΔIC/ΔIE ≈ ${model.alpha.toFixed(3)}`
+          : `γ = ΔIE/ΔIB ≈ ${Math.round(model.beta + 1)}`;
+      const equationY = config === "CC" ? 100 : 55;
+      const iePath = config === "CC" ? "M 410 297 V 320" : "M 410 298 V 344";
+      const ieLabelX = config === "CC" ? 388 : 424;
+      const ieLabelY = config === "CC" ? 309 : 326;
+      const ieValueY = config === "CC" ? 325 : 342;
+      const ieAnchor = config === "CC" ? "end" : "start";
+      return `
+        <g class="layer-current">
+          <path d="M 228 215 H 260" class="current-path ib"/>
+          <text x="232" y="199" class="current-label" fill="var(--accent)">IB</text>
+          <text x="232" y="232" class="current-value">${formatCurrent(ib)}</text>
+
+          <path d="M 410 76 V 132" class="current-path ic"/>
+          <text x="424" y="92" class="current-label" fill="var(--accent-2)">IC</text>
+          <text x="424" y="108" class="current-value">${formatCurrent(model.ic)}</text>
+
+          <path d="${iePath}" class="current-path ie"/>
+          <text x="${ieLabelX}" y="${ieLabelY}" text-anchor="${ieAnchor}" class="current-label" fill="var(--warning)">IE</text>
+          <text x="${ieLabelX}" y="${ieValueY}" text-anchor="${ieAnchor}" class="current-value">${formatCurrent(ie)}</text>
+
+          <text x="20" y="${equationY}" class="equation">IE = IB + IC</text>
+          <text x="20" y="${equationY + 17}" class="small">${relation}</text>
+        </g>
+      `;
+    }
+
+    function biasPills(x, y) {
+      if (!diagramOptions.bias) return "";
+      return `
+        <g class="layer-bias">
+          <rect x="${x}" y="${y}" width="150" height="28" rx="9" class="bias-pill forward"/>
+          <text x="${x + 10}" y="${y + 18}" class="micro" fill="var(--success)">B-E junction: forward biased</text>
+          <rect x="${x}" y="${y + 34}" width="150" height="28" rx="9" class="bias-pill reverse"/>
+          <text x="${x + 10}" y="${y + 52}" class="micro" fill="var(--accent-strong)">C-B junction: reverse biased</text>
+        </g>
+      `;
+    }
+
+    function statusBadge(model) {
+      const status = !model.biasValid
+        ? { text: "Outside active region", cls: "status-bad", textCls: "status-bad-text" }
+        : model.clipping
+          ? { text: "Active bias - signal clips", cls: "status-warn", textCls: "status-warn-text" }
+          : { text: "Active-region operation", cls: "status-good", textCls: "status-good-text" };
+      return `
+        <g>
+          <rect x="535" y="12" width="148" height="26" rx="9" class="${status.cls}"/>
+          <text x="609" y="29" text-anchor="middle" class="${status.textCls}">${status.text}</text>
+        </g>
+      `;
+    }
+
+    function outputBracket(yActive, yCommon, portText, nodeText) {
+      const yMid = (yActive + yCommon) / 2;
+      return `
+        <path d="M 650 ${yActive} V ${yCommon}" class="output-bracket"/>
+        <path d="M 615 ${yActive} H 640 M 615 ${yCommon} H 640" class="output-wire"/>
+        <text x="640" y="${yMid - 8}" text-anchor="end" class="output-label">Vout</text>
+        <text x="640" y="${yMid + 10}" text-anchor="end" class="tiny">${portText}</text>
+        <text x="640" y="${yMid + 26}" text-anchor="end" class="tiny">${nodeText}</text>
+      `;
+    }
+
+    function biasNetwork(config, commonY) {
+      if (!diagramOptions.bias) return "";
+      if (config === "CB") {
+        return `
+          <g class="layer-bias">
+            <path d="M 270 215 H 210" class="bias-wire"/>
+            <rect x="102" y="190" width="108" height="46" rx="10" class="pill"/>
+            <text x="156" y="208" text-anchor="middle" class="micro">DC BASE BIAS</text>
+            <text x="156" y="225" text-anchor="middle" class="tiny">holds B at fixed voltage</text>
+            <path d="M 270 215 V 290" class="bias-wire"/>
+            ${verticalCapacitor(270, 315, "component")}
+            <path d="M 270 340 V ${commonY}" class="common-wire"/>
+            <text x="286" y="318" class="tiny">bypass C</text>
+            <text x="286" y="333" class="tiny">AC-grounds base</text>
+          </g>
+        `;
+      }
+      return `
+        <g class="layer-bias">
+          <path d="M 270 215 V 154" class="bias-wire"/>
+          <rect x="202" y="103" width="136" height="48" rx="10" class="pill"/>
+          <text x="270" y="122" text-anchor="middle" class="micro">DC BIAS NETWORK (VBB)</text>
+          <text x="270" y="139" text-anchor="middle" class="tiny">signal rides on the bias</text>
+        </g>
+      `;
+    }
+
+    function renderSchematic(config, model) {
+      const state = model.state;
+      const sourceValue = Math.round(state.vin) + " mVpk";
+      const rsValue = state.rs < 0.1 ? Math.round(state.rs * 1000) + " Ohm" : state.rs.toFixed(state.rs < 1 ? 2 : 1) + " kOhm";
+      const stageValue = state.rstage.toFixed(1) + " kOhm";
+      const supplyValue = state.vcc.toFixed(1) + " V";
+      const flowDuration = clamp(1.65 - state.ic * 0.22, 0.55, 1.55).toFixed(2);
+      const status = statusBadge(model);
+      const transistor = transistorSymbol(config);
+      let body = "";
+
+      if (config === "CE") {
+        body = `
+          <path d="M 36 385 H 670" class="common-wire"/>
+          <path d="M 410 285 V 385" class="common-wire"/>
+          ${groundSymbol(410, 385, "common-wire")}
+          <rect x="500" y="397" width="170" height="28" rx="9" class="pill common"/>
+          <text x="585" y="415" text-anchor="middle" class="common-label">COMMON TERMINAL: EMITTER</text>
+
+          ${acSource(76, 215, "Vin at base", sourceValue)}
+          <path d="M 49 215 H 34 V 385" class="input-wire"/>
+          <path d="M 103 215 H 118" class="input-wire"/>
+          ${horizontalResistor(118, 180, 215, "input-wire")}
+          <path d="M 180 215 H 192" class="input-wire"/>
+          ${horizontalCapacitor(217, 215, "component")}
+          <path d="M 242 215 H 270" class="input-wire"/>
+          ${valuePill(116, 245, 74, "RS", rsValue, "input")}
+          <text x="217" y="248" text-anchor="middle" class="tiny">Cin</text>
+
+          <path d="M 410 145 V 124" class="output-wire"/>
+          ${verticalResistor(410, 54, 124, "component")}
+          <path d="M 410 54 V 42" class="wire"/>
+          <path d="M 399 42 H 421 L 410 30 Z" fill="var(--text)"/>
+          ${valuePill(430, 49, 92, "RC", stageValue, "output")}
+          <text x="410" y="20" text-anchor="middle" class="label">VCC ${supplyValue}</text>
+          <path d="M 410 145 H 615" class="output-wire"/>
+          ${outputBracket(145, 385, "collector to emitter", "VC,DC ≈ " + model.qpoint.toFixed(2) + " V")}
+
+          ${biasNetwork(config, 385)}
+          ${transistor}
+          ${currentOverlay(model, config)}
+          ${biasPills(470, 298)}
+          ${status}
+        `;
+      } else if (config === "CB") {
+        body = `
+          <path d="M 36 385 H 670" class="common-wire"/>
+          <rect x="500" y="397" width="170" height="28" rx="9" class="pill common"/>
+          <text x="585" y="415" text-anchor="middle" class="common-label">COMMON TERMINAL: BASE</text>
+
+          ${acSource(76, 305, "Vin at emitter", sourceValue)}
+          <path d="M 49 305 H 34 V 385" class="input-wire"/>
+          <path d="M 103 305 H 118" class="input-wire"/>
+          ${horizontalResistor(118, 180, 305, "input-wire")}
+          <path d="M 180 305 H 192" class="input-wire"/>
+          ${horizontalCapacitor(217, 305, "component")}
+          <path d="M 242 305 H 350 L 410 285" class="input-wire"/>
+          ${valuePill(116, 335, 74, "RS", rsValue, "input")}
+          <text x="217" y="338" text-anchor="middle" class="tiny">Cin</text>
+
+          <path d="M 410 145 V 124" class="output-wire"/>
+          ${verticalResistor(410, 54, 124, "component")}
+          <path d="M 410 54 V 42" class="wire"/>
+          <path d="M 399 42 H 421 L 410 30 Z" fill="var(--text)"/>
+          ${valuePill(430, 49, 92, "RC", stageValue, "output")}
+          <text x="410" y="20" text-anchor="middle" class="label">VCC ${supplyValue}</text>
+          <path d="M 410 145 H 615" class="output-wire"/>
+          ${outputBracket(145, 385, "collector to base", "VC,DC ≈ " + model.qpoint.toFixed(2) + " V")}
+
+          ${biasNetwork(config, 385)}
+          ${transistor}
+          ${currentOverlay(model, config)}
+          ${biasPills(470, 298)}
+          ${status}
+        `;
+      } else {
+        body = `
+          <path d="M 34 55 H 670" class="common-wire"/>
+          <path d="M 410 55 V 145" class="common-wire"/>
+          <rect x="472" y="64" width="198" height="42" rx="10" class="pill common"/>
+          <text x="571" y="81" text-anchor="middle" class="common-label">COMMON: COLLECTOR</text>
+          <text x="571" y="97" text-anchor="middle" class="tiny" fill="var(--warning)">VCC supply rail is the AC reference</text>
+          <text x="410" y="23" text-anchor="middle" class="label">VCC ${supplyValue}</text>
+          <path d="M 399 42 H 421 L 410 30 Z" fill="var(--text)"/>
+          <path d="M 410 30 V 55" class="common-wire"/>
+
+          ${acSource(76, 215, "Vin at base", sourceValue)}
+          <path d="M 49 215 H 34 V 55" class="input-wire"/>
+          <path d="M 103 215 H 118" class="input-wire"/>
+          ${horizontalResistor(118, 180, 215, "input-wire")}
+          <path d="M 180 215 H 192" class="input-wire"/>
+          ${horizontalCapacitor(217, 215, "component")}
+          <path d="M 242 215 H 270" class="input-wire"/>
+          ${valuePill(116, 245, 74, "RS", rsValue, "input")}
+          <text x="217" y="248" text-anchor="middle" class="tiny">Cin</text>
+
+          <path d="M 410 285 H 615" class="output-wire"/>
+          ${outputBracket(285, 55, "emitter to collector", "VE,DC ≈ " + model.qpoint.toFixed(2) + " V")}
+          <path d="M 410 285 V 326" class="wire"/>
+          ${verticalResistor(410, 326, 384, "component")}
+          <path d="M 410 384 V 392" class="wire"/>
+          ${groundSymbol(410, 392, "wire")}
+          ${valuePill(432, 342, 92, "RE", stageValue, "output")}
+
+          ${biasNetwork(config, 55)}
+          ${transistor}
+          ${currentOverlay(model, config)}
+          ${biasPills(520, 330)}
+          ${status}
+        `;
+      }
+
+      const schematicWrap = document.getElementById("schematicWrap");
+      const configurationChanged = schematicWrap.dataset.diagramConfig !== config;
+      schematicWrap.dataset.diagramConfig = config;
+      schematicWrap.innerHTML = `
+        <svg id="schematic" viewBox="0 0 700 440" role="img" aria-labelledby="schematicSvgTitle schematicSvgDesc">
+          <title id="schematicSvgTitle">${configInfo[config].name} annotated circuit</title>
+          <desc id="schematicSvgDesc">NPN transistor circuit with separate input, output and common-reference paths, conventional current arrows, active-region junction bias labels, and live component values for the ${config} configuration.</desc>
+          ${schematicStyles(flowDuration)}
+          ${body}
+        </svg>
+      `;
+      if (window.innerWidth <= 680 && configurationChanged) {
+        requestAnimationFrame(() => {
+          schematicWrap.scrollLeft = Math.max(0, (schematicWrap.scrollWidth - schematicWrap.clientWidth) / 2);
+        });
+      } else if (window.innerWidth > 680) {
+        schematicWrap.scrollLeft = 0;
+      }
+    }
+
+    function updateTableHighlight() {
+      document.querySelectorAll("[data-config-row]").forEach((row) => {
+        row.classList.toggle("active-row", row.dataset.configRow === activeConfig);
+      });
+    }
+
+    function updateAll() {
+      const state = states[activeConfig];
+      lastModel = calculateModel(activeConfig, state);
+      updateControlOutputs();
+      updateDynamicText(lastModel);
+      updateMetrics(lastModel);
+      renderSchematic(activeConfig, lastModel);
+      updateTableHighlight();
+      drawScope(performance.now());
+    }
+
+    function selectConfig(config, focusTab = false) {
+      activeConfig = config;
+      tabButtons.forEach((button) => {
+        const selected = button.dataset.config === config;
+        button.setAttribute("aria-selected", String(selected));
+        button.tabIndex = selected ? 0 : -1;
+        if (selected && focusTab) button.focus();
+      });
+      document.getElementById("labPanel").setAttribute("aria-labelledby", "tab-" + config);
+      syncControlsFromState();
+      updateAll();
+    }
+
+    function readCssColor(variable) {
+      return getComputedStyle(document.documentElement).getPropertyValue(variable).trim();
+    }
+
+    function resizeCanvas() {
+      const rect = scopeCanvas.getBoundingClientRect();
+      const ratio = Math.max(1, window.devicePixelRatio || 1);
+      const width = Math.max(320, Math.round(rect.width * ratio));
+      const height = Math.max(220, Math.round(rect.height * ratio));
+      if (scopeCanvas.width !== width || scopeCanvas.height !== height) {
+        scopeCanvas.width = width;
+        scopeCanvas.height = height;
+      }
+      scopeContext.setTransform(ratio, 0, 0, ratio, 0, 0);
+      return { width: rect.width, height: rect.height };
+    }
+
+    function drawGrid(ctx, width, height) {
+      const gridColor = readCssColor("--scope-grid");
+      ctx.save();
+      ctx.strokeStyle = gridColor;
+      ctx.lineWidth = 1;
+      for (let i = 0; i <= 10; i += 1) {
+        const x = (width * i) / 10;
+        ctx.beginPath();
+        ctx.moveTo(x, 0);
+        ctx.lineTo(x, height);
+        ctx.stroke();
+      }
+      for (let i = 0; i <= 8; i += 1) {
+        const y = (height * i) / 8;
+        ctx.beginPath();
+        ctx.moveTo(0, y);
+        ctx.lineTo(width, y);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawScope(timestamp) {
+      if (!lastModel) return;
+      const { width, height } = resizeCanvas();
+      const ctx = scopeContext;
+      const bg = readCssColor("--scope-bg");
+      const text = readCssColor("--scope-text");
+      const inputColor = readCssColor("--scope-input");
+      const outputColor = readCssColor("--scope-output");
+      const model = lastModel;
+      const reducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
+      const drift = reducedMotion ? 0 : timestamp / 6000;
+      const frequency = getFrequency(model.state);
+      const cycles = 2.2 + (Math.log10(frequency) - 2) * 1.4;
+      const leftPad = 58;
+      const rightPad = 14;
+      const plotWidth = width - leftPad - rightPad;
+      const topBase = height * 0.28;
+      const bottomBase = height * 0.74;
+      const channelAmplitude = Math.min(68, height * 0.19);
+
+      ctx.clearRect(0, 0, width, height);
+      ctx.fillStyle = bg;
+      ctx.fillRect(0, 0, width, height);
+      drawGrid(ctx, width, height);
+
+      ctx.save();
+      ctx.strokeStyle = "rgba(255,255,255,0.18)";
+      ctx.setLineDash([5, 5]);
+      ctx.beginPath();
+      ctx.moveTo(leftPad, topBase);
+      ctx.lineTo(width - rightPad, topBase);
+      ctx.moveTo(leftPad, bottomBase);
+      ctx.lineTo(width - rightPad, bottomBase);
+      ctx.stroke();
+      ctx.restore();
+
+      ctx.fillStyle = text;
+      ctx.font = "700 12px system-ui, sans-serif";
+      ctx.fillText("CH1", 14, topBase + 4);
+      ctx.fillText("CH2", 14, bottomBase + 4);
+      ctx.font = "600 11px system-ui, sans-serif";
+      ctx.fillText(formatVoltage(model.deviceInputPeak) + "pk", 10, topBase + 22);
+      ctx.fillText(model.biasValid ? formatVoltage(model.outputPeak) + "pk" : "no linear swing", 10, bottomBase + 22);
+
+      const sampleCount = Math.max(420, Math.floor(plotWidth));
+      const outputSamples = [];
+      let maxOutputAbs = 0;
+      for (let i = 0; i <= sampleCount; i += 1) {
+        const normalizedX = i / sampleCount;
+        const angle = 2 * Math.PI * (cycles * normalizedX + drift);
+        const inputSignal = Math.sin(angle) * model.deviceInputPeak;
+        const idealOutput = model.av * inputSignal;
+        const actualOutput = model.biasValid
+          ? clamp(idealOutput, -model.negativeHeadroom, model.positiveHeadroom)
+          : 0;
+        outputSamples.push(actualOutput);
+        maxOutputAbs = Math.max(maxOutputAbs, Math.abs(actualOutput));
+      }
+
+      function drawTrace(color, baseline, getNormalizedY) {
+        ctx.save();
+        ctx.strokeStyle = color;
+        ctx.lineWidth = 2.4;
+        ctx.lineJoin = "round";
+        ctx.lineCap = "round";
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 7;
+        ctx.beginPath();
+        for (let i = 0; i <= sampleCount; i += 1) {
+          const x = leftPad + (i / sampleCount) * plotWidth;
+          const y = baseline - getNormalizedY(i) * channelAmplitude;
+          if (i === 0) ctx.moveTo(x, y);
+          else ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+        ctx.restore();
+      }
+
+      drawTrace(inputColor, topBase, (i) => {
+        const normalizedX = i / sampleCount;
+        return Math.sin(2 * Math.PI * (cycles * normalizedX + drift));
+      });
+
+      drawTrace(outputColor, bottomBase, (i) => {
+        if (maxOutputAbs < 1e-12) return 0;
+        return outputSamples[i] / maxOutputAbs;
+      });
+
+      ctx.fillStyle = text;
+      ctx.font = "600 11px system-ui, sans-serif";
+      ctx.textAlign = "right";
+      ctx.fillText(formatFrequency(model.state.frequencyExponent) + " | " + (model.phase === 180 ? "inverted" : "in phase"), width - 14, height - 10);
+      ctx.textAlign = "left";
+
+      scopeCanvas.setAttribute(
+        "aria-label",
+        "Input waveform at " + formatVoltage(model.deviceInputPeak) + " peak and output waveform at " +
+        (model.biasValid ? formatVoltage(model.outputPeak) + " peak" : "no linear swing") +
+        ", with " + model.phase + " degree phase shift" + (model.clipping ? " and clipping." : ".")
+      );
+    }
+
+    function animationLoop(timestamp) {
+      drawScope(timestamp);
+      animationFrame = requestAnimationFrame(animationLoop);
+    }
+
+    function applyPreset(name) {
+      if (name === "ceClip") {
+        states.CE = { vcc: 9, ic: 1.4, beta: 120, vin: 90, frequencyExponent: 3, rstage: 4.7, rs: 0.6 };
+        selectConfig("CE");
+      } else if (name === "cbMismatch") {
+        states.CB = { vcc: 9, ic: 1, beta: 100, vin: 150, frequencyExponent: 3.3, rstage: 2.2, rs: 3.0 };
+        selectConfig("CB");
+      } else if (name === "ccBuffer") {
+        states.CC = { vcc: 12, ic: 1.5, beta: 150, vin: 300, frequencyExponent: 3, rstage: 3.3, rs: 5.0 };
+        selectConfig("CC");
+      }
+      document.getElementById("simulator").scrollIntoView({ behavior: "smooth", block: "start" });
+    }
+
+    function renderQuiz() {
+      const list = document.getElementById("quizList");
+      list.innerHTML = quizQuestions.map((item, questionIndex) => {
+        const options = item.options.map((option, optionIndex) => `
+          <label class="option">
+            <input type="radio" name="question-${questionIndex}" value="${optionIndex}">
+            <span>${option}</span>
+          </label>
+        `).join("");
+        return `
+          <fieldset class="question-card" data-question-index="${questionIndex}">
+            <legend><span class="question-number">${questionIndex + 1}.</span> ${item.question}</legend>
+            <div class="options">${options}</div>
+            <p class="feedback" aria-live="polite"></p>
+          </fieldset>
+        `;
+      }).join("");
+      updateQuizProgress();
+    }
+
+    function updateQuizProgress() {
+      let answered = 0;
+      quizQuestions.forEach((_, index) => {
+        if (document.querySelector('input[name="question-' + index + '"]:checked')) answered += 1;
+      });
+      document.getElementById("quizProgress").textContent = answered + " of " + quizQuestions.length + " answered";
+    }
+
+    function gradeQuiz(event) {
+      event.preventDefault();
+      let score = 0;
+      let answered = 0;
+
+      quizQuestions.forEach((item, index) => {
+        const card = document.querySelector('[data-question-index="' + index + '"]');
+        const selected = document.querySelector('input[name="question-' + index + '"]:checked');
+        const feedback = card.querySelector(".feedback");
+        card.classList.remove("correct", "incorrect");
+
+        if (selected) {
+          answered += 1;
+          const isCorrect = Number(selected.value) === item.answer;
+          if (isCorrect) score += 1;
+          card.classList.add(isCorrect ? "correct" : "incorrect");
+          feedback.textContent = (isCorrect ? "Correct. " : "Not quite. ") + item.explanation;
+        } else {
+          card.classList.add("incorrect");
+          feedback.textContent = "No answer selected. " + item.explanation;
+        }
+      });
+
+      const percent = Math.round((score / quizQuestions.length) * 100);
+      let message;
+      if (score === 5) message = "Excellent - you have a strong grasp of all three configurations.";
+      else if (score >= 4) message = "Very good - review the one concept you missed.";
+      else if (score >= 3) message = "Good start - revisit the comparison table and guided experiments.";
+      else message = "Keep exploring the simulator, then try the quiz again.";
+
+      document.getElementById("quizResult").textContent = "Score: " + score + "/5 (" + percent + "%). " + message + (answered < 5 ? " Unanswered questions were counted as incorrect." : "");
+      document.getElementById("quizResult").scrollIntoView({ behavior: "smooth", block: "nearest" });
+    }
+
+    function resetQuiz() {
+      document.getElementById("quizForm").reset();
+      document.querySelectorAll(".question-card").forEach((card) => {
+        card.classList.remove("correct", "incorrect");
+        card.querySelector(".feedback").textContent = "";
+      });
+      document.getElementById("quizResult").textContent = "Your score will appear here.";
+      updateQuizProgress();
+    }
+
+    function applyTheme(theme) {
+      document.documentElement.dataset.theme = theme;
+      const isDark = theme === "dark";
+      document.getElementById("themeToggle").setAttribute("aria-pressed", String(isDark));
+      document.getElementById("themeIcon").textContent = isDark ? "Sun" : "Moon";
+      document.getElementById("themeLabel").textContent = isDark ? "Light theme" : "Dark theme";
+      try {
+        localStorage.setItem("bjt-theme", theme);
+      } catch (error) {
+        // Local storage may be unavailable in privacy-restricted contexts.
+      }
+      drawScope(performance.now());
+    }
+
+    function initializeTheme() {
+      let saved = null;
+      try {
+        saved = localStorage.getItem("bjt-theme");
+      } catch (error) {
+        saved = null;
+      }
+      const preferred = window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
+      applyTheme(saved || preferred);
+    }
+
+    controls.forEach((control) => {
+      updateSliderFill(control);
+      control.addEventListener("input", () => {
+        const key = control.dataset.key;
+        states[activeConfig][key] = Number(control.value);
+        updateSliderFill(control);
+        updateAll();
+      });
+    });
+
+    tabButtons.forEach((button, index) => {
+      button.addEventListener("click", () => selectConfig(button.dataset.config));
+      button.addEventListener("keydown", (event) => {
+        if (!["ArrowLeft", "ArrowRight", "Home", "End"].includes(event.key)) return;
+        event.preventDefault();
+        let nextIndex = index;
+        if (event.key === "ArrowLeft") nextIndex = (index - 1 + tabButtons.length) % tabButtons.length;
+        if (event.key === "ArrowRight") nextIndex = (index + 1) % tabButtons.length;
+        if (event.key === "Home") nextIndex = 0;
+        if (event.key === "End") nextIndex = tabButtons.length - 1;
+        selectConfig(tabButtons[nextIndex].dataset.config, true);
+      });
+    });
+
+    document.querySelectorAll("[data-diagram-option]").forEach((button) => {
+      button.addEventListener("click", () => {
+        const option = button.dataset.diagramOption;
+        diagramOptions[option] = !diagramOptions[option];
+        button.setAttribute("aria-pressed", String(diagramOptions[option]));
+        if (lastModel) renderSchematic(activeConfig, lastModel);
+      });
+    });
+
+    document.getElementById("resetMode").addEventListener("click", () => {
+      states[activeConfig] = { ...defaultStates[activeConfig] };
+      syncControlsFromState();
+      updateAll();
+    });
+
+    document.querySelectorAll("[data-preset]").forEach((button) => {
+      button.addEventListener("click", () => applyPreset(button.dataset.preset));
+    });
+
+    document.getElementById("themeToggle").addEventListener("click", () => {
+      applyTheme(document.documentElement.dataset.theme === "dark" ? "light" : "dark");
+    });
+
+    document.getElementById("quizForm").addEventListener("change", updateQuizProgress);
+    document.getElementById("quizForm").addEventListener("submit", gradeQuiz);
+    document.getElementById("resetQuiz").addEventListener("click", resetQuiz);
+
+    window.addEventListener("resize", () => drawScope(performance.now()));
+    window.addEventListener("beforeunload", () => cancelAnimationFrame(animationFrame));
+
+    initializeTheme();
+    renderQuiz();
+    selectConfig("CE");
+    animationFrame = requestAnimationFrame(animationLoop);
+  </script>
+</body>
+</html>

@@ -1,0 +1,16 @@
+{
+  "courseCode": "PHYS8204",
+  "courseName": "Fundamentals of Astronomy & Astrophysics",
+  "faculty": {
+    "name": "Dr. Prince Sharma",
+    "email": "prince.sharma@ddn.upes.ac.in"
+  },
+  "simulators": [
+    {
+      "name": "AI - Integrated Learning Platform",
+      "desc": "AI-assisted astrophysics laboratory and visualization platform for 4th-year BSc and 1st-year MSc specialization students.",
+      "link": "https://31princerajsharma.pythonanywhere.com/",
+      "uploadFileLink": ""
+    }
+  ]
+}

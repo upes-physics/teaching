@@ -1,0 +1,1888 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="description" content="Interactive Wien bridge oscillator simulator with live waveforms, circuit visualization, frequency response, concepts, and a five-question quiz.">
+<title>Wien Bridge Oscillator — Interactive Learning Simulator</title>
+<script>
+(function () {
+  try {
+    const saved = localStorage.getItem('wien-theme');
+    const preferred = window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches ? 'light' : 'dark';
+    document.documentElement.dataset.theme = saved || preferred;
+  } catch (e) {
+    document.documentElement.dataset.theme = 'dark';
+  }
+})();
+</script>
+<style>
+:root {
+  color-scheme: light;
+  --bg: #eef3fb;
+  --surface: #ffffff;
+  --surface-2: #f6f8fc;
+  --surface-3: #e8eef8;
+  --text: #162033;
+  --muted: #5e6c83;
+  --subtle: #8794a8;
+  --border: #cbd5e4;
+  --grid: rgba(24, 92, 153, 0.10);
+  --primary: #0b70c9;
+  --primary-2: #07599f;
+  --secondary: #7346c8;
+  --positive: #0f9f6e;
+  --warning: #c77700;
+  --danger: #d43b45;
+  --scope: #07111d;
+  --scope-grid: rgba(87, 198, 255, 0.13);
+  --scope-text: #b6c8dd;
+  --wave-out: #3fd4ff;
+  --wave-fb: #b58bff;
+  --wave-demand: #ffbc4b;
+  --shadow: 0 12px 32px rgba(35, 57, 88, 0.12);
+  --radius: 16px;
+  --focus: 0 0 0 3px rgba(11, 112, 201, 0.25);
+}
+html[data-theme="dark"] {
+  color-scheme: dark;
+  --bg: #08101d;
+  --surface: #111b2b;
+  --surface-2: #162338;
+  --surface-3: #1d2c43;
+  --text: #e8eef8;
+  --muted: #a8b6ca;
+  --subtle: #75849a;
+  --border: #2a3d58;
+  --grid: rgba(79, 195, 247, 0.10);
+  --primary: #46c7ff;
+  --primary-2: #78d8ff;
+  --secondary: #a786ff;
+  --positive: #3ed598;
+  --warning: #ffb84d;
+  --danger: #ff6f78;
+  --scope: #030a12;
+  --scope-grid: rgba(70, 199, 255, 0.12);
+  --scope-text: #9fb1c7;
+  --wave-out: #46c7ff;
+  --wave-fb: #a786ff;
+  --wave-demand: #ffb84d;
+  --shadow: 0 16px 40px rgba(0, 0, 0, 0.34);
+  --focus: 0 0 0 3px rgba(70, 199, 255, 0.28);
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  min-height: 100vh;
+  background:
+    radial-gradient(circle at 15% 0%, color-mix(in srgb, var(--primary) 9%, transparent), transparent 32rem),
+    radial-gradient(circle at 88% 12%, color-mix(in srgb, var(--secondary) 8%, transparent), transparent 28rem),
+    var(--bg);
+  color: var(--text);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  line-height: 1.5;
+  transition: background 180ms ease, color 180ms ease;
+}
+button, input, select { font: inherit; }
+button, select, input[type="range"], input[type="checkbox"], input[type="radio"] { cursor: pointer; }
+button:focus-visible, select:focus-visible, input:focus-visible, [tabindex]:focus-visible {
+  outline: none;
+  box-shadow: var(--focus);
+}
+.skip-link {
+  position: fixed;
+  left: 12px;
+  top: -60px;
+  z-index: 1000;
+  padding: 10px 14px;
+  border-radius: 10px;
+  background: var(--primary);
+  color: #04101b;
+  font-weight: 800;
+  text-decoration: none;
+}
+.skip-link:focus { top: 12px; }
+.app-header {
+  position: sticky;
+  top: 0;
+  z-index: 50;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 18px;
+  padding: 14px clamp(16px, 3vw, 34px);
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 94%, transparent);
+  backdrop-filter: blur(16px);
+  box-shadow: 0 4px 18px rgba(0, 0, 0, 0.08);
+}
+.brand { display: flex; align-items: center; gap: 13px; min-width: 0; }
+.brand-mark {
+  width: 44px;
+  height: 44px;
+  flex: 0 0 auto;
+  border-radius: 13px;
+  display: grid;
+  place-items: center;
+  background: linear-gradient(135deg, var(--primary), var(--secondary));
+  color: #06111c;
+  font-size: 1.45rem;
+  font-weight: 900;
+  box-shadow: 0 8px 22px color-mix(in srgb, var(--primary) 24%, transparent);
+}
+.brand-title { font-weight: 850; letter-spacing: -0.025em; font-size: clamp(1rem, 2vw, 1.22rem); }
+.brand-subtitle { color: var(--muted); font-size: 0.76rem; letter-spacing: 0.04em; text-transform: uppercase; }
+.header-actions { display: flex; gap: 9px; align-items: center; flex-wrap: wrap; justify-content: flex-end; }
+.icon-button, .button, .preset-button {
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  color: var(--text);
+  border-radius: 11px;
+  padding: 9px 13px;
+  font-weight: 750;
+  font-size: 0.82rem;
+  transition: transform 150ms ease, border-color 150ms ease, background 150ms ease, color 150ms ease;
+}
+.icon-button { min-width: 42px; min-height: 42px; display: inline-grid; place-items: center; padding: 8px; font-size: 1.05rem; }
+.button { display: inline-flex; align-items: center; justify-content: center; gap: 7px; }
+.button.primary { background: var(--primary); border-color: var(--primary); color: #04111c; }
+.button.success { background: var(--positive); border-color: var(--positive); color: #04120d; }
+.button:hover, .icon-button:hover, .preset-button:hover { transform: translateY(-1px); border-color: var(--primary); }
+.button.primary:hover { background: var(--primary-2); }
+.tabs-wrap {
+  position: sticky;
+  top: 73px;
+  z-index: 45;
+  overflow-x: auto;
+  border-bottom: 1px solid var(--border);
+  background: color-mix(in srgb, var(--surface) 95%, transparent);
+  scrollbar-width: thin;
+}
+.tabs {
+  display: flex;
+  width: max-content;
+  min-width: 100%;
+  padding: 0 clamp(12px, 3vw, 30px);
+}
+.tab-button {
+  position: relative;
+  border: 0;
+  border-bottom: 3px solid transparent;
+  background: transparent;
+  color: var(--muted);
+  padding: 13px 17px 12px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+.tab-button[aria-selected="true"] { color: var(--primary); border-bottom-color: var(--primary); }
+.tab-button:hover { color: var(--text); }
+main { width: min(1600px, 100%); margin: 0 auto; }
+.tab-panel { display: none; padding: clamp(14px, 2.5vw, 28px); }
+.tab-panel.active { display: block; }
+.lab-grid { display: grid; grid-template-columns: minmax(285px, 340px) minmax(0, 1fr); gap: 18px; align-items: start; }
+.controls-column { display: grid; gap: 15px; position: sticky; top: 132px; max-height: calc(100vh - 150px); overflow: auto; padding-right: 3px; }
+.content-column { display: grid; gap: 18px; min-width: 0; }
+.panel {
+  background: color-mix(in srgb, var(--surface) 97%, transparent);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow);
+  overflow: hidden;
+}
+.panel-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 13px 16px;
+  border-bottom: 1px solid var(--border);
+  background: var(--surface-2);
+}
+.panel-title { margin: 0; font-size: 0.83rem; text-transform: uppercase; letter-spacing: 0.075em; color: var(--muted); }
+.panel-body { padding: 16px; }
+.panel-note { color: var(--muted); font-size: 0.78rem; margin: 8px 0 0; }
+.badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  border-radius: 999px;
+  border: 1px solid color-mix(in srgb, currentColor 35%, transparent);
+  background: color-mix(in srgb, currentColor 10%, transparent);
+  padding: 4px 9px;
+  color: var(--primary);
+  font-size: 0.69rem;
+  font-weight: 850;
+  letter-spacing: 0.045em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+.badge.good { color: var(--positive); }
+.badge.warn { color: var(--warning); }
+.badge.bad { color: var(--danger); }
+.preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.preset-button { text-align: left; padding: 10px 11px; line-height: 1.25; }
+.preset-button strong { display: block; font-size: 0.78rem; }
+.preset-button span { display: block; color: var(--muted); font-size: 0.68rem; margin-top: 2px; font-weight: 600; }
+.control { margin-bottom: 15px; }
+.control:last-child { margin-bottom: 0; }
+.control-label { display: flex; align-items: baseline; justify-content: space-between; gap: 12px; margin-bottom: 7px; color: var(--muted); font-size: 0.78rem; font-weight: 750; }
+.value-pill {
+  min-width: 66px;
+  text-align: right;
+  padding: 2px 7px;
+  border-radius: 7px;
+  background: var(--surface-3);
+  color: var(--primary);
+  font: 750 0.78rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+input[type="range"] {
+  --fill: 50%;
+  appearance: none;
+  width: 100%;
+  height: 6px;
+  border-radius: 999px;
+  background: linear-gradient(90deg, var(--primary) 0 var(--fill), var(--border) var(--fill) 100%);
+  outline: none;
+}
+input[type="range"]::-webkit-slider-thumb {
+  appearance: none;
+  width: 17px;
+  height: 17px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 3px solid var(--surface);
+  box-shadow: 0 0 0 1px var(--primary), 0 3px 10px color-mix(in srgb, var(--primary) 28%, transparent);
+}
+input[type="range"]::-moz-range-thumb {
+  width: 13px;
+  height: 13px;
+  border-radius: 50%;
+  background: var(--primary);
+  border: 3px solid var(--surface);
+}
+input[type="range"]:disabled { opacity: 0.45; cursor: not-allowed; }
+select {
+  width: 100%;
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 9px 10px;
+  background: var(--surface-2);
+  color: var(--text);
+}
+.switch-row, .check-row { display: flex; align-items: flex-start; gap: 9px; color: var(--muted); font-size: 0.78rem; font-weight: 650; }
+.switch-row input, .check-row input { margin-top: 2px; accent-color: var(--primary); }
+.check-stack { display: grid; gap: 8px; }
+.formula-strip {
+  margin-top: 12px;
+  padding: 10px 12px;
+  border-left: 3px solid var(--primary);
+  border-radius: 9px;
+  background: var(--surface-2);
+  color: var(--primary);
+  font: 720 0.78rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+  overflow-wrap: anywhere;
+}
+.status-hero { display: grid; grid-template-columns: minmax(0, 1.35fr) minmax(300px, 0.65fr); gap: 16px; }
+.status-card { padding: 18px; }
+.status-top { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; }
+.status-title { margin: 0; font-size: clamp(1.15rem, 2.6vw, 1.55rem); letter-spacing: -0.02em; }
+.status-text { color: var(--muted); margin: 8px 0 0; font-size: 0.9rem; max-width: 80ch; }
+.loop-summary {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 9px;
+  margin-top: 16px;
+}
+.summary-item { border: 1px solid var(--border); border-radius: 11px; background: var(--surface-2); padding: 10px; }
+.summary-label { color: var(--subtle); font-size: 0.67rem; text-transform: uppercase; letter-spacing: 0.07em; font-weight: 800; }
+.summary-value { margin-top: 3px; font: 800 1rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--primary); }
+.learning-callout {
+  border: 1px solid color-mix(in srgb, var(--secondary) 35%, var(--border));
+  background: color-mix(in srgb, var(--secondary) 8%, var(--surface));
+  border-radius: 14px;
+  padding: 15px;
+}
+.learning-callout h3 { margin: 0 0 6px; color: var(--secondary); font-size: 0.9rem; }
+.learning-callout p { margin: 0; color: var(--muted); font-size: 0.82rem; }
+.metrics-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 10px; }
+.metric-card { min-width: 0; border: 1px solid var(--border); border-radius: 13px; background: var(--surface); padding: 12px 13px; box-shadow: var(--shadow); }
+.metric-label { color: var(--subtle); text-transform: uppercase; letter-spacing: 0.07em; font-size: 0.64rem; font-weight: 850; }
+.metric-value { margin-top: 4px; color: var(--primary); font: 800 clamp(0.88rem, 2vw, 1.08rem) ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; overflow-wrap: anywhere; }
+.metric-note { margin-top: 2px; color: var(--muted); font-size: 0.66rem; }
+.canvas-wrap { position: relative; background: var(--scope); overflow: hidden; }
+canvas { display: block; width: 100%; }
+#waveCanvas { height: 330px; }
+#envelopeCanvas, #loopCanvas { height: 220px; }
+#bodeMagnitude { height: 340px; }
+#bodePhase { height: 260px; }
+.canvas-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; padding: 10px 14px; border-bottom: 1px solid var(--border); background: var(--surface-2); }
+.legend { display: flex; align-items: center; gap: 13px; flex-wrap: wrap; color: var(--muted); font-size: 0.72rem; }
+.legend-item { display: inline-flex; align-items: center; gap: 6px; }
+.legend-line { width: 23px; height: 3px; border-radius: 3px; background: currentColor; }
+.legend-line.dashed { height: 0; border-top: 2px dashed currentColor; background: none; }
+.two-column { display: grid; grid-template-columns: minmax(0, 1.25fr) minmax(260px, 0.75fr); gap: 18px; }
+.notice {
+  margin-top: 10px;
+  color: var(--muted);
+  font-size: 0.73rem;
+  display: flex;
+  align-items: flex-start;
+  gap: 7px;
+}
+.section-stack { display: grid; gap: 18px; }
+.section-heading { margin: 0 0 5px; font-size: clamp(1.4rem, 3vw, 2rem); letter-spacing: -0.035em; }
+.section-lead { margin: 0; color: var(--muted); max-width: 85ch; }
+.circuit-layout { display: grid; grid-template-columns: minmax(0, 1.45fr) minmax(290px, 0.55fr); gap: 18px; align-items: start; }
+.circuit-stage { padding: 12px; overflow-x: auto; }
+.circuit-svg { min-width: 760px; width: 100%; height: auto; display: block; border-radius: 13px; background: var(--scope); }
+.circuit-svg .wire { fill: none; stroke: var(--scope-text); stroke-width: 2.2; stroke-linecap: round; stroke-linejoin: round; }
+.circuit-svg .positive-path { stroke: var(--positive); }
+.circuit-svg .negative-path { stroke: var(--secondary); }
+.circuit-svg .output-path { stroke: var(--primary); }
+.circuit-svg .component { fill: color-mix(in srgb, var(--scope) 76%, var(--surface)); stroke: var(--scope-text); stroke-width: 2; }
+.circuit-svg .component.pos { stroke: var(--positive); }
+.circuit-svg .component.neg { stroke: var(--secondary); }
+.circuit-svg text { fill: var(--scope-text); font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.circuit-svg .label-primary { fill: var(--primary); font-weight: 800; }
+.circuit-svg .label-positive { fill: var(--positive); font-weight: 800; }
+.circuit-svg .label-negative { fill: var(--secondary); font-weight: 800; }
+.circuit-svg .flow { stroke-dasharray: 10 9; animation: signalFlow 1.4s linear infinite; }
+body.paused .circuit-svg .flow { animation-play-state: paused; }
+.circuit-svg.highlight-positive .negative-group { opacity: 0.18; }
+.circuit-svg.highlight-positive .opamp-group { opacity: 0.55; }
+.circuit-svg.highlight-negative .positive-group { opacity: 0.18; }
+.circuit-svg.highlight-negative .opamp-group { opacity: 0.55; }
+.circuit-svg.highlight-loop .positive-group, .circuit-svg.highlight-loop .negative-group, .circuit-svg.highlight-loop .opamp-group { opacity: 1; }
+@keyframes signalFlow { to { stroke-dashoffset: -38; } }
+.highlight-buttons { display: flex; gap: 8px; flex-wrap: wrap; margin-bottom: 13px; }
+.highlight-buttons .button.active { border-color: var(--primary); color: var(--primary); background: color-mix(in srgb, var(--primary) 10%, var(--surface-2)); }
+.step-list { display: grid; gap: 10px; }
+.step-card { border: 1px solid var(--border); border-radius: 12px; background: var(--surface-2); padding: 12px; }
+.step-card strong { display: block; color: var(--primary); margin-bottom: 4px; font-size: 0.82rem; }
+.step-card p { margin: 0; color: var(--muted); font-size: 0.78rem; }
+.concepts-grid { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 16px; }
+.concept-card { border: 1px solid var(--border); border-top: 4px solid var(--primary); border-radius: 14px; background: var(--surface); padding: 17px; box-shadow: var(--shadow); }
+.concept-card:nth-child(3n+2) { border-top-color: var(--secondary); }
+.concept-card:nth-child(3n) { border-top-color: var(--positive); }
+.concept-card h3 { margin: 0 0 9px; font-size: 0.98rem; }
+.concept-card p, .concept-card li { color: var(--muted); font-size: 0.82rem; }
+.concept-card p { margin: 0 0 8px; }
+.concept-card ul { margin: 8px 0 0; padding-left: 19px; }
+.concept-card .formula-strip { margin-bottom: 0; }
+.behavior-table-wrap { overflow-x: auto; }
+.behavior-table { width: 100%; border-collapse: collapse; min-width: 680px; font-size: 0.82rem; }
+.behavior-table th, .behavior-table td { padding: 12px 13px; border-bottom: 1px solid var(--border); text-align: left; vertical-align: top; }
+.behavior-table th { background: var(--surface-2); color: var(--text); font-size: 0.73rem; text-transform: uppercase; letter-spacing: 0.055em; }
+.behavior-table td { color: var(--muted); }
+.behavior-table strong { color: var(--primary); }
+.analysis-layout { display: grid; grid-template-columns: minmax(280px, 340px) minmax(0, 1fr); gap: 18px; align-items: start; }
+.analysis-sidebar { position: sticky; top: 132px; display: grid; gap: 15px; }
+.probe-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 9px; margin-top: 12px; }
+.probe-card { border: 1px solid var(--border); background: var(--surface-2); border-radius: 10px; padding: 9px; }
+.probe-card span { display: block; color: var(--subtle); font-size: 0.65rem; text-transform: uppercase; font-weight: 850; }
+.probe-card strong { display: block; margin-top: 3px; color: var(--primary); font: 760 0.83rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+.quiz-shell { max-width: 920px; margin: 0 auto; display: grid; gap: 16px; }
+.quiz-header { display: flex; align-items: center; justify-content: space-between; gap: 14px; flex-wrap: wrap; }
+.quiz-score { font: 850 1rem ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; color: var(--primary); }
+.quiz-question { margin: 0; border: 1px solid var(--border); border-radius: 14px; background: var(--surface); padding: 17px; box-shadow: var(--shadow); }
+.quiz-question legend { padding: 0 7px; font-weight: 850; color: var(--text); }
+.quiz-options { display: grid; gap: 8px; margin-top: 11px; }
+.quiz-option { display: flex; align-items: flex-start; gap: 9px; border: 1px solid var(--border); border-radius: 10px; background: var(--surface-2); padding: 10px 11px; color: var(--muted); font-size: 0.83rem; transition: border-color 150ms ease, background 150ms ease; }
+.quiz-option:hover { border-color: var(--primary); }
+.quiz-option input { margin-top: 3px; accent-color: var(--primary); }
+.quiz-option.correct { border-color: var(--positive); background: color-mix(in srgb, var(--positive) 10%, var(--surface)); color: var(--text); }
+.quiz-option.wrong { border-color: var(--danger); background: color-mix(in srgb, var(--danger) 9%, var(--surface)); color: var(--text); }
+.quiz-explanation { display: none; margin: 10px 0 0; padding: 10px 12px; border-left: 3px solid var(--primary); border-radius: 8px; background: var(--surface-2); color: var(--muted); font-size: 0.79rem; }
+.quiz-question.reviewed .quiz-explanation { display: block; }
+.quiz-actions { display: flex; gap: 10px; flex-wrap: wrap; justify-content: center; padding-bottom: 10px; }
+.footer-note { padding: 16px 22px 26px; color: var(--subtle); text-align: center; font-size: 0.72rem; }
+.sr-only { position: absolute !important; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+@media (max-width: 1180px) {
+  .lab-grid, .analysis-layout { grid-template-columns: 300px minmax(0, 1fr); }
+  .metrics-grid { grid-template-columns: repeat(3, minmax(0, 1fr)); }
+  .status-hero { grid-template-columns: 1fr; }
+  .concepts-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .circuit-layout { grid-template-columns: 1fr; }
+}
+@media (max-width: 850px) {
+  .app-header { position: relative; align-items: flex-start; }
+  .tabs-wrap { top: 0; }
+  .lab-grid, .analysis-layout { grid-template-columns: 1fr; }
+  .controls-column, .analysis-sidebar { position: static; max-height: none; overflow: visible; }
+  .two-column { grid-template-columns: 1fr; }
+  .metrics-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+  .concepts-grid { grid-template-columns: 1fr; }
+}
+@media (max-width: 620px) {
+  .app-header { padding: 12px 14px; flex-direction: column; }
+  .header-actions { width: 100%; justify-content: flex-start; }
+  .header-actions .button .label { display: none; }
+  .brand-subtitle { font-size: 0.67rem; }
+  .tab-panel { padding: 12px; }
+  .loop-summary { grid-template-columns: 1fr; }
+  .metrics-grid { grid-template-columns: 1fr 1fr; }
+  .preset-grid { grid-template-columns: 1fr; }
+  #waveCanvas { height: 290px; }
+}
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; animation-duration: 0.001ms !important; animation-iteration-count: 1 !important; transition-duration: 0.001ms !important; }
+}
+</style>
+</head>
+<body>
+<a class="skip-link" href="#mainContent">Skip to simulator</a>
+<header class="app-header">
+  <div class="brand">
+    <div class="brand-mark" aria-hidden="true">≈</div>
+    <div>
+      <div class="brand-title">Wien Bridge Oscillator</div>
+      <div class="brand-subtitle">Interactive learning simulator</div>
+    </div>
+  </div>
+  <div class="header-actions">
+    <button class="button" id="playButton" type="button" aria-pressed="false" title="Pause or resume the animation">
+      <span id="playIcon" aria-hidden="true">⏸</span><span class="label" id="playLabel">Pause</span>
+    </button>
+    <button class="button" id="restartButton" type="button" title="Restart from a small disturbance">
+      <span aria-hidden="true">↻</span><span class="label">Restart</span>
+    </button>
+    <button class="button" id="exportButton" type="button" title="Export current waveform data as CSV">
+      <span aria-hidden="true">⇩</span><span class="label">CSV</span>
+    </button>
+    <button class="icon-button" id="themeButton" type="button" aria-label="Switch color theme" title="Switch light and dark theme">☀</button>
+  </div>
+</header>
+<div class="tabs-wrap">
+  <nav class="tabs" role="tablist" aria-label="Simulator sections">
+    <button class="tab-button" id="tab-lab" role="tab" aria-selected="true" aria-controls="panel-lab" data-tab="lab">Simulator</button>
+    <button class="tab-button" id="tab-circuit" role="tab" aria-selected="false" aria-controls="panel-circuit" data-tab="circuit">Circuit &amp; operation</button>
+    <button class="tab-button" id="tab-concepts" role="tab" aria-selected="false" aria-controls="panel-concepts" data-tab="concepts">Basic concepts</button>
+    <button class="tab-button" id="tab-analysis" role="tab" aria-selected="false" aria-controls="panel-analysis" data-tab="analysis">Frequency response</button>
+    <button class="tab-button" id="tab-quiz" role="tab" aria-selected="false" aria-controls="panel-quiz" data-tab="quiz">Quiz — 5 questions</button>
+  </nav>
+</div>
+<main id="mainContent">
+  <section class="tab-panel active" id="panel-lab" role="tabpanel" aria-labelledby="tab-lab">
+    <div class="lab-grid">
+      <aside class="controls-column" aria-label="Simulation controls">
+        <section class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Guided presets</h2>
+            <span class="badge">Explore</span>
+          </div>
+          <div class="panel-body">
+            <div class="preset-grid">
+              <button class="preset-button" type="button" data-preset="stable"><strong>Stable sine</strong><span>AGC holds a clean output</span></button>
+              <button class="preset-button" type="button" data-preset="startup"><strong>Start-up</strong><span>Watch noise grow into a sine</span></button>
+              <button class="preset-button" type="button" data-preset="decay"><strong>Gain too low</strong><span>Loop gain below one</span></button>
+              <button class="preset-button" type="button" data-preset="clip"><strong>Clipping</strong><span>Excess gain without AGC</span></button>
+              <button class="preset-button" type="button" data-preset="mismatch"><strong>Mismatched bridge</strong><span>Unequal R and C values</span></button>
+            </div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Wien lead–lag network</h2>
+            <span class="badge good">Positive feedback</span>
+          </div>
+          <div class="panel-body">
+            <label class="switch-row" for="linkBridge">
+              <input id="linkBridge" type="checkbox" checked>
+              <span><strong>Use equal components</strong><br>Links R₂ to R₁ and C₂ to C₁.</span>
+            </label>
+            <div class="control" style="margin-top:15px">
+              <label class="control-label" for="R1"><span>Series resistance R₁</span><output class="value-pill" id="R1Out">10.0 kΩ</output></label>
+              <input id="R1" type="range" min="1" max="100" value="10" step="0.5">
+            </div>
+            <div class="control">
+              <label class="control-label" for="C1"><span>Series capacitance C₁</span><output class="value-pill" id="C1Out">10 nF</output></label>
+              <input id="C1" type="range" min="1" max="220" value="10" step="0.1">
+            </div>
+            <div class="control">
+              <label class="control-label" for="R2"><span>Shunt resistance R₂</span><output class="value-pill" id="R2Out">10.0 kΩ</output></label>
+              <input id="R2" type="range" min="1" max="100" value="10" step="0.5" disabled>
+            </div>
+            <div class="control">
+              <label class="control-label" for="C2"><span>Shunt capacitance C₂</span><output class="value-pill" id="C2Out">10 nF</output></label>
+              <input id="C2" type="range" min="1" max="220" value="10" step="0.1" disabled>
+            </div>
+            <div class="formula-strip" id="frequencyFormula">Equal case: f₀ = 1 / (2πRC)</div>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Non-inverting amplifier</h2>
+            <span class="badge">Gain control</span>
+          </div>
+          <div class="panel-body">
+            <div class="control">
+              <label class="control-label" for="Rf"><span>Feedback resistance Rf</span><output class="value-pill" id="RfOut">22.0 kΩ</output></label>
+              <input id="Rf" type="range" min="1" max="100" value="22" step="0.5">
+            </div>
+            <div class="control">
+              <label class="control-label" for="Rg"><span>Ground resistance Rg (Rb)</span><output class="value-pill" id="RgOut">10.0 kΩ</output></label>
+              <input id="Rg" type="range" min="1" max="100" value="10" step="0.5">
+            </div>
+            <div class="control">
+              <label class="control-label" for="supply"><span>Supply rails</span><output class="value-pill" id="supplyOut">±12.0 V</output></label>
+              <input id="supply" type="range" min="5" max="18" value="12" step="0.5">
+            </div>
+            <div class="control">
+              <label class="control-label" for="stabilization"><span>Amplitude control</span></label>
+              <select id="stabilization">
+                <option value="agc" selected>Soft automatic gain control</option>
+                <option value="none">None — allow rail clipping</option>
+              </select>
+            </div>
+            <div class="formula-strip">A = 1 + Rf / Rg</div>
+            <p class="panel-note">The AGC option is a simplified model of lamp-, diode-, or JFET-based amplitude stabilization.</p>
+          </div>
+        </section>
+
+        <section class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Display &amp; animation</h2>
+          </div>
+          <div class="panel-body">
+            <div class="control">
+              <label class="control-label" for="speed"><span>Animation speed</span><output class="value-pill" id="speedOut">1.00×</output></label>
+              <input id="speed" type="range" min="0.25" max="2" value="1" step="0.25">
+            </div>
+            <div class="check-stack">
+              <label class="check-row"><input id="showOutput" type="checkbox" checked><span>Show output voltage</span></label>
+              <label class="check-row"><input id="showFeedback" type="checkbox" checked><span>Show Wien-network feedback</span></label>
+              <label class="check-row"><input id="showDemand" type="checkbox" checked><span>Show demanded waveform when clipping</span></label>
+              <label class="check-row"><input id="showEnvelope" type="checkbox" checked><span>Show amplitude envelope</span></label>
+            </div>
+            <p class="panel-note">The animation is deliberately slowed; the displayed frequency value remains the calculated electrical frequency.</p>
+          </div>
+        </section>
+      </aside>
+
+      <div class="content-column">
+        <section class="status-hero">
+          <div class="panel status-card">
+            <div class="status-top">
+              <h1 class="status-title" id="statusTitle">Amplitude stabilized</h1>
+              <span class="badge good" id="statusBadge">Stable</span>
+            </div>
+            <p class="status-text" id="statusText">The small-signal loop gain is slightly above one, so oscillations start. Automatic gain control then reduces the effective amplifier gain until the loop gain becomes one.</p>
+            <div class="loop-summary">
+              <div class="summary-item"><div class="summary-label">Amplifier gain A</div><div class="summary-value" id="summaryGain">3.20</div></div>
+              <div class="summary-item"><div class="summary-label">Network feedback β₀</div><div class="summary-value" id="summaryBeta">0.333</div></div>
+              <div class="summary-item"><div class="summary-label">Small-signal Aβ₀</div><div class="summary-value" id="summaryLoop">1.067</div></div>
+            </div>
+          </div>
+          <aside class="learning-callout">
+            <h3>What to notice</h3>
+            <p id="learningText">At the balance frequency the Wien network has zero phase shift. A gain slightly above the theoretical value helps start oscillation; amplitude control then brings the effective gain back to the required value.</p>
+          </aside>
+        </section>
+
+        <section class="metrics-grid" aria-label="Live calculated values">
+          <div class="metric-card"><div class="metric-label">Oscillation frequency f₀</div><div class="metric-value" id="metricFrequency">1.592 kHz</div><div class="metric-note">Set by the RC network</div></div>
+          <div class="metric-card"><div class="metric-label">Period T</div><div class="metric-value" id="metricPeriod">628.3 µs</div><div class="metric-note">T = 1/f₀</div></div>
+          <div class="metric-card"><div class="metric-label">Required gain</div><div class="metric-value" id="metricRequiredGain">3.000</div><div class="metric-note">Areq = 1/β₀</div></div>
+          <div class="metric-card"><div class="metric-label">Effective gain</div><div class="metric-value" id="metricEffectiveGain">3.000</div><div class="metric-note">After amplitude control</div></div>
+          <div class="metric-card"><div class="metric-label">Output peak</div><div class="metric-value" id="metricPeak">6.70 V</div><div class="metric-note">Actual clipped output</div></div>
+          <div class="metric-card"><div class="metric-label">Output RMS</div><div class="metric-value" id="metricRms">4.74 V</div><div class="metric-note">Calculated from waveform</div></div>
+          <div class="metric-card"><div class="metric-label">Estimated THD</div><div class="metric-value" id="metricThd">0.0%</div><div class="metric-note">Rises when clipping occurs</div></div>
+          <div class="metric-card"><div class="metric-label">Output limit</div><div class="metric-value" id="metricLimit">±10.56 V</div><div class="metric-note">Simplified 88% rail model</div></div>
+        </section>
+
+        <section class="panel">
+          <div class="canvas-toolbar">
+            <div>
+              <h2 class="panel-title" style="margin-bottom:2px">Oscilloscope</h2>
+              <div class="panel-note" style="margin:0">Output and frequency-selective positive feedback at f₀</div>
+            </div>
+            <div class="legend" aria-label="Waveform legend">
+              <span class="legend-item" style="color:var(--wave-out)"><span class="legend-line"></span>Output</span>
+              <span class="legend-item" style="color:var(--wave-fb)"><span class="legend-line"></span>Feedback</span>
+              <span class="legend-item" style="color:var(--wave-demand)"><span class="legend-line dashed"></span>Demand before rails</span>
+            </div>
+          </div>
+          <div class="canvas-wrap"><canvas id="waveCanvas" aria-label="Animated output and feedback waveforms"></canvas></div>
+          <div class="panel-body" style="padding-top:10px">
+            <div class="notice"><span aria-hidden="true">ℹ</span><span>The output rail model is intentionally simple. It demonstrates growth, decay, stabilization, and clipping rather than reproducing a specific op-amp datasheet.</span></div>
+          </div>
+        </section>
+
+        <div class="two-column">
+          <section class="panel">
+            <div class="panel-header"><h2 class="panel-title">Amplitude history</h2><span class="badge" id="historyBadge">Growing → stable</span></div>
+            <div class="canvas-wrap"><canvas id="envelopeCanvas" aria-label="Oscillation amplitude history"></canvas></div>
+          </section>
+          <section class="panel">
+            <div class="panel-header"><h2 class="panel-title">Loop-gain meter</h2><span class="badge" id="loopBadge">Aeffβ₀ = 1.000</span></div>
+            <div class="canvas-wrap"><canvas id="loopCanvas" aria-label="Effective loop gain meter"></canvas></div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tab-panel" id="panel-circuit" role="tabpanel" aria-labelledby="tab-circuit" hidden>
+    <div class="section-stack">
+      <div>
+        <h1 class="section-heading">Correct circuit and signal path</h1>
+        <p class="section-lead">The non-inverting input receives frequency-selective positive feedback through the Wien lead–lag network. The inverting input receives ordinary negative feedback through Rf and Rg, which sets the amplifier gain.</p>
+      </div>
+      <div class="circuit-layout">
+        <section class="panel">
+          <div class="panel-header">
+            <h2 class="panel-title">Op-amp Wien bridge oscillator</h2>
+            <span class="badge" id="circuitStateBadge">Complete loop</span>
+          </div>
+          <div class="panel-body" style="padding-bottom:0">
+            <div class="highlight-buttons" aria-label="Circuit highlighting controls">
+              <button class="button active" type="button" data-highlight="loop">Complete loop</button>
+              <button class="button" type="button" data-highlight="positive">Positive-feedback path</button>
+              <button class="button" type="button" data-highlight="negative">Gain-setting path</button>
+            </div>
+          </div>
+          <div class="circuit-stage">
+            <svg id="circuitSvg" class="circuit-svg highlight-loop" viewBox="0 0 900 520" role="img" aria-labelledby="circuitTitle circuitDesc">
+              <title id="circuitTitle">Wien bridge oscillator circuit</title>
+              <desc id="circuitDesc">An op-amp non-inverting amplifier. Output is fed to the positive input through a series capacitor and resistor, with a parallel resistor and capacitor from the positive input to ground. Rf and Rg form the negative-feedback gain network.</desc>
+              <defs>
+                <pattern id="minorGrid" width="32" height="32" patternUnits="userSpaceOnUse">
+                  <path d="M 32 0 L 0 0 0 32" fill="none" stroke="var(--scope-grid)" stroke-width="1"/>
+                </pattern>
+              </defs>
+              <rect x="0" y="0" width="900" height="520" fill="url(#minorGrid)"/>
+
+              <g class="opamp-group">
+                <path class="wire output-path" d="M690 250 H830"/>
+                <circle cx="830" cy="250" r="5" fill="var(--primary)"/>
+                <text class="label-primary" x="790" y="235" font-size="15">Vout</text>
+                <polygon class="component" points="540,155 540,345 690,250"/>
+                <text x="588" y="244" font-size="17">OP-AMP</text>
+                <text x="514" y="204" font-size="25" fill="var(--positive)">+</text>
+                <text x="514" y="310" font-size="25" fill="var(--secondary)">−</text>
+                <path class="wire" d="M500 195 H540"/>
+                <path class="wire" d="M500 305 H540"/>
+                <path class="wire" d="M615 155 V125"/>
+                <path class="wire" d="M615 345 V375"/>
+                <text x="625" y="139" font-size="13">+Vs</text>
+                <text x="625" y="370" font-size="13">−Vs</text>
+                <text id="svgSupply" x="676" y="139" font-size="13" class="label-primary">±12.0 V</text>
+              </g>
+
+              <g class="positive-group">
+                <path class="wire positive-path flow" d="M830 250 V80 H500 V195"/>
+                <text class="label-positive" x="220" y="56" font-size="14">Frequency-selective positive feedback</text>
+                <path class="component pos" d="M720 68 V92 M706 68 V92"/>
+                <path class="wire positive-path" d="M830 250 V80 H720 M706 80 H650"/>
+                <text x="700" y="54" class="label-positive" font-size="14">C₁</text>
+                <path class="component pos" d="M650 80 l-10 -12 l-18 24 l-18 -24 l-18 24 l-18 -24 l-18 24 l-10 -12"/>
+                <path class="wire positive-path" d="M540 80 H520 V195 H500"/>
+                <text x="585" y="54" class="label-positive" font-size="14">R₁</text>
+                <text id="svgC1" x="688" y="112" font-size="13">10 nF</text>
+                <text id="svgR1" x="574" y="112" font-size="13">10.0 kΩ</text>
+                <circle cx="500" cy="195" r="5" fill="var(--positive)"/>
+                <text class="label-positive" x="455" y="178" font-size="13">V+</text>
+
+                <path class="wire positive-path" d="M500 195 V242 H390"/>
+                <path class="wire positive-path" d="M500 195 V242 H470 V397"/>
+                <path class="component pos" d="M390 242 V262 l-12 10 l24 18 l-24 18 l24 18 l-24 18 l12 10 V374"/>
+                <path class="wire positive-path" d="M390 374 V397"/>
+                <path class="component pos" d="M458 290 H482 M458 306 H482"/>
+                <path class="wire positive-path" d="M470 242 V290 M470 306 V397"/>
+                <path class="wire positive-path" d="M350 397 H510"/>
+                <path class="wire" d="M430 397 V419 M407 419 H453 M414 427 H446 M422 435 H438"/>
+                <text x="348" y="312" class="label-positive" font-size="14">R₂</text>
+                <text x="490" y="302" class="label-positive" font-size="14">C₂</text>
+                <text id="svgR2" x="338" y="386" font-size="13">10.0 kΩ</text>
+                <text id="svgC2" x="480" y="386" font-size="13">10 nF</text>
+              </g>
+
+              <g class="negative-group">
+                <path class="wire negative-path flow" d="M830 250 V450 H500 V305"/>
+                <text class="label-negative" x="580" y="480" font-size="14">Negative feedback sets amplifier gain</text>
+                <path class="wire negative-path" d="M830 250 V450 H700"/>
+                <path class="component neg" d="M700 450 l-10 -12 l-18 24 l-18 -24 l-18 24 l-18 -24 l-18 24 l-10 -12"/>
+                <path class="wire negative-path" d="M590 450 H500 V305"/>
+                <text x="632" y="428" class="label-negative" font-size="14">Rf</text>
+                <text id="svgRf" x="621" y="482" font-size="13">22.0 kΩ</text>
+                <circle cx="500" cy="305" r="5" fill="var(--secondary)"/>
+                <text class="label-negative" x="455" y="332" font-size="13">V−</text>
+                <path class="wire negative-path" d="M500 305 V365"/>
+                <path class="component neg" d="M500 365 V375 l-12 10 l24 18 l-24 18 l24 18 l-12 10 V459"/>
+                <path class="wire negative-path" d="M500 459 V477 M477 477 H523 M484 485 H516 M492 493 H508"/>
+                <text x="518" y="418" class="label-negative" font-size="14">Rg</text>
+                <text id="svgRg" x="520" y="443" font-size="13">10.0 kΩ</text>
+              </g>
+
+              <g>
+                <rect x="34" y="24" width="305" height="120" rx="13" fill="color-mix(in srgb, var(--scope) 85%, var(--surface))" stroke="var(--border)"/>
+                <text x="54" y="51" class="label-primary" font-size="15">Live design values</text>
+                <text x="54" y="78" font-size="13">f₀ =</text><text id="svgF0" x="102" y="78" class="label-primary" font-size="13">1.592 kHz</text>
+                <text x="54" y="102" font-size="13">β₀ =</text><text id="svgBeta" x="102" y="102" class="label-positive" font-size="13">0.333</text>
+                <text x="186" y="102" font-size="13">Areq =</text><text id="svgAreq" x="252" y="102" class="label-primary" font-size="13">3.000</text>
+                <text x="54" y="126" font-size="13">A =</text><text id="svgGain" x="102" y="126" class="label-negative" font-size="13">3.200</text>
+                <text x="186" y="126" font-size="13">Aβ₀ =</text><text id="svgLoop" x="252" y="126" class="label-primary" font-size="13">1.067</text>
+              </g>
+            </svg>
+          </div>
+        </section>
+
+        <aside class="section-stack">
+          <section class="panel">
+            <div class="panel-header"><h2 class="panel-title">How one loop works</h2></div>
+            <div class="panel-body step-list">
+              <div class="step-card"><strong>1. A tiny disturbance appears</strong><p>Power-on noise contains many frequencies. The Wien network favors the frequency at which its phase shift is zero.</p></div>
+              <div class="step-card"><strong>2. The RC network selects f₀</strong><p>The series C₁–R₁ arm and shunt R₂∥C₂ arm form a lead–lag divider. At f₀, its output is in phase with Vout.</p></div>
+              <div class="step-card"><strong>3. The op-amp restores loss</strong><p>The non-inverting gain A compensates the feedback attenuation β₀. Sustained oscillation requires Aβ₀ = 1.</p></div>
+              <div class="step-card"><strong>4. Amplitude is limited</strong><p>Real oscillators need an amplitude-control element. Without it, excess gain drives the op-amp into clipping.</p></div>
+            </div>
+          </section>
+          <section class="learning-callout">
+            <h3 id="circuitInsightTitle">Complete loop</h3>
+            <p id="circuitInsight">Both feedback paths are essential: the Wien network chooses the frequency and phase, while Rf and Rg set how much the op-amp amplifies.</p>
+          </section>
+        </aside>
+      </div>
+    </div>
+  </section>
+
+  <section class="tab-panel" id="panel-concepts" role="tabpanel" aria-labelledby="tab-concepts" hidden>
+    <div class="section-stack">
+      <div>
+        <h1 class="section-heading">Basic concept knowledge</h1>
+        <p class="section-lead">A Wien bridge oscillator is a sinusoidal RC oscillator. It combines a frequency-selective positive-feedback network with a non-inverting amplifier and a separate amplitude-stabilization mechanism.</p>
+      </div>
+      <div class="concepts-grid">
+        <article class="concept-card">
+          <h3>1. What is an oscillator?</h3>
+          <p>An oscillator converts DC supply power into a periodic AC signal without requiring a continuing external input signal. A small start-up disturbance is repeatedly amplified and fed back.</p>
+          <p>The desired frequency survives when the total loop phase is 0° (or 360°) and the loop magnitude is one.</p>
+        </article>
+        <article class="concept-card">
+          <h3>2. Barkhausen criterion</h3>
+          <p>For steady sinusoidal oscillation at one frequency:</p>
+          <div class="formula-strip">|Aβ| = 1 &nbsp; and &nbsp; ∠Aβ = 0°</div>
+          <p>For reliable start-up, the small-signal loop gain is usually made slightly greater than one; amplitude control later reduces it to one.</p>
+        </article>
+        <article class="concept-card">
+          <h3>3. Wien lead–lag network</h3>
+          <p>The positive-feedback network has a series C₁–R₁ arm and a shunt R₂∥C₂ arm. It behaves like a band-pass network: very low and very high frequencies are strongly attenuated.</p>
+          <p>At the balance frequency, the network phase shift is exactly 0°.</p>
+        </article>
+        <article class="concept-card">
+          <h3>4. Oscillation frequency</h3>
+          <p>For equal components R₁ = R₂ = R and C₁ = C₂ = C:</p>
+          <div class="formula-strip">f₀ = 1 / (2πRC)</div>
+          <p>For unequal values:</p>
+          <div class="formula-strip">f₀ = 1 / (2π√(R₁R₂C₁C₂))</div>
+        </article>
+        <article class="concept-card">
+          <h3>5. Feedback fraction and gain</h3>
+          <p>For equal components, the Wien network attenuates the output to one third at f₀, so β₀ = 1/3. The non-inverting amplifier must therefore have a gain of three.</p>
+          <div class="formula-strip">A = 1 + Rf/Rg = 3 ⇒ Rf = 2Rg</div>
+          <p>For unequal components, Areq = 1 + R₁/R₂ + C₂/C₁.</p>
+        </article>
+        <article class="concept-card">
+          <h3>6. Growth, decay, and clipping</h3>
+          <ul>
+            <li><strong>Aβ &lt; 1:</strong> every trip around the loop is smaller, so oscillations decay.</li>
+            <li><strong>Aβ = 1:</strong> the amplitude is ideally constant.</li>
+            <li><strong>Aβ &gt; 1:</strong> the amplitude grows until a nonlinear mechanism reduces gain or the output clips.</li>
+          </ul>
+        </article>
+        <article class="concept-card">
+          <h3>7. Why amplitude stabilization matters</h3>
+          <p>Exact gain adjustment is difficult because component values and op-amp gain change with temperature and frequency. A lamp, diodes, or a JFET can vary the negative feedback so that the effective gain settles at the required value.</p>
+          <p>Gentle control gives a low-distortion sine wave; hard rail clipping introduces harmonics.</p>
+        </article>
+        <article class="concept-card">
+          <h3>8. Below and above f₀</h3>
+          <p>Below f₀, the series capacitor has high reactance and the network gives a positive phase lead. Above f₀, the shunt capacitor increasingly bypasses the feedback node and the network gives a phase lag.</p>
+          <p>Only at f₀ is the network phase 0°.</p>
+        </article>
+        <article class="concept-card">
+          <h3>9. Uses and limitations</h3>
+          <p>Wien bridge oscillators are useful for audio-frequency sine-wave generation, laboratory signal sources, and low-distortion testing.</p>
+          <p>Frequency accuracy depends on R and C matching, while the upper useful frequency is limited by the op-amp bandwidth and slew rate.</p>
+        </article>
+      </div>
+
+      <section class="panel">
+        <div class="panel-header"><h2 class="panel-title">Behavior summary</h2></div>
+        <div class="behavior-table-wrap">
+          <table class="behavior-table">
+            <thead><tr><th>Condition</th><th>Network phase</th><th>Loop result</th><th>What you observe</th></tr></thead>
+            <tbody>
+              <tr><td><strong>f &lt; f₀</strong></td><td>Positive phase lead</td><td>Phase condition is not satisfied</td><td>That frequency does not build into a steady output.</td></tr>
+              <tr><td><strong>f = f₀</strong></td><td>0°</td><td>Can satisfy Barkhausen when Aβ₀ = 1</td><td>A sinusoid is selected and sustained.</td></tr>
+              <tr><td><strong>f &gt; f₀</strong></td><td>Negative phase lag</td><td>Phase condition is not satisfied</td><td>High-frequency components are suppressed.</td></tr>
+              <tr><td><strong>Aβ₀ &lt; 1</strong></td><td>0° at f₀</td><td>Loss exceeds gain</td><td>The sine-wave envelope decays.</td></tr>
+              <tr><td><strong>Aβ₀ &gt; 1</strong></td><td>0° at f₀</td><td>Gain exceeds loss</td><td>The envelope grows; AGC stabilizes it or the rails clip it.</td></tr>
+            </tbody>
+          </table>
+        </div>
+      </section>
+    </div>
+  </section>
+
+  <section class="tab-panel" id="panel-analysis" role="tabpanel" aria-labelledby="tab-analysis" hidden>
+    <div class="section-stack">
+      <div>
+        <h1 class="section-heading">Frequency response of the feedback network</h1>
+        <p class="section-lead">Move the probe across frequency to inspect the magnitude and phase of β(jω). The orange marker is the probe; the green marker is the calculated zero-phase frequency f₀.</p>
+      </div>
+      <div class="analysis-layout">
+        <aside class="analysis-sidebar">
+          <section class="panel">
+            <div class="panel-header"><h2 class="panel-title">Frequency probe</h2><span class="badge">Log scale</span></div>
+            <div class="panel-body">
+              <div class="control">
+                <label class="control-label" for="probe"><span>Probe ratio f/f₀</span><output class="value-pill" id="probeOut">1.000×</output></label>
+                <input id="probe" type="range" min="-2" max="2" value="0" step="0.01">
+              </div>
+              <div class="probe-grid">
+                <div class="probe-card"><span>Probe frequency</span><strong id="probeFrequency">1.592 kHz</strong></div>
+                <div class="probe-card"><span>|β|</span><strong id="probeMagnitude">0.3333</strong></div>
+                <div class="probe-card"><span>β phase</span><strong id="probePhase">0.00°</strong></div>
+                <div class="probe-card"><span>|Aβ|</span><strong id="probeLoop">1.0667</strong></div>
+              </div>
+              <div class="formula-strip">β(s) = sC₁R₂ / [1 + s(R₁C₁ + R₂C₁ + R₂C₂) + s²R₁R₂C₁C₂]</div>
+            </div>
+          </section>
+          <section class="learning-callout">
+            <h3 id="probeInsightTitle">At the balance frequency</h3>
+            <p id="probeInsight">The phase is approximately 0°, so positive feedback is in phase with the output. The magnitude is β₀, which determines the required amplifier gain.</p>
+          </section>
+        </aside>
+        <div class="section-stack">
+          <section class="panel">
+            <div class="panel-header"><h2 class="panel-title">Magnitude response</h2><div class="legend"><span class="legend-item" style="color:var(--positive)"><span class="legend-line"></span>|β|</span><span class="legend-item" style="color:var(--primary)"><span class="legend-line"></span>|Aβ|</span></div></div>
+            <div class="canvas-wrap"><canvas id="bodeMagnitude" aria-label="Magnitude response of feedback network and loop gain"></canvas></div>
+          </section>
+          <section class="panel">
+            <div class="panel-header"><h2 class="panel-title">Phase response</h2><span class="badge">Zero at f₀</span></div>
+            <div class="canvas-wrap"><canvas id="bodePhase" aria-label="Phase response of the feedback network"></canvas></div>
+          </section>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="tab-panel" id="panel-quiz" role="tabpanel" aria-labelledby="tab-quiz" hidden>
+    <div class="quiz-shell">
+      <div class="quiz-header">
+        <div>
+          <h1 class="section-heading" style="margin-bottom:3px">Wien bridge self-check</h1>
+          <p class="section-lead">Answer all five questions, then check your score and explanations.</p>
+        </div>
+        <div class="quiz-score" id="quizScore" aria-live="polite">Not submitted</div>
+      </div>
+
+      <fieldset class="quiz-question" data-answer="b">
+        <legend>1. For R₁ = R₂ = R and C₁ = C₂ = C, what is the oscillation frequency?</legend>
+        <div class="quiz-options">
+          <label class="quiz-option"><input type="radio" name="q1" value="a">f₀ = 1/(RC)</label>
+          <label class="quiz-option"><input type="radio" name="q1" value="b">f₀ = 1/(2πRC)</label>
+          <label class="quiz-option"><input type="radio" name="q1" value="c">f₀ = R/(2πC)</label>
+          <label class="quiz-option"><input type="radio" name="q1" value="d">f₀ = 2πRC</label>
+        </div>
+        <p class="quiz-explanation"><strong>Explanation:</strong> In the equal-component Wien network, the zero-phase frequency is f₀ = 1/(2πRC).</p>
+      </fieldset>
+
+      <fieldset class="quiz-question" data-answer="c">
+        <legend>2. What is the feedback fraction β₀ at f₀ for equal R and C values?</legend>
+        <div class="quiz-options">
+          <label class="quiz-option"><input type="radio" name="q2" value="a">1</label>
+          <label class="quiz-option"><input type="radio" name="q2" value="b">1/2</label>
+          <label class="quiz-option"><input type="radio" name="q2" value="c">1/3</label>
+          <label class="quiz-option"><input type="radio" name="q2" value="d">1/√2</label>
+        </div>
+        <p class="quiz-explanation"><strong>Explanation:</strong> At balance, the equal-component lead–lag network attenuates the output by a factor of three, so β₀ = 1/3.</p>
+      </fieldset>
+
+      <fieldset class="quiz-question" data-answer="d">
+        <legend>3. For equal components, which non-inverting amplifier gain sustains oscillation ideally?</legend>
+        <div class="quiz-options">
+          <label class="quiz-option"><input type="radio" name="q3" value="a">A = 1</label>
+          <label class="quiz-option"><input type="radio" name="q3" value="b">A = 2</label>
+          <label class="quiz-option"><input type="radio" name="q3" value="c">A = 1/3</label>
+          <label class="quiz-option"><input type="radio" name="q3" value="d">A = 3</label>
+        </div>
+        <p class="quiz-explanation"><strong>Explanation:</strong> Barkhausen requires Aβ₀ = 1. Since β₀ = 1/3, the required gain is A = 3, obtained with Rf = 2Rg.</p>
+      </fieldset>
+
+      <fieldset class="quiz-question" data-answer="a">
+        <legend>4. What happens when the loop-gain magnitude Aβ₀ is less than one?</legend>
+        <div class="quiz-options">
+          <label class="quiz-option"><input type="radio" name="q4" value="a">The oscillation amplitude decays</label>
+          <label class="quiz-option"><input type="radio" name="q4" value="b">The amplitude grows without limit</label>
+          <label class="quiz-option"><input type="radio" name="q4" value="c">The frequency doubles</label>
+          <label class="quiz-option"><input type="radio" name="q4" value="d">The phase becomes exactly 180°</label>
+        </div>
+        <p class="quiz-explanation"><strong>Explanation:</strong> If Aβ₀ &lt; 1, each trip around the loop returns a smaller signal, so the envelope decreases toward zero.</p>
+      </fieldset>
+
+      <fieldset class="quiz-question" data-answer="b">
+        <legend>5. Why is an amplitude-stabilization element used in a practical Wien bridge oscillator?</legend>
+        <div class="quiz-options">
+          <label class="quiz-option"><input type="radio" name="q5" value="a">To change the oscillator into a rectifier</label>
+          <label class="quiz-option"><input type="radio" name="q5" value="b">To reduce effective gain as the output grows and avoid clipping</label>
+          <label class="quiz-option"><input type="radio" name="q5" value="c">To force a 180° phase shift at f₀</label>
+          <label class="quiz-option"><input type="radio" name="q5" value="d">To make the feedback fraction equal to one</label>
+        </div>
+        <p class="quiz-explanation"><strong>Explanation:</strong> Start-up needs loop gain slightly above one, but steady operation needs loop gain equal to one. A lamp, diode network, or JFET can reduce effective gain smoothly as amplitude rises.</p>
+      </fieldset>
+
+      <div class="quiz-actions">
+        <button class="button primary" id="submitQuiz" type="button">Check answers</button>
+        <button class="button" id="resetQuiz" type="button">Reset quiz</button>
+      </div>
+    </div>
+  </section>
+</main>
+<footer class="footer-note">Educational model: ideal RC network with a simplified op-amp output-limit and amplitude-control model. Values update live and the file works offline.</footer>
+<script>
+'use strict';
+
+const $ = (id) => document.getElementById(id);
+const controls = {
+  linkBridge: $('linkBridge'),
+  R1: $('R1'), C1: $('C1'), R2: $('R2'), C2: $('C2'),
+  Rf: $('Rf'), Rg: $('Rg'), supply: $('supply'), stabilization: $('stabilization'),
+  speed: $('speed'), showOutput: $('showOutput'), showFeedback: $('showFeedback'),
+  showDemand: $('showDemand'), showEnvelope: $('showEnvelope'), probe: $('probe')
+};
+
+const state = {
+  playing: true,
+  activeTab: 'lab',
+  phase: 0,
+  envelope: 6.1,
+  simTime: 0,
+  lastFrame: 0,
+  lastUi: 0,
+  lastHistory: 0,
+  history: [],
+  highlight: 'loop'
+};
+
+const clamp = (value, min, max) => Math.max(min, Math.min(max, value));
+const lerp = (a, b, t) => a + (b - a) * t;
+
+function cssVar(name) {
+  return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+}
+
+function formatFrequency(f) {
+  if (f >= 1e6) return (f / 1e6).toFixed(f >= 1e7 ? 1 : 3) + ' MHz';
+  if (f >= 1e3) return (f / 1e3).toFixed(f >= 1e4 ? 2 : 3) + ' kHz';
+  return f.toFixed(f >= 100 ? 1 : 2) + ' Hz';
+}
+
+function formatPeriod(t) {
+  if (t < 1e-6) return (t * 1e9).toFixed(2) + ' ns';
+  if (t < 1e-3) return (t * 1e6).toFixed(2) + ' µs';
+  if (t < 1) return (t * 1e3).toFixed(2) + ' ms';
+  return t.toFixed(3) + ' s';
+}
+
+function getParams() {
+  const linked = controls.linkBridge.checked;
+  const R1 = Number(controls.R1.value) * 1e3;
+  const C1 = Number(controls.C1.value) * 1e-9;
+  const R2 = (linked ? Number(controls.R1.value) : Number(controls.R2.value)) * 1e3;
+  const C2 = (linked ? Number(controls.C1.value) : Number(controls.C2.value)) * 1e-9;
+  const Rf = Number(controls.Rf.value) * 1e3;
+  const Rg = Number(controls.Rg.value) * 1e3;
+  const supply = Number(controls.supply.value);
+  const gain = 1 + Rf / Rg;
+  const f0 = 1 / (2 * Math.PI * Math.sqrt(R1 * R2 * C1 * C2));
+  const beta0 = (C1 * R2) / (R1 * C1 + R2 * C1 + R2 * C2);
+  const requiredGain = 1 / beta0;
+  const smallSignalLoop = gain * beta0;
+  const outputLimit = 0.88 * supply;
+  const targetAmplitude = 0.64 * outputLimit;
+  return {
+    linked, R1, C1, R2, C2, Rf, Rg, supply, gain, f0, beta0, requiredGain,
+    smallSignalLoop, outputLimit, targetAmplitude,
+    stabilization: controls.stabilization.value,
+    speed: Number(controls.speed.value)
+  };
+}
+
+function effectiveGain(p, amplitude) {
+  if (p.stabilization !== 'agc' || p.gain <= p.requiredGain + 1e-9) return p.gain;
+  const denominatorBase = Math.max(p.requiredGain - 1, 1e-6);
+  const k = Math.max(0, (p.gain - p.requiredGain) / denominatorBase);
+  const ratio = amplitude / Math.max(p.targetAmplitude, 1e-6);
+  return 1 + (p.gain - 1) / (1 + k * ratio * ratio);
+}
+
+function networkAtFrequency(p, f) {
+  const w = 2 * Math.PI * f;
+  const numI = w * p.C1 * p.R2;
+  const denR = 1 - w * w * p.R1 * p.R2 * p.C1 * p.C2;
+  const denI = w * (p.R1 * p.C1 + p.R2 * p.C1 + p.R2 * p.C2);
+  const den2 = denR * denR + denI * denI;
+  const real = den2 > 0 ? (numI * denI) / den2 : 0;
+  const imag = den2 > 0 ? (numI * denR) / den2 : 0;
+  return {
+    real,
+    imag,
+    magnitude: Math.hypot(real, imag),
+    phase: Math.atan2(imag, real) * 180 / Math.PI
+  };
+}
+
+function waveformStats(demandPeak, limit) {
+  const nSamples = 512;
+  const values = new Array(nSamples);
+  let sumSq = 0;
+  let peak = 0;
+  for (let i = 0; i < nSamples; i++) {
+    const y = clamp(demandPeak * Math.sin(2 * Math.PI * i / nSamples), -limit, limit);
+    values[i] = y;
+    sumSq += y * y;
+    peak = Math.max(peak, Math.abs(y));
+  }
+  const harmonics = [];
+  for (let n = 1; n <= 9; n++) {
+    let a = 0;
+    let b = 0;
+    for (let i = 0; i < nSamples; i++) {
+      const angle = 2 * Math.PI * n * i / nSamples;
+      a += values[i] * Math.cos(angle);
+      b += values[i] * Math.sin(angle);
+    }
+    harmonics[n] = (2 / nSamples) * Math.hypot(a, b);
+  }
+  let harmonicSq = 0;
+  for (let n = 2; n <= 9; n++) harmonicSq += harmonics[n] * harmonics[n];
+  const thd = harmonics[1] > 1e-9 ? Math.sqrt(harmonicSq) / harmonics[1] * 100 : 0;
+  return { rms: Math.sqrt(sumSq / nSamples), peak, thd };
+}
+
+function setupCanvas(canvas, fallbackHeight) {
+  const rect = canvas.getBoundingClientRect();
+  const width = Math.max(280, rect.width || canvas.parentElement.clientWidth || 700);
+  const height = Math.max(160, rect.height || fallbackHeight);
+  const dpr = Math.min(window.devicePixelRatio || 1, 2);
+  const w = Math.round(width * dpr);
+  const h = Math.round(height * dpr);
+  if (canvas.width !== w || canvas.height !== h) {
+    canvas.width = w;
+    canvas.height = h;
+  }
+  const ctx = canvas.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  return { ctx, width, height };
+}
+
+function roundRect(ctx, x, y, width, height, radius) {
+  const r = Math.min(radius, width / 2, height / 2);
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.arcTo(x + width, y, x + width, y + height, r);
+  ctx.arcTo(x + width, y + height, x, y + height, r);
+  ctx.arcTo(x, y + height, x, y, r);
+  ctx.arcTo(x, y, x + width, y, r);
+  ctx.closePath();
+}
+
+function drawScopeGrid(ctx, width, height, cols = 10, rows = 8) {
+  ctx.fillStyle = cssVar('--scope');
+  ctx.fillRect(0, 0, width, height);
+  ctx.strokeStyle = cssVar('--scope-grid');
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= cols; i++) {
+    const x = i * width / cols;
+    ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, height); ctx.stroke();
+  }
+  for (let j = 0; j <= rows; j++) {
+    const y = j * height / rows;
+    ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(width, y); ctx.stroke();
+  }
+}
+
+function drawWaveform() {
+  const canvas = $('waveCanvas');
+  if (!canvas || state.activeTab !== 'lab') return;
+  const { ctx, width: W, height: H } = setupCanvas(canvas, 330);
+  const p = getParams();
+  const stats = waveformStats(state.envelope, p.outputLimit);
+  drawScopeGrid(ctx, W, H, 12, 8);
+
+  const margin = { left: 58, right: 18, top: 20, bottom: 34 };
+  const plotW = W - margin.left - margin.right;
+  const plotH = H - margin.top - margin.bottom;
+  const centerY = margin.top + plotH / 2;
+  const scaleY = (plotH / 2 - 10) / Math.max(p.outputLimit, 0.1);
+  const cycles = 2.5;
+
+  ctx.strokeStyle = 'rgba(255,255,255,0.20)';
+  ctx.setLineDash([5, 5]);
+  ctx.beginPath(); ctx.moveTo(margin.left, centerY); ctx.lineTo(W - margin.right, centerY); ctx.stroke();
+  ctx.setLineDash([]);
+
+  const drawSignal = (color, lineWidth, dashed, valueFn) => {
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = lineWidth;
+    ctx.lineJoin = 'round';
+    ctx.lineCap = 'round';
+    if (dashed) ctx.setLineDash([7, 6]);
+    ctx.shadowBlur = dashed ? 0 : 8;
+    ctx.shadowColor = color;
+    ctx.beginPath();
+    for (let i = 0; i <= plotW; i++) {
+      const theta = (i / plotW) * cycles * 2 * Math.PI + state.phase;
+      const yValue = valueFn(theta);
+      const x = margin.left + i;
+      const y = centerY - yValue * scaleY;
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.restore();
+  };
+
+  const clipping = state.envelope > p.outputLimit * 1.001;
+  if (controls.showDemand.checked && clipping) {
+    drawSignal(cssVar('--wave-demand'), 1.4, true, theta => state.envelope * Math.sin(theta));
+  }
+  if (controls.showFeedback.checked) {
+    drawSignal(cssVar('--wave-fb'), 1.8, false, theta => {
+      const output = clamp(state.envelope * Math.sin(theta), -p.outputLimit, p.outputLimit);
+      return output * p.beta0;
+    });
+  }
+  if (controls.showOutput.checked) {
+    drawSignal(cssVar('--wave-out'), 2.4, false, theta => clamp(state.envelope * Math.sin(theta), -p.outputLimit, p.outputLimit));
+  }
+
+  if (controls.showEnvelope.checked) {
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.28)';
+    ctx.setLineDash([4, 5]);
+    const yTop = centerY - Math.min(state.envelope, p.outputLimit) * scaleY;
+    const yBottom = centerY + Math.min(state.envelope, p.outputLimit) * scaleY;
+    ctx.beginPath(); ctx.moveTo(margin.left, yTop); ctx.lineTo(W - margin.right, yTop); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(margin.left, yBottom); ctx.lineTo(W - margin.right, yBottom); ctx.stroke();
+    ctx.restore();
+  }
+
+  const cursorPhase = ((state.phase % (2 * Math.PI)) + 2 * Math.PI) % (2 * Math.PI);
+  const cursorX = margin.left + (cursorPhase / (cycles * 2 * Math.PI)) * plotW;
+  ctx.strokeStyle = cssVar('--warning');
+  ctx.lineWidth = 1.3;
+  ctx.beginPath(); ctx.moveTo(cursorX, margin.top); ctx.lineTo(cursorX, H - margin.bottom); ctx.stroke();
+
+  ctx.fillStyle = cssVar('--scope-text');
+  ctx.font = '12px ui-monospace, SFMono-Regular, Menlo, monospace';
+  ctx.textAlign = 'right';
+  ctx.fillText('+' + p.outputLimit.toFixed(1) + ' V', margin.left - 8, margin.top + 4);
+  ctx.fillText('0 V', margin.left - 8, centerY + 4);
+  ctx.fillText('−' + p.outputLimit.toFixed(1) + ' V', margin.left - 8, H - margin.bottom + 4);
+  ctx.textAlign = 'left';
+  ctx.fillText('2.5 cycles • display motion slowed', margin.left, H - 10);
+  ctx.textAlign = 'right';
+  ctx.fillText('f₀ = ' + formatFrequency(p.f0), W - margin.right, H - 10);
+
+  if (clipping) {
+    ctx.fillStyle = 'rgba(255, 111, 120, 0.15)';
+    roundRect(ctx, W - 158, 14, 140, 28, 8); ctx.fill();
+    ctx.strokeStyle = cssVar('--danger'); ctx.stroke();
+    ctx.fillStyle = cssVar('--danger');
+    ctx.font = '700 12px ui-sans-serif, system-ui';
+    ctx.textAlign = 'center';
+    ctx.fillText('RAIL CLIPPING', W - 88, 33);
+  }
+
+  return stats;
+}
+
+function drawEnvelope() {
+  const canvas = $('envelopeCanvas');
+  if (!canvas || state.activeTab !== 'lab') return;
+  const { ctx, width: W, height: H } = setupCanvas(canvas, 220);
+  const p = getParams();
+  drawScopeGrid(ctx, W, H, 10, 5);
+  const margin = { left: 46, right: 14, top: 16, bottom: 30 };
+  const plotW = W - margin.left - margin.right;
+  const plotH = H - margin.top - margin.bottom;
+  const yMax = Math.max(p.outputLimit * 1.25, ...state.history.map(d => d.amp), 1);
+  const history = state.history.length ? state.history : [{ t: 0, amp: state.envelope }];
+  const tMin = history[0].t;
+  const tMax = Math.max(history[history.length - 1].t, tMin + 1);
+
+  const yFor = v => margin.top + plotH * (1 - clamp(v / yMax, 0, 1));
+  const xFor = t => margin.left + plotW * (t - tMin) / (tMax - tMin);
+
+  ctx.strokeStyle = cssVar('--positive');
+  ctx.lineWidth = 2.3;
+  ctx.shadowBlur = 7;
+  ctx.shadowColor = cssVar('--positive');
+  ctx.beginPath();
+  history.forEach((d, i) => {
+    const x = xFor(d.t), y = yFor(d.amp);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  });
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+
+  ctx.setLineDash([5, 5]);
+  ctx.lineWidth = 1.2;
+  ctx.strokeStyle = cssVar('--danger');
+  ctx.beginPath(); ctx.moveTo(margin.left, yFor(p.outputLimit)); ctx.lineTo(W - margin.right, yFor(p.outputLimit)); ctx.stroke();
+  if (p.stabilization === 'agc') {
+    ctx.strokeStyle = cssVar('--secondary');
+    ctx.beginPath(); ctx.moveTo(margin.left, yFor(p.targetAmplitude)); ctx.lineTo(W - margin.right, yFor(p.targetAmplitude)); ctx.stroke();
+  }
+  ctx.setLineDash([]);
+
+  ctx.fillStyle = cssVar('--scope-text');
+  ctx.font = '11px ui-monospace, SFMono-Regular, Menlo, monospace';
+  ctx.textAlign = 'right';
+  ctx.fillText(yMax.toFixed(1) + ' V', margin.left - 7, margin.top + 4);
+  ctx.fillText('0 V', margin.left - 7, H - margin.bottom + 4);
+  ctx.textAlign = 'left';
+  ctx.fillText('time →', margin.left, H - 9);
+  ctx.fillStyle = cssVar('--danger');
+  ctx.fillText('rail limit', Math.max(margin.left + 5, W - 82), yFor(p.outputLimit) - 5);
+  if (p.stabilization === 'agc') {
+    ctx.fillStyle = cssVar('--secondary');
+    ctx.fillText('AGC target', margin.left + 7, yFor(p.targetAmplitude) - 5);
+  }
+}
+
+function drawLoopMeter() {
+  const canvas = $('loopCanvas');
+  if (!canvas || state.activeTab !== 'lab') return;
+  const { ctx, width: W, height: H } = setupCanvas(canvas, 220);
+  const p = getParams();
+  const aEff = effectiveGain(p, state.envelope);
+  const loop = aEff * p.beta0;
+  ctx.fillStyle = cssVar('--scope');
+  ctx.fillRect(0, 0, W, H);
+
+  const cx = W / 2;
+  const cy = H * 0.68;
+  const radius = Math.min(W * 0.32, H * 0.48);
+  const start = Math.PI;
+  const end = 2 * Math.PI;
+  const toAngle = value => lerp(start, end, clamp((value - 0.6) / 0.8, 0, 1));
+
+  ctx.lineCap = 'round';
+  ctx.lineWidth = 14;
+  const zones = [
+    { a: 0.6, b: 0.97, color: cssVar('--danger') },
+    { a: 0.97, b: 1.03, color: cssVar('--positive') },
+    { a: 1.03, b: 1.4, color: cssVar('--warning') }
+  ];
+  zones.forEach(z => {
+    ctx.beginPath();
+    ctx.strokeStyle = z.color;
+    ctx.arc(cx, cy, radius, toAngle(z.a), toAngle(z.b));
+    ctx.stroke();
+  });
+
+  ctx.lineWidth = 2;
+  ctx.strokeStyle = cssVar('--scope-text');
+  for (let i = 0; i <= 8; i++) {
+    const value = 0.6 + i * 0.1;
+    const angle = toAngle(value);
+    const x1 = cx + Math.cos(angle) * (radius - 21);
+    const y1 = cy + Math.sin(angle) * (radius - 21);
+    const x2 = cx + Math.cos(angle) * (radius - 7);
+    const y2 = cy + Math.sin(angle) * (radius - 7);
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+  }
+
+  const needle = toAngle(loop);
+  ctx.strokeStyle = cssVar('--primary');
+  ctx.lineWidth = 4;
+  ctx.shadowBlur = 9;
+  ctx.shadowColor = cssVar('--primary');
+  ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(needle) * (radius - 24), cy + Math.sin(needle) * (radius - 24)); ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.fillStyle = cssVar('--primary');
+  ctx.beginPath(); ctx.arc(cx, cy, 7, 0, Math.PI * 2); ctx.fill();
+
+  ctx.fillStyle = cssVar('--scope-text');
+  ctx.font = '11px ui-monospace, SFMono-Regular, Menlo, monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('0.6', cx - radius, cy + 22);
+  ctx.fillText('1.0', cx, cy - radius - 12);
+  ctx.fillText('1.4', cx + radius, cy + 22);
+  ctx.font = '800 23px ui-monospace, SFMono-Regular, Menlo, monospace';
+  ctx.fillStyle = Math.abs(loop - 1) < 0.03 ? cssVar('--positive') : loop < 1 ? cssVar('--danger') : cssVar('--warning');
+  ctx.fillText(loop.toFixed(3), cx, H - 22);
+}
+
+function drawBodePlots() {
+  if (state.activeTab !== 'analysis') return;
+  const p = getParams();
+  const ratio = Math.pow(10, Number(controls.probe.value));
+  const probeF = p.f0 * ratio;
+  const fMin = p.f0 / 100;
+  const fMax = p.f0 * 100;
+
+  drawBodeMagnitude(p, fMin, fMax, probeF);
+  drawBodePhase(p, fMin, fMax, probeF);
+}
+
+function drawAxes(ctx, W, H, margin, yTicks, yMap, labelFormatter) {
+  const plotW = W - margin.left - margin.right;
+  const plotH = H - margin.top - margin.bottom;
+  ctx.strokeStyle = cssVar('--scope-grid');
+  ctx.lineWidth = 1;
+  for (let i = 0; i <= 4; i++) {
+    const x = margin.left + plotW * i / 4;
+    ctx.beginPath(); ctx.moveTo(x, margin.top); ctx.lineTo(x, H - margin.bottom); ctx.stroke();
+  }
+  yTicks.forEach(v => {
+    const y = yMap(v);
+    ctx.beginPath(); ctx.moveTo(margin.left, y); ctx.lineTo(W - margin.right, y); ctx.stroke();
+    ctx.fillStyle = cssVar('--scope-text');
+    ctx.font = '11px ui-monospace, SFMono-Regular, Menlo, monospace';
+    ctx.textAlign = 'right';
+    ctx.fillText(labelFormatter(v), margin.left - 8, y + 4);
+  });
+}
+
+function logX(f, fMin, fMax, left, width) {
+  return left + width * (Math.log10(f) - Math.log10(fMin)) / (Math.log10(fMax) - Math.log10(fMin));
+}
+
+function drawFrequencyMarkers(ctx, p, fMin, fMax, probeF, margin, W, H) {
+  const plotW = W - margin.left - margin.right;
+  const x0 = logX(p.f0, fMin, fMax, margin.left, plotW);
+  const xp = logX(probeF, fMin, fMax, margin.left, plotW);
+  ctx.save();
+  ctx.lineWidth = 1.5;
+  ctx.setLineDash([6, 5]);
+  ctx.strokeStyle = cssVar('--positive');
+  ctx.beginPath(); ctx.moveTo(x0, margin.top); ctx.lineTo(x0, H - margin.bottom); ctx.stroke();
+  ctx.strokeStyle = cssVar('--warning');
+  ctx.beginPath(); ctx.moveTo(xp, margin.top); ctx.lineTo(xp, H - margin.bottom); ctx.stroke();
+  ctx.setLineDash([]);
+  ctx.fillStyle = cssVar('--positive');
+  ctx.font = '800 11px ui-monospace, SFMono-Regular, Menlo, monospace';
+  ctx.textAlign = 'center';
+  ctx.fillText('f₀', x0, margin.top + 13);
+  ctx.fillStyle = cssVar('--warning');
+  ctx.fillText('probe', xp, margin.top + 27);
+  ctx.restore();
+}
+
+function drawBodeMagnitude(p, fMin, fMax, probeF) {
+  const canvas = $('bodeMagnitude');
+  const { ctx, width: W, height: H } = setupCanvas(canvas, 340);
+  drawScopeGrid(ctx, W, H, 8, 6);
+  const margin = { left: 58, right: 18, top: 20, bottom: 43 };
+  const plotW = W - margin.left - margin.right;
+  const plotH = H - margin.top - margin.bottom;
+  const yMin = -60, yMax = 10;
+  const yMap = db => margin.top + plotH * (1 - (db - yMin) / (yMax - yMin));
+  drawAxes(ctx, W, H, margin, [-60, -50, -40, -30, -20, -10, 0, 10], yMap, v => v + ' dB');
+
+  const plotCurve = (color, valueFn, width = 2.2) => {
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.lineJoin = 'round';
+    ctx.shadowBlur = 7;
+    ctx.shadowColor = color;
+    ctx.beginPath();
+    for (let i = 0; i <= plotW; i++) {
+      const f = Math.pow(10, Math.log10(fMin) + (Math.log10(fMax) - Math.log10(fMin)) * i / plotW);
+      const x = margin.left + i;
+      const y = yMap(clamp(valueFn(f), yMin, yMax));
+      if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+  };
+
+  plotCurve(cssVar('--positive'), f => 20 * Math.log10(Math.max(networkAtFrequency(p, f).magnitude, 1e-8)));
+  plotCurve(cssVar('--primary'), f => 20 * Math.log10(Math.max(p.gain * networkAtFrequency(p, f).magnitude, 1e-8)), 1.8);
+  ctx.strokeStyle = 'rgba(255,255,255,0.28)';
+  ctx.setLineDash([4, 5]);
+  ctx.beginPath(); ctx.moveTo(margin.left, yMap(0)); ctx.lineTo(W - margin.right, yMap(0)); ctx.stroke();
+  ctx.setLineDash([]);
+  drawFrequencyMarkers(ctx, p, fMin, fMax, probeF, margin, W, H);
+
+  ctx.fillStyle = cssVar('--scope-text');
+  ctx.font = '11px ui-monospace, SFMono-Regular, Menlo, monospace';
+  ctx.textAlign = 'center';
+  ['f₀/100', 'f₀/10', 'f₀', '10f₀', '100f₀'].forEach((label, i) => ctx.fillText(label, margin.left + plotW * i / 4, H - 14));
+}
+
+function drawBodePhase(p, fMin, fMax, probeF) {
+  const canvas = $('bodePhase');
+  const { ctx, width: W, height: H } = setupCanvas(canvas, 260);
+  drawScopeGrid(ctx, W, H, 8, 6);
+  const margin = { left: 58, right: 18, top: 18, bottom: 42 };
+  const plotW = W - margin.left - margin.right;
+  const plotH = H - margin.top - margin.bottom;
+  const yMap = deg => margin.top + plotH * (1 - (deg + 90) / 180);
+  drawAxes(ctx, W, H, margin, [-90, -60, -30, 0, 30, 60, 90], yMap, v => v + '°');
+
+  ctx.strokeStyle = cssVar('--secondary');
+  ctx.lineWidth = 2.3;
+  ctx.shadowBlur = 7;
+  ctx.shadowColor = cssVar('--secondary');
+  ctx.beginPath();
+  for (let i = 0; i <= plotW; i++) {
+    const f = Math.pow(10, Math.log10(fMin) + (Math.log10(fMax) - Math.log10(fMin)) * i / plotW);
+    const x = margin.left + i;
+    const y = yMap(networkAtFrequency(p, f).phase);
+    if (i === 0) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+  }
+  ctx.stroke();
+  ctx.shadowBlur = 0;
+  ctx.strokeStyle = 'rgba(255,255,255,0.30)';
+  ctx.setLineDash([4, 5]);
+  ctx.beginPath(); ctx.moveTo(margin.left, yMap(0)); ctx.lineTo(W - margin.right, yMap(0)); ctx.stroke();
+  ctx.setLineDash([]);
+  drawFrequencyMarkers(ctx, p, fMin, fMax, probeF, margin, W, H);
+
+  ctx.fillStyle = cssVar('--scope-text');
+  ctx.font = '11px ui-monospace, SFMono-Regular, Menlo, monospace';
+  ctx.textAlign = 'center';
+  ['f₀/100', 'f₀/10', 'f₀', '10f₀', '100f₀'].forEach((label, i) => ctx.fillText(label, margin.left + plotW * i / 4, H - 14));
+}
+
+function updateRangeFill(input) {
+  const min = Number(input.min || 0);
+  const max = Number(input.max || 100);
+  const value = Number(input.value);
+  input.style.setProperty('--fill', ((value - min) / (max - min) * 100) + '%');
+}
+
+function syncLinkedControls() {
+  const linked = controls.linkBridge.checked;
+  controls.R2.disabled = linked;
+  controls.C2.disabled = linked;
+  if (linked) {
+    controls.R2.value = controls.R1.value;
+    controls.C2.value = controls.C1.value;
+  }
+}
+
+function formatCapacitanceNf(value) {
+  const n = Number(value);
+  return (Math.abs(n - Math.round(n)) < 1e-9 ? n.toFixed(0) : n.toFixed(1)) + ' nF';
+}
+
+function updateControlOutputs() {
+  syncLinkedControls();
+  $('R1Out').textContent = Number(controls.R1.value).toFixed(1) + ' kΩ';
+  $('C1Out').textContent = formatCapacitanceNf(controls.C1.value);
+  $('R2Out').textContent = Number(controls.R2.value).toFixed(1) + ' kΩ';
+  $('C2Out').textContent = formatCapacitanceNf(controls.C2.value);
+  $('RfOut').textContent = Number(controls.Rf.value).toFixed(1) + ' kΩ';
+  $('RgOut').textContent = Number(controls.Rg.value).toFixed(1) + ' kΩ';
+  $('supplyOut').textContent = '±' + Number(controls.supply.value).toFixed(1) + ' V';
+  $('speedOut').textContent = Number(controls.speed.value).toFixed(2) + '×';
+  $('probeOut').textContent = Math.pow(10, Number(controls.probe.value)).toFixed(Math.abs(Number(controls.probe.value)) < 0.5 ? 3 : 2) + '×';
+  Object.values(controls).forEach(el => {
+    if (el && el.type === 'range') updateRangeFill(el);
+  });
+  $('frequencyFormula').textContent = controls.linkBridge.checked
+    ? 'Equal case: f₀ = 1 / (2πRC)'
+    : 'General case: f₀ = 1 / (2π√(R₁R₂C₁C₂))';
+}
+
+function statusFor(p, aEff, loopEff, stats) {
+  const clipped = state.envelope > p.outputLimit * 1.001;
+  const nearTarget = p.stabilization === 'agc' && Math.abs(state.envelope - p.targetAmplitude) / p.targetAmplitude < 0.10;
+  if (p.smallSignalLoop < 0.985) {
+    return {
+      title: 'Oscillation is decaying', badge: 'Loop gain < 1', className: 'bad', history: 'Decaying',
+      text: 'The amplifier does not replace all of the loss in the Wien network. Each trip around the loop is smaller, so the sinusoidal envelope falls toward zero.',
+      learning: 'Increase Rf or reduce Rg until the small-signal product Aβ₀ reaches or slightly exceeds one.'
+    };
+  }
+  if (clipped && p.stabilization === 'none') {
+    return {
+      title: 'Output is clipping at the rails', badge: 'Distorted', className: 'bad', history: 'Growing → clipped',
+      text: 'The loop gain is above one and no amplitude-control mechanism is active. The demanded sine wave grows beyond the available output swing, producing flat-topped distortion and harmonics.',
+      learning: 'Enable soft automatic gain control or reduce the amplifier gain closer to the required value.'
+    };
+  }
+  if (p.stabilization === 'agc' && p.gain > p.requiredGain && nearTarget) {
+    return {
+      title: 'Amplitude stabilized', badge: 'Stable', className: 'good', history: 'Growing → stable',
+      text: 'The small-signal loop gain is above one for start-up. As the output grows, the amplitude-control model reduces the effective amplifier gain until Aeffβ₀ is approximately one.',
+      learning: 'This is the practical design idea: slightly more than unity loop gain for start-up, then automatic reduction to unity for a low-distortion steady sine wave.'
+    };
+  }
+  if (Math.abs(loopEff - 1) <= 0.015) {
+    return {
+      title: 'Ideal sustained oscillation', badge: 'Aβ ≈ 1', className: 'good', history: 'Nearly constant',
+      text: 'The effective loop gain is approximately one and the network phase is zero at f₀, so the model maintains nearly constant amplitude.',
+      learning: 'In an ideal calculation Aβ₀ = 1 is enough. In a real circuit, component tolerances make a small start-up margin and amplitude stabilization necessary.'
+    };
+  }
+  if (loopEff > 1) {
+    return {
+      title: 'Oscillation is growing', badge: 'Loop gain > 1', className: 'warn', history: 'Growing',
+      text: 'The signal returned around the loop is larger than the previous cycle. The envelope will grow until the amplitude control settles it or the output reaches its rails.',
+      learning: 'Watch the amplitude-history graph. With AGC enabled, the effective gain falls as the output approaches the target amplitude.'
+    };
+  }
+  return {
+    title: 'Oscillation is slowly decaying', badge: 'Aeffβ < 1', className: 'warn', history: 'Settling',
+    text: 'At the current amplitude the effective loop gain is slightly below one, so the amplitude is moving downward toward its equilibrium value.',
+    learning: 'Automatic gain control continuously nudges the loop gain toward one rather than holding a fixed gain.'
+  };
+}
+
+function setBadge(element, text, className) {
+  element.textContent = text;
+  element.className = 'badge' + (className ? ' ' + className : '');
+}
+
+function updateUi() {
+  updateControlOutputs();
+  const p = getParams();
+  const aEff = effectiveGain(p, state.envelope);
+  const loopEff = aEff * p.beta0;
+  const stats = waveformStats(state.envelope, p.outputLimit);
+  const status = statusFor(p, aEff, loopEff, stats);
+
+  $('statusTitle').textContent = status.title;
+  $('statusText').textContent = status.text;
+  $('learningText').textContent = status.learning;
+  setBadge($('statusBadge'), status.badge, status.className);
+  setBadge($('historyBadge'), status.history, status.className);
+  setBadge($('loopBadge'), 'Aeffβ₀ = ' + loopEff.toFixed(3), Math.abs(loopEff - 1) < 0.03 ? 'good' : loopEff < 1 ? 'bad' : 'warn');
+
+  $('summaryGain').textContent = p.gain.toFixed(3);
+  $('summaryBeta').textContent = p.beta0.toFixed(4);
+  $('summaryLoop').textContent = p.smallSignalLoop.toFixed(4);
+  $('metricFrequency').textContent = formatFrequency(p.f0);
+  $('metricPeriod').textContent = formatPeriod(1 / p.f0);
+  $('metricRequiredGain').textContent = p.requiredGain.toFixed(3);
+  $('metricEffectiveGain').textContent = aEff.toFixed(3);
+  $('metricPeak').textContent = stats.peak.toFixed(2) + ' V';
+  $('metricRms').textContent = stats.rms.toFixed(2) + ' V';
+  $('metricThd').textContent = stats.thd.toFixed(stats.thd < 1 ? 2 : 1) + '%';
+  $('metricLimit').textContent = '±' + p.outputLimit.toFixed(2) + ' V';
+
+  updateCircuitValues(p);
+  updateProbeReadouts(p);
+}
+
+function updateCircuitValues(p) {
+  $('svgSupply').textContent = '±' + p.supply.toFixed(1) + ' V';
+  $('svgR1').textContent = (p.R1 / 1e3).toFixed(1) + ' kΩ';
+  $('svgC1').textContent = formatCapacitanceNf(p.C1 / 1e-9);
+  $('svgR2').textContent = (p.R2 / 1e3).toFixed(1) + ' kΩ';
+  $('svgC2').textContent = formatCapacitanceNf(p.C2 / 1e-9);
+  $('svgRf').textContent = (p.Rf / 1e3).toFixed(1) + ' kΩ';
+  $('svgRg').textContent = (p.Rg / 1e3).toFixed(1) + ' kΩ';
+  $('svgF0').textContent = formatFrequency(p.f0);
+  $('svgBeta').textContent = p.beta0.toFixed(4);
+  $('svgAreq').textContent = p.requiredGain.toFixed(3);
+  $('svgGain').textContent = p.gain.toFixed(3);
+  $('svgLoop').textContent = p.smallSignalLoop.toFixed(4);
+}
+
+function updateProbeReadouts(p) {
+  const ratio = Math.pow(10, Number(controls.probe.value));
+  const f = p.f0 * ratio;
+  const response = networkAtFrequency(p, f);
+  $('probeFrequency').textContent = formatFrequency(f);
+  $('probeMagnitude').textContent = response.magnitude.toFixed(4);
+  $('probePhase').textContent = (response.phase >= 0 ? '+' : '') + response.phase.toFixed(2) + '°';
+  $('probeLoop').textContent = (p.gain * response.magnitude).toFixed(4);
+
+  if (ratio < 0.88) {
+    $('probeInsightTitle').textContent = 'Below the balance frequency';
+    $('probeInsight').textContent = 'The series capacitor has relatively high reactance. The feedback magnitude is reduced and the network gives a positive phase lead, so the loop phase condition is not met.';
+  } else if (ratio > 1.14) {
+    $('probeInsightTitle').textContent = 'Above the balance frequency';
+    $('probeInsight').textContent = 'The shunt capacitor increasingly bypasses the feedback node. The feedback magnitude falls and the network gives a negative phase lag.';
+  } else {
+    $('probeInsightTitle').textContent = 'At the balance frequency';
+    $('probeInsight').textContent = 'The phase is approximately 0°, so positive feedback is in phase with the output. The magnitude is β₀, which determines the required amplifier gain.';
+  }
+}
+
+function updateSimulation(dt) {
+  const p = getParams();
+  const aEff = effectiveGain(p, state.envelope);
+  const loopEff = aEff * p.beta0;
+  const growthConstant = 18;
+  const exponent = clamp((loopEff - 1) * growthConstant * dt * p.speed, -0.30, 0.30);
+  if (state.envelope > 0 || loopEff > 1) state.envelope *= Math.exp(exponent);
+  if (state.envelope < 0.0005 && loopEff <= 1) state.envelope = 0;
+  const maxDemand = p.stabilization === 'agc' ? p.outputLimit * 1.35 : p.outputLimit * 3.0;
+  state.envelope = clamp(state.envelope, 0, maxDemand);
+  state.phase = (state.phase + dt * p.speed * 2 * Math.PI * 0.32) % (2 * Math.PI);
+  state.simTime += dt * p.speed;
+
+  if (state.simTime - state.lastHistory >= 0.075) {
+    state.lastHistory = state.simTime;
+    state.history.push({ t: state.simTime, amp: state.envelope, loop: loopEff });
+    if (state.history.length > 240) state.history.shift();
+  }
+}
+
+function drawActive() {
+  if (state.activeTab === 'lab') {
+    drawWaveform();
+    drawEnvelope();
+    drawLoopMeter();
+  } else if (state.activeTab === 'analysis') {
+    drawBodePlots();
+  }
+}
+
+function animationFrame(timestamp) {
+  const dt = state.lastFrame ? clamp((timestamp - state.lastFrame) / 1000, 0, 0.06) : 0;
+  state.lastFrame = timestamp;
+  if (state.playing && dt > 0) updateSimulation(dt);
+  if (state.activeTab === 'lab') {
+    drawWaveform();
+    if (timestamp - state.lastUi > 90) {
+      drawEnvelope();
+      drawLoopMeter();
+      updateUi();
+      state.lastUi = timestamp;
+    }
+  }
+  requestAnimationFrame(animationFrame);
+}
+
+function restartOscillation(seed = null) {
+  const p = getParams();
+  state.envelope = seed === null ? Math.max(0.035, p.targetAmplitude * 0.02) : seed;
+  state.simTime = 0;
+  state.lastHistory = 0;
+  state.history = [{ t: 0, amp: state.envelope }];
+  state.phase = 0;
+  state.playing = true;
+  updatePlayButton();
+  updateUi();
+  drawActive();
+}
+
+function setControl(id, value) {
+  controls[id].value = value;
+}
+
+function applyPreset(name) {
+  controls.linkBridge.checked = true;
+  setControl('R1', 10); setControl('C1', 10); setControl('R2', 10); setControl('C2', 10);
+  setControl('Rg', 10); setControl('supply', 12); setControl('speed', 1);
+  controls.stabilization.value = 'agc';
+  let seed;
+  if (name === 'stable') {
+    setControl('Rf', 22);
+    seed = getParams().targetAmplitude * 0.95;
+  } else if (name === 'startup') {
+    setControl('Rf', 22);
+    seed = 0.04;
+  } else if (name === 'decay') {
+    setControl('Rf', 17);
+    controls.stabilization.value = 'none';
+    seed = getParams().targetAmplitude * 0.85;
+  } else if (name === 'clip') {
+    setControl('Rf', 30);
+    controls.stabilization.value = 'none';
+    seed = getParams().outputLimit * 1.15;
+  } else if (name === 'mismatch') {
+    controls.linkBridge.checked = false;
+    setControl('R1', 10); setControl('R2', 15); setControl('C1', 10); setControl('C2', 6.8);
+    setControl('Rf', 15);
+    controls.stabilization.value = 'agc';
+    seed = getParams().targetAmplitude * 0.75;
+  }
+  syncLinkedControls();
+  restartOscillation(seed);
+}
+
+function updatePlayButton() {
+  $('playIcon').textContent = state.playing ? '⏸' : '▶';
+  $('playLabel').textContent = state.playing ? 'Pause' : 'Resume';
+  $('playButton').setAttribute('aria-pressed', state.playing ? 'false' : 'true');
+  document.body.classList.toggle('paused', !state.playing);
+}
+
+function togglePlay() {
+  state.playing = !state.playing;
+  updatePlayButton();
+  if (state.playing) state.lastFrame = performance.now();
+}
+
+function switchTab(name, focus = false) {
+  state.activeTab = name;
+  document.querySelectorAll('.tab-button').forEach(btn => {
+    const selected = btn.dataset.tab === name;
+    btn.setAttribute('aria-selected', String(selected));
+    btn.tabIndex = selected ? 0 : -1;
+    if (selected && focus) btn.focus();
+  });
+  document.querySelectorAll('.tab-panel').forEach(panel => {
+    const active = panel.id === 'panel-' + name;
+    panel.classList.toggle('active', active);
+    panel.hidden = !active;
+  });
+  window.scrollTo({ top: 0, left: 0, behavior: 'auto' });
+  requestAnimationFrame(() => {
+    updateUi();
+    drawActive();
+  });
+}
+
+function applyTheme(theme) {
+  document.documentElement.dataset.theme = theme;
+  try { localStorage.setItem('wien-theme', theme); } catch (e) {}
+  $('themeButton').textContent = theme === 'dark' ? '☀' : '🌙';
+  $('themeButton').setAttribute('aria-label', theme === 'dark' ? 'Switch to light theme' : 'Switch to dark theme');
+  requestAnimationFrame(drawActive);
+}
+
+function toggleTheme() {
+  applyTheme(document.documentElement.dataset.theme === 'dark' ? 'light' : 'dark');
+}
+
+function exportCsv() {
+  const p = getParams();
+  const rows = [
+    ['Wien Bridge Oscillator Simulation'],
+    ['R1 (ohm)', p.R1], ['C1 (F)', p.C1], ['R2 (ohm)', p.R2], ['C2 (F)', p.C2],
+    ['Rf (ohm)', p.Rf], ['Rg (ohm)', p.Rg], ['Frequency f0 (Hz)', p.f0],
+    ['Feedback beta0', p.beta0], ['Required gain', p.requiredGain], ['Nominal gain', p.gain],
+    ['Supply rail (V)', p.supply], ['Amplitude-control mode', p.stabilization],
+    [], ['Time (s)', 'Output (V)', 'Feedback (V)', 'Demand (V)']
+  ];
+  const cycles = 3;
+  const points = 600;
+  for (let i = 0; i <= points; i++) {
+    const theta = cycles * 2 * Math.PI * i / points;
+    const time = cycles * i / points / p.f0;
+    const demand = state.envelope * Math.sin(theta);
+    const output = clamp(demand, -p.outputLimit, p.outputLimit);
+    rows.push([time, output, output * p.beta0, demand]);
+  }
+  const csv = rows.map(row => row.map(value => {
+    const text = String(value ?? '');
+    return /[",\n]/.test(text) ? '"' + text.replace(/"/g, '""') + '"' : text;
+  }).join(',')).join('\n');
+  const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'wien_bridge_oscillator_data.csv';
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  URL.revokeObjectURL(url);
+}
+
+function setCircuitHighlight(mode) {
+  state.highlight = mode;
+  const svg = $('circuitSvg');
+  svg.classList.remove('highlight-loop', 'highlight-positive', 'highlight-negative');
+  svg.classList.add('highlight-' + mode);
+  document.querySelectorAll('[data-highlight]').forEach(btn => btn.classList.toggle('active', btn.dataset.highlight === mode));
+  const content = {
+    loop: ['Complete loop', 'Both feedback paths are essential: the Wien network chooses the frequency and phase, while Rf and Rg set how much the op-amp amplifies.'],
+    positive: ['Positive-feedback path', 'Vout passes through the series C₁–R₁ arm to the non-inverting input. R₂ and C₂ form the shunt arm to ground. At f₀ this divider has zero phase shift and magnitude β₀.'],
+    negative: ['Gain-setting path', 'Rf and Rg form the ordinary non-inverting negative-feedback network. They set A = 1 + Rf/Rg, which must compensate the attenuation of the Wien network.']
+  }[mode];
+  $('circuitInsightTitle').textContent = content[0];
+  $('circuitInsight').textContent = content[1];
+  $('circuitStateBadge').textContent = content[0];
+}
+
+function submitQuiz() {
+  let score = 0;
+  const questions = document.querySelectorAll('.quiz-question');
+  questions.forEach(question => {
+    const answer = question.dataset.answer;
+    const chosen = question.querySelector('input[type="radio"]:checked');
+    question.classList.add('reviewed');
+    question.querySelectorAll('.quiz-option').forEach(label => {
+      const input = label.querySelector('input');
+      label.classList.remove('correct', 'wrong');
+      if (input.value === answer) label.classList.add('correct');
+      if (chosen && input === chosen && input.value !== answer) label.classList.add('wrong');
+    });
+    if (chosen && chosen.value === answer) score++;
+  });
+  const message = score === 5 ? '5 / 5 — Excellent' : score >= 3 ? score + ' / 5 — Good progress' : score + ' / 5 — Review the explanations';
+  $('quizScore').textContent = message;
+  $('quizScore').scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+}
+
+function resetQuiz() {
+  document.querySelectorAll('.quiz-question').forEach(question => {
+    question.classList.remove('reviewed');
+    question.querySelectorAll('input').forEach(input => { input.checked = false; });
+    question.querySelectorAll('.quiz-option').forEach(label => label.classList.remove('correct', 'wrong'));
+  });
+  $('quizScore').textContent = 'Not submitted';
+}
+
+function handleControlInput(event) {
+  if (event.target === controls.R1 && controls.linkBridge.checked) controls.R2.value = controls.R1.value;
+  if (event.target === controls.C1 && controls.linkBridge.checked) controls.C2.value = controls.C1.value;
+  updateUi();
+  drawActive();
+}
+
+function bindEvents() {
+  document.querySelectorAll('.tab-button').forEach(btn => {
+    btn.addEventListener('click', () => switchTab(btn.dataset.tab));
+    btn.addEventListener('keydown', event => {
+      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+      event.preventDefault();
+      const tabs = [...document.querySelectorAll('.tab-button')];
+      let index = tabs.indexOf(btn);
+      if (event.key === 'ArrowRight') index = (index + 1) % tabs.length;
+      if (event.key === 'ArrowLeft') index = (index - 1 + tabs.length) % tabs.length;
+      if (event.key === 'Home') index = 0;
+      if (event.key === 'End') index = tabs.length - 1;
+      switchTab(tabs[index].dataset.tab, true);
+    });
+  });
+  Object.values(controls).forEach(el => {
+    if (!el) return;
+    el.addEventListener(el.type === 'checkbox' || el.tagName === 'SELECT' ? 'change' : 'input', handleControlInput);
+  });
+  document.querySelectorAll('[data-preset]').forEach(btn => btn.addEventListener('click', () => applyPreset(btn.dataset.preset)));
+  document.querySelectorAll('[data-highlight]').forEach(btn => btn.addEventListener('click', () => setCircuitHighlight(btn.dataset.highlight)));
+  $('playButton').addEventListener('click', togglePlay);
+  $('restartButton').addEventListener('click', () => restartOscillation());
+  $('exportButton').addEventListener('click', exportCsv);
+  $('themeButton').addEventListener('click', toggleTheme);
+  $('submitQuiz').addEventListener('click', submitQuiz);
+  $('resetQuiz').addEventListener('click', resetQuiz);
+  window.addEventListener('resize', () => requestAnimationFrame(drawActive));
+}
+
+function init() {
+  bindEvents();
+  syncLinkedControls();
+  const reducedMotion = window.matchMedia && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reducedMotion) state.playing = false;
+  const p = getParams();
+  state.envelope = p.targetAmplitude * 0.95;
+  state.history = [{ t: 0, amp: state.envelope }];
+  updatePlayButton();
+  applyTheme(document.documentElement.dataset.theme || 'dark');
+  updateUi();
+  switchTab('lab');
+  requestAnimationFrame(animationFrame);
+}
+
+document.addEventListener('DOMContentLoaded', init);
+</script>
+</body>
+</html>

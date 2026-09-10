@@ -1,0 +1,89 @@
+:root {
+  --primary: #244a9b;
+  --primary-dark: #17346f;
+  --accent: #f2b705;
+  --bg: #f6f8fc;
+  --card: #ffffff;
+  --text: #1c2430;
+  --muted: #5d6b82;
+  --border: #dce3ef;
+  --code-bg: #1f2533;
+  --code-text: #f8f8f2;
+}
+* { box-sizing: border-box; }
+html { scroll-behavior: smooth; }
+body {
+  margin: 0;
+  font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  line-height: 1.6;
+}
+a { color: var(--primary); }
+.container { max-width: 1180px; margin: 0 auto; padding: 1.25rem; }
+.site-header {
+  background: linear-gradient(135deg, #183977, #2f63c8);
+  color: white;
+  padding: 2rem 0 1.2rem;
+  box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+}
+.site-header h1 { margin: 0; font-size: clamp(1.8rem, 4vw, 3rem); }
+.site-header p { max-width: 850px; color: #e6efff; margin: 0.45rem 0 0; }
+.navbar {
+  display: flex; flex-wrap: wrap; gap: 0.75rem; margin-top: 1.25rem;
+}
+.navbar a {
+  color: white; text-decoration: none; border: 1px solid rgba(255,255,255,0.35);
+  padding: 0.45rem 0.75rem; border-radius: 999px; background: rgba(255,255,255,0.10);
+}
+.navbar a:hover { background: rgba(255,255,255,0.22); }
+.hero-card, .card, .sim-card, .syllabus-card {
+  background: var(--card); border: 1px solid var(--border); border-radius: 18px;
+  box-shadow: 0 8px 24px rgba(22, 35, 62, 0.07);
+}
+.hero-card { padding: 1.5rem; margin: 1.25rem 0; }
+.hero-card h2, .card h2, .sim-card h2 { margin-top: 0; }
+.badge-row { display:flex; flex-wrap:wrap; gap:.5rem; margin-top:1rem; }
+.badge { background:#eaf1ff; border:1px solid #d2e0ff; color:#214583; padding:.35rem .65rem; border-radius:999px; font-size:.9rem; }
+.syllabus-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(250px, 1fr)); gap: 1rem; margin: 1rem 0 2rem; }
+.syllabus-card { padding: 1rem; }
+.syllabus-card h3 { margin: 0 0 .25rem; color: var(--primary-dark); }
+.hours { color: var(--primary); font-weight: 700; }
+.module-grid, .sim-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(260px, 1fr)); gap: 1rem; }
+.module-card, .card { padding: 1.2rem; }
+.module-card {
+  display:block; background:white; text-decoration:none; color: var(--text); border:1px solid var(--border); border-radius:16px;
+  box-shadow: 0 6px 18px rgba(22, 35, 62, 0.06); transition: transform .15s ease, box-shadow .15s ease;
+}
+.module-card:hover { transform: translateY(-2px); box-shadow: 0 10px 24px rgba(22,35,62,.10); }
+.module-card h3 { margin: 0 0 .45rem; color: var(--primary); }
+.module-card p { margin: 0; color: var(--muted); }
+.section-title { margin: 2rem 0 0.75rem; }
+.sim-card { padding: 1.2rem; margin-bottom: 1rem; }
+.control-row { margin: 0.8rem 0; }
+.control-row label { display:block; font-weight:700; margin-bottom:.25rem; }
+input, select, textarea {
+  width: 100%; padding: .65rem; border: 1px solid #bfc9d9; border-radius: 10px; font: inherit; background: white;
+}
+textarea { min-height: 110px; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+button, .btn {
+  display:inline-block; background: var(--primary); color: white; border:none; border-radius: 10px;
+  padding: .7rem 1rem; cursor:pointer; text-decoration:none; font-weight:700; margin:.3rem .3rem .3rem 0;
+}
+button:hover, .btn:hover { background: var(--primary-dark); }
+.code-box, pre.code-box {
+  background: var(--code-bg); color: var(--code-text); padding: 1rem; border-radius: 12px;
+  overflow-x:auto; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; font-size: .92rem;
+}
+.output-box {
+  background: #f4f7fb; border-left: 5px solid var(--primary); padding: 1rem; border-radius: 10px;
+  min-height: 64px; white-space: pre-wrap; font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+}
+.note-box { background:#fff9e9; border-left:5px solid var(--accent); padding:1rem; border-radius:10px; }
+.two-col { display:grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 1rem; }
+canvas { width:100%; max-width:520px; height:300px; background:white; border:1px solid var(--border); border-radius: 12px; }
+table { border-collapse: collapse; width: 100%; background: white; }
+th, td { border: 1px solid var(--border); padding: .6rem; text-align: left; }
+th { background: #eef4ff; }
+footer { padding: 2rem 0; color: var(--muted); text-align:center; }
+.small { font-size: .92rem; color: var(--muted); }

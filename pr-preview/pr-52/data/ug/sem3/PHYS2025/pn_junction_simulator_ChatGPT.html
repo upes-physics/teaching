@@ -1,0 +1,1893 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="theme-color" content="#f4f7fb">
+<title>Interactive PN Junction Laboratory</title>
+<style>
+  :root {
+    color-scheme: light;
+    --bg: #f4f7fb;
+    --surface: #ffffff;
+    --surface-2: #eef3fa;
+    --surface-3: #e5edf8;
+    --text: #172033;
+    --muted: #65708a;
+    --border: #d6dfec;
+    --shadow: 0 14px 36px rgba(31, 50, 81, 0.10);
+    --primary: #2756d8;
+    --primary-2: #6a46d8;
+    --primary-soft: #e9efff;
+    --cyan: #0b9fc6;
+    --cyan-soft: #dff8ff;
+    --pink: #db3d83;
+    --pink-soft: #ffe5f1;
+    --amber: #d8860b;
+    --amber-soft: #fff3d8;
+    --green: #16895c;
+    --green-soft: #e0f7ee;
+    --red: #c53c49;
+    --red-soft: #ffe6e8;
+    --purple: #7645cc;
+    --plot: #fbfdff;
+    --grid: #dbe4f1;
+    --p-region: #f7b8d0;
+    --p-region-deep: #cf3f78;
+    --n-region: #9edcf0;
+    --n-region-deep: #147da0;
+    --depletion: rgba(255, 210, 105, 0.34);
+    --wire: #35405a;
+    --focus: #2c6cf2;
+  }
+
+  html[data-theme="dark"] {
+    color-scheme: dark;
+    --bg: #0d1320;
+    --surface: #151d2d;
+    --surface-2: #1c2638;
+    --surface-3: #243149;
+    --text: #edf3ff;
+    --muted: #a5b1c9;
+    --border: #2d3a52;
+    --shadow: 0 16px 42px rgba(0, 0, 0, 0.32);
+    --primary: #7ea1ff;
+    --primary-2: #ac8dff;
+    --primary-soft: #24345e;
+    --cyan: #58d4f1;
+    --cyan-soft: #163846;
+    --pink: #ff7cad;
+    --pink-soft: #4a2034;
+    --amber: #ffc766;
+    --amber-soft: #443619;
+    --green: #63d6a7;
+    --green-soft: #173d31;
+    --red: #ff7a86;
+    --red-soft: #47232a;
+    --purple: #c2a7ff;
+    --plot: #101827;
+    --grid: #29364d;
+    --p-region: #7d3555;
+    --p-region-deep: #ff85b4;
+    --n-region: #225b72;
+    --n-region-deep: #70d8f5;
+    --depletion: rgba(255, 199, 102, 0.20);
+    --wire: #c9d5ec;
+    --focus: #9bb6ff;
+  }
+
+  * { box-sizing: border-box; }
+  html { scroll-behavior: smooth; }
+  body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+    background:
+      radial-gradient(circle at 8% -10%, color-mix(in srgb, var(--primary) 13%, transparent), transparent 34%),
+      radial-gradient(circle at 94% 2%, color-mix(in srgb, var(--pink) 10%, transparent), transparent 30%),
+      var(--bg);
+    color: var(--text);
+    line-height: 1.5;
+  }
+
+  button, input, select { font: inherit; }
+  button, select, input[type="range"], input[type="checkbox"] { accent-color: var(--primary); }
+  button:focus-visible, input:focus-visible, select:focus-visible, summary:focus-visible {
+    outline: 3px solid color-mix(in srgb, var(--focus) 55%, transparent);
+    outline-offset: 2px;
+  }
+
+  .app-header {
+    position: sticky;
+    top: 0;
+    z-index: 30;
+    border-bottom: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
+    background: color-mix(in srgb, var(--surface) 88%, transparent);
+    backdrop-filter: blur(16px);
+  }
+
+  .header-inner {
+    width: min(1540px, calc(100% - 28px));
+    margin: 0 auto;
+    min-height: 78px;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 18px;
+  }
+
+  .brand { display: flex; align-items: center; gap: 12px; min-width: 0; }
+  .brand-mark {
+    width: 46px;
+    height: 46px;
+    border-radius: 14px;
+    display: grid;
+    place-items: center;
+    background: linear-gradient(135deg, var(--pink), var(--primary), var(--cyan));
+    box-shadow: 0 8px 20px color-mix(in srgb, var(--primary) 22%, transparent);
+    color: white;
+    font-weight: 900;
+    letter-spacing: -0.05em;
+  }
+  .brand h1 { margin: 0; font-size: clamp(1.05rem, 2vw, 1.45rem); letter-spacing: -0.025em; }
+  .brand p { margin: 1px 0 0; color: var(--muted); font-size: 0.78rem; }
+
+  .header-actions { display: flex; align-items: center; gap: 10px; }
+  .nav-tabs {
+    display: flex;
+    gap: 4px;
+    padding: 4px;
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    background: var(--surface-2);
+  }
+  .nav-tab, .theme-toggle, .button, .preset-button, .segment-button, .experiment-button {
+    border: 0;
+    cursor: pointer;
+    transition: transform .18s ease, background .18s ease, color .18s ease, border-color .18s ease, box-shadow .18s ease;
+  }
+  .nav-tab {
+    padding: 8px 12px;
+    border-radius: 9px;
+    color: var(--muted);
+    background: transparent;
+    font-size: 0.82rem;
+    font-weight: 750;
+  }
+  .nav-tab.active { color: white; background: var(--primary); box-shadow: 0 5px 14px color-mix(in srgb, var(--primary) 27%, transparent); }
+  .theme-toggle {
+    min-width: 106px;
+    padding: 9px 12px;
+    border-radius: 11px;
+    border: 1px solid var(--border);
+    color: var(--text);
+    background: var(--surface);
+    font-weight: 750;
+    font-size: 0.8rem;
+  }
+  .theme-toggle:hover, .button:hover, .preset-button:hover, .experiment-button:hover { transform: translateY(-1px); }
+
+  .app-main { width: min(1540px, calc(100% - 28px)); margin: 22px auto 34px; }
+  .view { display: none; }
+  .view.active { display: block; animation: appear .22s ease; }
+  @keyframes appear { from { opacity: 0; transform: translateY(5px); } to { opacity: 1; transform: none; } }
+
+  .hero-strip {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 20px;
+    margin-bottom: 16px;
+  }
+  .hero-strip h2 { margin: 0; font-size: clamp(1.35rem, 2.5vw, 2rem); letter-spacing: -0.035em; }
+  .hero-strip p { max-width: 830px; margin: 6px 0 0; color: var(--muted); }
+  .hero-badge {
+    flex: 0 0 auto;
+    padding: 7px 11px;
+    border-radius: 999px;
+    background: var(--primary-soft);
+    color: var(--primary);
+    font-size: .76rem;
+    font-weight: 800;
+    border: 1px solid color-mix(in srgb, var(--primary) 22%, var(--border));
+  }
+
+  .lab-grid {
+    display: grid;
+    grid-template-columns: 285px minmax(460px, 1fr) 320px;
+    gap: 14px;
+    align-items: start;
+  }
+
+  .card {
+    background: color-mix(in srgb, var(--surface) 96%, transparent);
+    border: 1px solid var(--border);
+    border-radius: 17px;
+    box-shadow: var(--shadow);
+  }
+  .card-header {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 15px 16px 12px;
+    border-bottom: 1px solid var(--border);
+  }
+  .card-header h3 { margin: 0; font-size: 0.98rem; }
+  .card-header p { margin: 3px 0 0; color: var(--muted); font-size: .76rem; }
+  .card-body { padding: 15px 16px; }
+  .controls-card, .readout-card { position: sticky; top: 96px; max-height: calc(100vh - 116px); overflow: auto; scrollbar-width: thin; }
+
+  .section-label {
+    margin: 0 0 9px;
+    font-size: .68rem;
+    text-transform: uppercase;
+    letter-spacing: .095em;
+    color: var(--muted);
+    font-weight: 850;
+  }
+  .control-section + .control-section { margin-top: 16px; padding-top: 15px; border-top: 1px solid var(--border); }
+  .segment {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 5px;
+    padding: 4px;
+    border-radius: 12px;
+    background: var(--surface-2);
+    border: 1px solid var(--border);
+  }
+  .segment-button {
+    padding: 8px 5px;
+    border-radius: 8px;
+    background: transparent;
+    color: var(--muted);
+    font-size: .75rem;
+    font-weight: 800;
+  }
+  .segment-button.active { background: var(--surface); color: var(--primary); box-shadow: 0 3px 10px rgba(0,0,0,.08); }
+
+  .control { margin-top: 12px; }
+  .control-top { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; margin-bottom: 5px; }
+  .control label { font-size: .78rem; font-weight: 760; }
+  .control output { color: var(--primary); font-size: .76rem; font-weight: 850; white-space: nowrap; }
+  .control small { display: block; margin-top: 3px; color: var(--muted); font-size: .68rem; }
+  input[type="range"] { width: 100%; cursor: pointer; }
+  select, input[type="number"] {
+    width: 100%;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-2);
+    color: var(--text);
+    padding: 8px 10px;
+  }
+  .voltage-pair { display: grid; grid-template-columns: 1fr 78px; gap: 8px; align-items: center; }
+  .voltage-pair input[type="number"] { padding: 7px 8px; text-align: right; }
+  .toggle-line { display: flex; justify-content: space-between; gap: 12px; align-items: center; margin-top: 9px; font-size: .76rem; font-weight: 700; }
+  .toggle-line input { width: 18px; height: 18px; }
+
+  .preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+  .preset-button {
+    min-height: 40px;
+    padding: 7px 8px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    font-size: .7rem;
+    font-weight: 780;
+    text-align: left;
+  }
+  .preset-button strong { display: block; color: var(--primary); font-size: .73rem; }
+
+  .button-row { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+  .button {
+    padding: 9px 10px;
+    border-radius: 10px;
+    border: 1px solid var(--border);
+    background: var(--surface-2);
+    color: var(--text);
+    font-size: .75rem;
+    font-weight: 800;
+  }
+  .button.primary { background: var(--primary); color: white; border-color: transparent; }
+  .button.wide { grid-column: 1 / -1; }
+
+  .visual-column { display: grid; gap: 14px; min-width: 0; }
+  .visual-card { overflow: hidden; }
+  .status-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    padding: 6px 9px;
+    border-radius: 999px;
+    font-size: .7rem;
+    font-weight: 850;
+    white-space: nowrap;
+  }
+  .status-equilibrium { background: var(--surface-3); color: var(--muted); }
+  .status-forward { background: var(--green-soft); color: var(--green); }
+  .status-reverse { background: var(--primary-soft); color: var(--primary); }
+  .status-breakdown { background: var(--red-soft); color: var(--red); }
+  .canvas-wrap { position: relative; min-height: 440px; background: var(--plot); }
+  canvas { display: block; width: 100%; }
+  #junctionCanvas { height: 440px; }
+  .canvas-legend {
+    display: flex;
+    gap: 14px;
+    flex-wrap: wrap;
+    padding: 9px 14px 12px;
+    border-top: 1px solid var(--border);
+    color: var(--muted);
+    font-size: .69rem;
+  }
+  .legend-item { display: flex; align-items: center; gap: 6px; }
+  .legend-symbol { width: 12px; height: 12px; border-radius: 50%; display: grid; place-items: center; font-size: 8px; font-weight: 900; color: #fff; }
+  .legend-hole { background: var(--pink); }
+  .legend-electron { background: var(--cyan); }
+  .legend-ion { border-radius: 3px; background: var(--amber); }
+  .legend-field { width: 19px; height: 2px; border-radius: 0; background: var(--purple); }
+
+  .quick-readouts {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    border-top: 1px solid var(--border);
+  }
+  .quick-readout { padding: 10px 12px; min-width: 0; }
+  .quick-readout + .quick-readout { border-left: 1px solid var(--border); }
+  .quick-readout span { display: block; color: var(--muted); font-size: .66rem; text-transform: uppercase; letter-spacing: .055em; font-weight: 750; }
+  .quick-readout strong { display: block; margin-top: 2px; font-size: .9rem; overflow: hidden; text-overflow: ellipsis; }
+
+  .diagnostic-grid { display: grid; grid-template-columns: minmax(0, 1.2fr) minmax(280px, .8fr); gap: 14px; }
+  .plot-card { overflow: hidden; }
+  .plot-toolbar { display: flex; align-items: center; justify-content: space-between; gap: 8px; }
+  .mini-select { width: auto; min-width: 118px; padding: 6px 8px; font-size: .72rem; }
+  #ivCanvas { height: 300px; background: var(--plot); }
+  #bandCanvas { height: 300px; background: var(--plot); }
+
+  .readout-card .card-body { padding-top: 12px; }
+  .metric-list { margin: 0; }
+  .metric-row { display: grid; grid-template-columns: 1fr auto; gap: 10px; align-items: baseline; padding: 7px 0; border-bottom: 1px dashed var(--border); }
+  .metric-row dt { color: var(--muted); font-size: .73rem; }
+  .metric-row dd { margin: 0; font-size: .77rem; font-weight: 850; text-align: right; }
+  .explanation-box, .formula-box, .model-note {
+    margin-top: 13px;
+    padding: 11px 12px;
+    border-radius: 12px;
+    font-size: .75rem;
+  }
+  .explanation-box { background: var(--primary-soft); border: 1px solid color-mix(in srgb, var(--primary) 25%, var(--border)); }
+  .explanation-box h4, .formula-box h4 { margin: 0 0 5px; font-size: .78rem; }
+  .explanation-box p, .formula-box p, .model-note p { margin: 0; }
+  .formula-box { background: var(--surface-2); border-left: 4px solid var(--cyan); }
+  .formula-main { font-family: Cambria, "Times New Roman", serif; font-size: .9rem; color: var(--text); }
+  .model-note { background: var(--amber-soft); color: color-mix(in srgb, var(--text) 88%, var(--amber)); border: 1px solid color-mix(in srgb, var(--amber) 32%, var(--border)); }
+  .state-checklist { margin: 13px 0 0; padding: 0; list-style: none; }
+  .state-checklist li { display: flex; gap: 8px; align-items: flex-start; margin: 7px 0; color: var(--muted); font-size: .72rem; }
+  .check-dot { width: 8px; height: 8px; margin-top: 5px; border-radius: 50%; background: var(--primary); flex: 0 0 auto; }
+
+  .experiments-section { margin-top: 18px; }
+  .section-heading { display: flex; align-items: end; justify-content: space-between; gap: 14px; margin-bottom: 10px; }
+  .section-heading h2 { margin: 0; font-size: 1.18rem; }
+  .section-heading p { margin: 3px 0 0; color: var(--muted); font-size: .8rem; }
+  .experiment-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; }
+  .experiment-card { padding: 15px; box-shadow: none; }
+  .experiment-number { width: 30px; height: 30px; border-radius: 10px; display: grid; place-items: center; background: var(--primary-soft); color: var(--primary); font-weight: 900; }
+  .experiment-card h3 { margin: 10px 0 5px; font-size: .9rem; }
+  .experiment-card p { margin: 0 0 12px; color: var(--muted); font-size: .74rem; }
+  .experiment-button { width: 100%; padding: 8px 10px; border-radius: 9px; background: var(--surface-2); color: var(--primary); border: 1px solid var(--border); font-size: .72rem; font-weight: 820; }
+
+  .content-shell { max-width: 1180px; margin: 0 auto; }
+  .concept-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 13px; }
+  .concept-card { padding: 17px; box-shadow: none; }
+  .concept-icon { width: 38px; height: 38px; border-radius: 12px; display: grid; place-items: center; margin-bottom: 10px; font-size: 1.08rem; background: var(--primary-soft); }
+  .concept-card h3 { margin: 0 0 6px; font-size: .95rem; }
+  .concept-card p { margin: 0; color: var(--muted); font-size: .78rem; }
+  .concept-card .formula-box { margin-top: 10px; }
+  .comparison-card { margin-top: 14px; overflow: auto; box-shadow: none; }
+  table { width: 100%; border-collapse: collapse; min-width: 780px; }
+  th, td { padding: 11px 12px; border-bottom: 1px solid var(--border); text-align: left; font-size: .76rem; }
+  th { background: var(--surface-2); color: var(--text); font-size: .7rem; text-transform: uppercase; letter-spacing: .06em; }
+  td { color: var(--muted); }
+  td:first-child { color: var(--text); font-weight: 800; }
+  .glossary { margin-top: 14px; }
+  details { border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+  details + details { margin-top: 8px; }
+  summary { padding: 11px 13px; cursor: pointer; font-size: .8rem; font-weight: 800; }
+  details p { margin: 0; padding: 0 13px 13px; color: var(--muted); font-size: .76rem; }
+
+  .quiz-shell { max-width: 920px; margin: 0 auto; }
+  .quiz-card { padding: 17px; box-shadow: none; }
+  .quiz-question { padding: 15px 0; border-bottom: 1px solid var(--border); }
+  .quiz-question:last-of-type { border-bottom: 0; }
+  fieldset { border: 0; padding: 0; margin: 0; }
+  legend { width: 100%; font-size: .9rem; font-weight: 820; margin-bottom: 9px; }
+  .question-number { color: var(--primary); margin-right: 3px; }
+  .quiz-options { display: grid; gap: 7px; }
+  .quiz-option {
+    display: flex;
+    align-items: flex-start;
+    gap: 9px;
+    padding: 9px 11px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface-2);
+    cursor: pointer;
+    font-size: .77rem;
+  }
+  .quiz-option:hover { border-color: color-mix(in srgb, var(--primary) 50%, var(--border)); }
+  .quiz-option.correct { background: var(--green-soft); border-color: var(--green); color: var(--green); }
+  .quiz-option.incorrect { background: var(--red-soft); border-color: var(--red); color: var(--red); }
+  .quiz-option input { margin-top: 2px; }
+  .quiz-explanation { display: none; margin: 8px 0 0; padding: 9px 11px; border-radius: 9px; background: var(--surface-2); color: var(--muted); font-size: .74rem; }
+  .quiz-question.reviewed .quiz-explanation { display: block; }
+  .quiz-actions { display: flex; gap: 9px; flex-wrap: wrap; margin-top: 15px; }
+  .quiz-result { margin-top: 14px; padding: 13px; border-radius: 12px; background: var(--primary-soft); display: none; }
+  .quiz-result.show { display: block; }
+  .quiz-result strong { color: var(--primary); }
+  .progress-track { height: 8px; border-radius: 999px; background: var(--surface-3); overflow: hidden; margin-top: 8px; }
+  .progress-fill { height: 100%; width: 0; background: linear-gradient(90deg, var(--cyan), var(--primary), var(--purple)); transition: width .35s ease; }
+
+  .footer {
+    width: min(1540px, calc(100% - 28px));
+    margin: 0 auto 24px;
+    color: var(--muted);
+    text-align: center;
+    font-size: .69rem;
+  }
+
+  @media (max-width: 1240px) {
+    .lab-grid { grid-template-columns: 260px minmax(430px, 1fr); }
+    .readout-card { grid-column: 1 / -1; position: static; max-height: none; }
+    .readout-card .card-body { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .readout-card .metric-list { grid-row: span 3; }
+  }
+  @media (max-width: 940px) {
+    .header-inner { align-items: flex-start; padding: 10px 0; flex-wrap: wrap; }
+    .header-actions { width: 100%; justify-content: space-between; }
+    .lab-grid { grid-template-columns: 1fr; }
+    .controls-card { position: static; max-height: none; }
+    .controls-card .card-body { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; }
+    .control-section + .control-section { margin-top: 0; padding-top: 0; border-top: 0; }
+    .diagnostic-grid { grid-template-columns: 1fr; }
+    .experiment-grid, .concept-grid { grid-template-columns: 1fr 1fr; }
+  }
+  @media (max-width: 670px) {
+    .app-main, .header-inner, .footer { width: min(100% - 16px, 1540px); }
+    .brand p { display: none; }
+    .brand-mark { width: 40px; height: 40px; }
+    .header-actions { align-items: stretch; }
+    .nav-tabs { flex: 1; }
+    .nav-tab { flex: 1; padding-inline: 5px; }
+    .theme-toggle { min-width: auto; }
+    .hero-strip { display: block; }
+    .hero-badge { display: inline-flex; margin-top: 9px; }
+    .controls-card .card-body, .readout-card .card-body { display: block; }
+    .control-section + .control-section { margin-top: 16px; padding-top: 15px; border-top: 1px solid var(--border); }
+    .quick-readouts { grid-template-columns: 1fr 1fr; }
+    .quick-readout:nth-child(3) { border-left: 0; border-top: 1px solid var(--border); }
+    .quick-readout:nth-child(4) { border-top: 1px solid var(--border); }
+    .experiment-grid, .concept-grid { grid-template-columns: 1fr; }
+    #junctionCanvas { height: 390px; }
+    #ivCanvas, #bandCanvas { height: 280px; }
+  }
+  @media (prefers-reduced-motion: reduce) {
+    * { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+  }
+</style>
+</head>
+<body>
+<header class="app-header">
+  <div class="header-inner">
+    <div class="brand">
+      <div class="brand-mark" aria-hidden="true">PN</div>
+      <div>
+        <h1>Interactive PN Junction Laboratory</h1>
+        <p>Depletion region, carrier motion, biasing, I–V response and breakdown</p>
+      </div>
+    </div>
+    <div class="header-actions">
+      <nav class="nav-tabs" aria-label="Simulator sections" role="tablist">
+        <button class="nav-tab active" type="button" role="tab" aria-selected="true" data-view="simulation">Simulation</button>
+        <button class="nav-tab" type="button" role="tab" aria-selected="false" data-view="concepts">Concepts</button>
+        <button class="nav-tab" type="button" role="tab" aria-selected="false" data-view="quiz">Quiz</button>
+      </nav>
+      <button class="theme-toggle" id="themeToggle" type="button" aria-label="Switch colour theme">🌙 Dark</button>
+    </div>
+  </div>
+</header>
+
+<main class="app-main">
+  <section class="view active" id="view-simulation" aria-labelledby="simulationTitle">
+    <div class="hero-strip">
+      <div>
+        <h2 id="simulationTitle">See a PN junction respond to bias in real time</h2>
+        <p>Change the voltage, semiconductor material, doping and temperature. The cross-section, carriers, depletion width, electric field, energy bands and I–V operating point update together.</p>
+      </div>
+      <span class="hero-badge">Self-contained · Works offline</span>
+    </div>
+
+    <div class="lab-grid">
+      <aside class="card controls-card" aria-label="Simulation controls">
+        <div class="card-header">
+          <div><h3>Experiment controls</h3><p>Choose a condition, then vary one parameter at a time.</p></div>
+        </div>
+        <div class="card-body">
+          <div class="control-section">
+            <p class="section-label">Bias condition</p>
+            <div class="segment" id="biasSegment" role="group" aria-label="Bias condition">
+              <button class="segment-button active" type="button" data-bias="equilibrium">Equilibrium</button>
+              <button class="segment-button" type="button" data-bias="forward">Forward</button>
+              <button class="segment-button" type="button" data-bias="reverse">Reverse</button>
+            </div>
+            <div class="control">
+              <div class="control-top">
+                <label for="voltageRange">Applied voltage magnitude</label>
+                <output id="voltageOut">0.00 V</output>
+              </div>
+              <div class="voltage-pair">
+                <input id="voltageRange" type="range" min="0" max="1.2" step="0.01" value="0" disabled>
+                <input id="voltageNumber" type="number" min="0" max="1.2" step="0.01" value="0" aria-label="Applied voltage magnitude" disabled>
+              </div>
+              <small id="voltageHint">No external bias is applied.</small>
+            </div>
+          </div>
+
+          <div class="control-section">
+            <p class="section-label">Junction properties</p>
+            <div class="control">
+              <div class="control-top"><label for="materialSelect">Semiconductor</label></div>
+              <select id="materialSelect">
+                <option value="si">Silicon (Si)</option>
+                <option value="ge">Germanium (Ge)</option>
+                <option value="gaas">Gallium arsenide (GaAs)</option>
+              </select>
+            </div>
+            <div class="control">
+              <div class="control-top"><label for="pDoping">P-side acceptor density N<sub>A</sub></label><output id="pDopingOut">1.0 × 10¹⁶ cm⁻³</output></div>
+              <input id="pDoping" type="range" min="14" max="19" step="0.1" value="16">
+            </div>
+            <div class="control">
+              <div class="control-top"><label for="nDoping">N-side donor density N<sub>D</sub></label><output id="nDopingOut">1.0 × 10¹⁶ cm⁻³</output></div>
+              <input id="nDoping" type="range" min="14" max="19" step="0.1" value="16">
+            </div>
+            <div class="control">
+              <div class="control-top"><label for="temperature">Temperature</label><output id="temperatureOut">300 K</output></div>
+              <input id="temperature" type="range" min="240" max="420" step="5" value="300">
+            </div>
+            <div class="control">
+              <div class="control-top"><label for="seriesResistance">Series resistance</label><output id="seriesResistanceOut">220 Ω</output></div>
+              <input id="seriesResistance" type="range" min="10" max="2000" step="10" value="220">
+              <small>Limits current in forward conduction and breakdown.</small>
+            </div>
+          </div>
+
+          <div class="control-section">
+            <p class="section-label">Display</p>
+            <div class="control">
+              <div class="control-top"><label for="animationSpeed">Carrier animation speed</label><output id="animationSpeedOut">1.0×</output></div>
+              <input id="animationSpeed" type="range" min="0.25" max="2.5" step="0.25" value="1">
+            </div>
+            <label class="toggle-line"><span>Show mobile carriers</span><input id="showCarriers" type="checkbox" checked></label>
+            <label class="toggle-line"><span>Show electric field</span><input id="showField" type="checkbox" checked></label>
+          </div>
+
+          <div class="control-section">
+            <p class="section-label">Quick presets</p>
+            <div class="preset-grid">
+              <button class="preset-button" type="button" data-preset="equilibrium"><strong>Equilibrium</strong>Built-in field only</button>
+              <button class="preset-button" type="button" data-preset="forward"><strong>Si forward</strong>Near the knee</button>
+              <button class="preset-button" type="button" data-preset="reverse"><strong>Reverse leakage</strong>Minority carriers</button>
+              <button class="preset-button" type="button" data-preset="avalanche"><strong>Avalanche</strong>Impact ionisation</button>
+              <button class="preset-button" type="button" data-preset="zener"><strong>Zener</strong>Heavy doping</button>
+              <button class="preset-button" type="button" data-preset="asymmetric"><strong>One-sided</strong>Unequal depletion</button>
+            </div>
+          </div>
+
+          <div class="control-section">
+            <div class="button-row">
+              <button class="button primary" id="pauseButton" type="button">⏸ Pause</button>
+              <button class="button" id="resetButton" type="button">↺ Reset</button>
+              <button class="button wide" id="snapshotButton" type="button">Save junction snapshot</button>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <div class="visual-column">
+        <article class="card visual-card" aria-labelledby="junctionTitle">
+          <div class="card-header">
+            <div><h3 id="junctionTitle">Semiconductor cross-section</h3><p>P-type material on the left, N-type material on the right.</p></div>
+            <span class="status-badge status-equilibrium" id="statusBadge">● Equilibrium</span>
+          </div>
+          <div class="canvas-wrap">
+            <canvas id="junctionCanvas" role="img" aria-label="Interactive PN junction cross-section with depletion region and charge carriers"></canvas>
+          </div>
+          <div class="quick-readouts">
+            <div class="quick-readout"><span>Applied voltage</span><strong id="quickVoltage">0.00 V</strong></div>
+            <div class="quick-readout"><span>Junction current</span><strong id="quickCurrent">0 A</strong></div>
+            <div class="quick-readout"><span>Depletion width</span><strong id="quickWidth">—</strong></div>
+            <div class="quick-readout"><span>Barrier</span><strong id="quickBarrier">—</strong></div>
+          </div>
+          <div class="canvas-legend" aria-label="Diagram legend">
+            <span class="legend-item"><span class="legend-symbol legend-hole">+</span>Mobile hole</span>
+            <span class="legend-item"><span class="legend-symbol legend-electron">−</span>Mobile electron</span>
+            <span class="legend-item"><span class="legend-symbol legend-ion">±</span>Fixed ions in depletion region</span>
+            <span class="legend-item"><span class="legend-symbol legend-field"></span>Electric field direction</span>
+          </div>
+        </article>
+
+        <div class="diagnostic-grid">
+          <article class="card plot-card" aria-labelledby="ivTitle">
+            <div class="card-header">
+              <div><h3 id="ivTitle">Current–voltage characteristic</h3><p>The marker is the present operating point.</p></div>
+              <select class="mini-select" id="graphScale" aria-label="Current axis scale">
+                <option value="log">Signed log current</option>
+                <option value="linear">Linear current</option>
+              </select>
+            </div>
+            <canvas id="ivCanvas" role="img" aria-label="PN junction current voltage graph"></canvas>
+          </article>
+
+          <article class="card plot-card" aria-labelledby="bandTitle">
+            <div class="card-header">
+              <div><h3 id="bandTitle">Energy-band picture</h3><p>Bias changes the junction barrier.</p></div>
+            </div>
+            <canvas id="bandCanvas" role="img" aria-label="Simplified PN junction energy band diagram"></canvas>
+          </article>
+        </div>
+      </div>
+
+      <aside class="card readout-card" aria-label="Live analysis">
+        <div class="card-header">
+          <div><h3>Live analysis</h3><p>Calculated from a simplified abrupt-junction model.</p></div>
+        </div>
+        <div class="card-body">
+          <dl class="metric-list">
+            <div class="metric-row"><dt>Bias state</dt><dd id="metricState">Equilibrium</dd></div>
+            <div class="metric-row"><dt>Junction voltage V<sub>J</sub></dt><dd id="metricJunctionVoltage">0 V</dd></div>
+            <div class="metric-row"><dt>Thermal voltage V<sub>T</sub></dt><dd id="metricThermal">25.85 mV</dd></div>
+            <div class="metric-row"><dt>Built-in potential V<sub>bi</sub></dt><dd id="metricBuiltIn">—</dd></div>
+            <div class="metric-row"><dt>Barrier potential</dt><dd id="metricBarrier">—</dd></div>
+            <div class="metric-row"><dt>Total depletion width W</dt><dd id="metricWidth">—</dd></div>
+            <div class="metric-row"><dt>P-side width x<sub>p</sub></dt><dd id="metricXp">—</dd></div>
+            <div class="metric-row"><dt>N-side width x<sub>n</sub></dt><dd id="metricXn">—</dd></div>
+            <div class="metric-row"><dt>Peak electric field</dt><dd id="metricField">—</dd></div>
+            <div class="metric-row"><dt>Capacitance / area</dt><dd id="metricCapacitance">—</dd></div>
+            <div class="metric-row"><dt>Estimated breakdown</dt><dd id="metricBreakdown">—</dd></div>
+            <div class="metric-row"><dt>Dominant carriers</dt><dd id="metricCarriers">—</dd></div>
+          </dl>
+
+          <div class="explanation-box">
+            <h4 id="explanationTitle">Dynamic equilibrium</h4>
+            <p id="explanationText">Majority carriers diffuse across the new junction, leaving fixed ions. The resulting electric field drives an opposing drift current, so the net current is zero.</p>
+          </div>
+
+          <div class="formula-box">
+            <h4>Diode equation</h4>
+            <p class="formula-main">I = I<sub>S</sub>[e<sup>V<sub>J</sub>/(nV<sub>T</sub>)</sup> − 1]</p>
+            <p id="formulaInterpretation">At equilibrium, forward diffusion and reverse drift currents cancel.</p>
+          </div>
+
+          <ul class="state-checklist" id="stateChecklist">
+            <li><span class="check-dot"></span><span>The depletion region contains fixed ions but very few mobile carriers.</span></li>
+            <li><span class="check-dot"></span><span>The built-in field points from the positive donor ions on the N side toward the negative acceptor ions on the P side.</span></li>
+          </ul>
+
+          <div class="model-note">
+            <p><strong>Modeling note:</strong> numerical material constants, saturation current and breakdown voltage are educational approximations. Real devices depend on geometry, fabrication, area and datasheet limits.</p>
+          </div>
+        </div>
+      </aside>
+    </div>
+
+    <section class="experiments-section" aria-labelledby="experimentsTitle">
+      <div class="section-heading">
+        <div><h2 id="experimentsTitle">Guided investigations</h2><p>Use a preset, then adjust the highlighted parameter and explain what changes.</p></div>
+      </div>
+      <div class="experiment-grid">
+        <article class="card experiment-card">
+          <span class="experiment-number">1</span>
+          <h3>Find the forward knee</h3>
+          <p>Start near 0.45 V and raise the silicon forward voltage. Compare how slowly the current begins and how rapidly it grows near 0.7–0.8 V.</p>
+          <button class="experiment-button" type="button" data-experiment="knee">Open forward-bias experiment</button>
+        </article>
+        <article class="card experiment-card">
+          <span class="experiment-number">2</span>
+          <h3>Move the depletion region</h3>
+          <p>At equilibrium, make N<sub>A</sub> much larger than N<sub>D</sub>. The depletion region extends farther into the more lightly doped side.</p>
+          <button class="experiment-button" type="button" data-experiment="width">Open doping experiment</button>
+        </article>
+        <article class="card experiment-card">
+          <span class="experiment-number">3</span>
+          <h3>Compare breakdown mechanisms</h3>
+          <p>Observe avalanche at moderate doping, then use the Zener preset. Heavy doping narrows the junction and lowers the estimated breakdown voltage.</p>
+          <button class="experiment-button" type="button" data-experiment="breakdown">Open breakdown experiment</button>
+        </article>
+      </div>
+    </section>
+  </section>
+
+  <section class="view" id="view-concepts" aria-labelledby="conceptsTitle">
+    <div class="content-shell">
+      <div class="hero-strip">
+        <div><h2 id="conceptsTitle">PN junction concepts</h2><p>A PN junction is the boundary formed when P-type and N-type semiconductors are joined. Its behaviour follows from diffusion, drift and the electric field of uncovered ions.</p></div>
+        <span class="hero-badge">Core theory</span>
+      </div>
+
+      <div class="concept-grid">
+        <article class="card concept-card">
+          <div class="concept-icon">1</div>
+          <h3>Junction formation</h3>
+          <p>Holes diffuse from P to N and electrons diffuse from N to P. Recombination near the boundary removes mobile carriers and exposes immobile acceptor and donor ions.</p>
+        </article>
+        <article class="card concept-card">
+          <div class="concept-icon">↔</div>
+          <h3>Depletion region</h3>
+          <p>The region around the junction is depleted of most mobile carriers. Its fixed negative ions on the P side and fixed positive ions on the N side create the built-in field.</p>
+          <div class="formula-box"><p class="formula-main">W ∝ √[(V<sub>bi</sub> − V<sub>J</sub>)(1/N<sub>A</sub> + 1/N<sub>D</sub>)]</p></div>
+        </article>
+        <article class="card concept-card">
+          <div class="concept-icon">0</div>
+          <h3>Equilibrium</h3>
+          <p>Diffusion tends to move majority carriers across the junction, while the built-in electric field drives a drift current in the opposite direction. The two currents balance.</p>
+        </article>
+        <article class="card concept-card">
+          <div class="concept-icon">＋</div>
+          <h3>Forward bias</h3>
+          <p>Connect P to the positive terminal and N to the negative terminal. The applied field opposes the built-in field, lowers the barrier and narrows the depletion region. Majority-carrier current rises exponentially.</p>
+        </article>
+        <article class="card concept-card">
+          <div class="concept-icon">−</div>
+          <h3>Reverse bias</h3>
+          <p>Connect P to the negative terminal and N to the positive terminal. The barrier grows and the depletion region widens. Majority carriers are blocked; only a small minority-carrier current flows before breakdown.</p>
+        </article>
+        <article class="card concept-card">
+          <div class="concept-icon">⚡</div>
+          <h3>Breakdown</h3>
+          <p>Avalanche breakdown comes from impact ionisation in a strong field. In a heavily doped, very narrow junction, quantum tunnelling can dominate and is called Zener breakdown. External resistance must limit current.</p>
+        </article>
+        <article class="card concept-card">
+          <div class="concept-icon">eˣ</div>
+          <h3>Diode I–V law</h3>
+          <p>The idealised current is exponential in forward bias and approximately −I<sub>S</sub> in ordinary reverse bias. The thermal voltage V<sub>T</sub> = kT/q increases with temperature.</p>
+          <div class="formula-box"><p class="formula-main">I = I<sub>S</sub>(e<sup>V/(nV<sub>T</sub>)</sup> − 1)</p></div>
+        </article>
+        <article class="card concept-card">
+          <div class="concept-icon">T</div>
+          <h3>Temperature effect</h3>
+          <p>Higher temperature increases intrinsic carriers and reverse saturation current. For the same forward current, a real silicon diode generally requires a lower forward voltage as temperature rises.</p>
+        </article>
+        <article class="card concept-card">
+          <div class="concept-icon">N/P</div>
+          <h3>Unequal doping</h3>
+          <p>Charge neutrality requires equal uncovered charge on both sides. Therefore, the depletion region spreads farther into the more lightly doped material.</p>
+          <div class="formula-box"><p class="formula-main">N<sub>A</sub>x<sub>p</sub> = N<sub>D</sub>x<sub>n</sub></p></div>
+        </article>
+      </div>
+
+      <article class="card comparison-card" aria-labelledby="comparisonTitle">
+        <div class="card-header"><div><h3 id="comparisonTitle">Bias-state comparison</h3><p>Use this table as a quick revision guide.</p></div></div>
+        <table>
+          <thead><tr><th>Condition</th><th>External polarity</th><th>Barrier</th><th>Depletion width</th><th>Dominant motion</th><th>Current</th></tr></thead>
+          <tbody>
+            <tr><td>Equilibrium</td><td>No source</td><td>Built-in</td><td>Natural width</td><td>Diffusion and drift balance</td><td>Net zero</td></tr>
+            <tr><td>Forward bias</td><td>P positive, N negative</td><td>Reduced</td><td>Narrower</td><td>Majority carriers cross</td><td>Rises exponentially</td></tr>
+            <tr><td>Reverse bias</td><td>P negative, N positive</td><td>Increased</td><td>Wider</td><td>Minority carriers swept across</td><td>Small leakage</td></tr>
+            <tr><td>Breakdown</td><td>Large reverse voltage</td><td>Very strong field</td><td>Wide or extremely narrow, depending on mechanism</td><td>Impact ionisation or tunnelling</td><td>Large; must be limited</td></tr>
+          </tbody>
+        </table>
+      </article>
+
+      <div class="glossary" aria-label="Glossary">
+        <details><summary>What is a majority carrier?</summary><p>Holes are the majority carriers in P-type material, while electrons are the majority carriers in N-type material. Minority carriers are the much less numerous opposite carrier type.</p></details>
+        <details><summary>Why are the ions called fixed?</summary><p>The ionised dopant atoms are part of the crystal lattice. They contribute charge but do not move through the material like electrons and holes.</p></details>
+        <details><summary>Why is a series resistor important?</summary><p>The diode current can rise extremely quickly in forward conduction or breakdown. A resistor absorbs part of the source voltage and prevents destructive current.</p></details>
+      </div>
+    </div>
+  </section>
+
+  <section class="view" id="view-quiz" aria-labelledby="quizTitle">
+    <div class="quiz-shell">
+      <div class="hero-strip">
+        <div><h2 id="quizTitle">Five-question knowledge check</h2><p>Choose one answer for each question, then submit to view your score and explanations.</p></div>
+        <span class="hero-badge">5 questions</span>
+      </div>
+
+      <form class="card quiz-card" id="quizForm">
+        <div class="quiz-question" data-answer="b">
+          <fieldset>
+            <legend><span class="question-number">1.</span> What is found inside the depletion region of an ideal PN junction?</legend>
+            <div class="quiz-options">
+              <label class="quiz-option"><input type="radio" name="q1" value="a">A large concentration of freely moving majority carriers</label>
+              <label class="quiz-option"><input type="radio" name="q1" value="b">Fixed ionised dopants and very few mobile carriers</label>
+              <label class="quiz-option"><input type="radio" name="q1" value="c">Only neutral atoms with no electric field</label>
+              <label class="quiz-option"><input type="radio" name="q1" value="d">A metallic conductor</label>
+            </div>
+            <p class="quiz-explanation">Recombination removes many mobile carriers near the boundary, leaving fixed negative acceptor ions on the P side and fixed positive donor ions on the N side.</p>
+          </fieldset>
+        </div>
+
+        <div class="quiz-question" data-answer="c">
+          <fieldset>
+            <legend><span class="question-number">2.</span> Which change occurs when a PN junction is forward biased?</legend>
+            <div class="quiz-options">
+              <label class="quiz-option"><input type="radio" name="q2" value="a">The barrier and depletion width both increase</label>
+              <label class="quiz-option"><input type="radio" name="q2" value="b">Only minority carriers can move</label>
+              <label class="quiz-option"><input type="radio" name="q2" value="c">The barrier falls, the depletion region narrows and majority-carrier current increases</label>
+              <label class="quiz-option"><input type="radio" name="q2" value="d">The built-in field becomes infinitely large</label>
+            </div>
+            <p class="quiz-explanation">Forward bias opposes the built-in electric field. This lowers the energy barrier and lets majority carriers cross the junction more easily.</p>
+          </fieldset>
+        </div>
+
+        <div class="quiz-question" data-answer="a">
+          <fieldset>
+            <legend><span class="question-number">3.</span> Before breakdown, reverse current is mainly due to:</legend>
+            <div class="quiz-options">
+              <label class="quiz-option"><input type="radio" name="q3" value="a">Thermally generated minority carriers swept by the junction field</label>
+              <label class="quiz-option"><input type="radio" name="q3" value="b">A flood of majority carriers crossing a reduced barrier</label>
+              <label class="quiz-option"><input type="radio" name="q3" value="c">Current through a metal short circuit</label>
+              <label class="quiz-option"><input type="radio" name="q3" value="d">The disappearance of all dopant ions</label>
+            </div>
+            <p class="quiz-explanation">Reverse bias blocks majority carriers. A small current still flows because minority carriers are generated thermally and swept across by the electric field.</p>
+          </fieldset>
+        </div>
+
+        <div class="quiz-question" data-answer="d">
+          <fieldset>
+            <legend><span class="question-number">4.</span> If the P side is much more heavily doped than the N side, where does most of the depletion region lie?</legend>
+            <div class="quiz-options">
+              <label class="quiz-option"><input type="radio" name="q4" value="a">Entirely in the P side</label>
+              <label class="quiz-option"><input type="radio" name="q4" value="b">Equally on both sides regardless of doping</label>
+              <label class="quiz-option"><input type="radio" name="q4" value="c">Outside the semiconductor</label>
+              <label class="quiz-option"><input type="radio" name="q4" value="d">Farther into the more lightly doped N side</label>
+            </div>
+            <p class="quiz-explanation">The uncovered charge must balance: N<sub>A</sub>x<sub>p</sub> = N<sub>D</sub>x<sub>n</sub>. The lighter-doped side therefore needs a larger width.</p>
+          </fieldset>
+        </div>
+
+        <div class="quiz-question" data-answer="b">
+          <fieldset>
+            <legend><span class="question-number">5.</span> Which statement best distinguishes avalanche and Zener breakdown?</legend>
+            <div class="quiz-options">
+              <label class="quiz-option"><input type="radio" name="q5" value="a">Both are ordinary forward-bias conduction</label>
+              <label class="quiz-option"><input type="radio" name="q5" value="b">Avalanche uses impact ionisation; Zener breakdown uses tunnelling in a heavily doped, narrow junction</label>
+              <label class="quiz-option"><input type="radio" name="q5" value="c">Avalanche occurs only at zero voltage</label>
+              <label class="quiz-option"><input type="radio" name="q5" value="d">Zener breakdown contains no electric field</label>
+            </div>
+            <p class="quiz-explanation">Avalanche multiplication results from energetic carriers colliding with the lattice. Zener breakdown is quantum tunnelling through a very narrow depletion region.</p>
+          </fieldset>
+        </div>
+
+        <div class="quiz-actions">
+          <button class="button primary" type="submit">Submit answers</button>
+          <button class="button" type="button" id="resetQuizButton">Reset quiz</button>
+        </div>
+        <div class="quiz-result" id="quizResult" role="status" aria-live="polite">
+          <strong id="quizScore">Score: 0 / 5</strong>
+          <div id="quizMessage">Review the explanations beneath each question.</div>
+          <div class="progress-track" aria-hidden="true"><div class="progress-fill" id="quizProgress"></div></div>
+        </div>
+      </form>
+    </div>
+  </section>
+</main>
+
+<footer class="footer">
+  Educational one-dimensional abrupt-junction model. Use component datasheets and appropriate circuit protection for real design work.
+</footer>
+
+<script>
+(() => {
+  'use strict';
+
+  const materials = {
+    si:   { name: 'Silicon', symbol: 'Si', ni300: 1.0e10, epsR: 11.7, Eg: 1.12, Is300: 5e-10, ideality: 1.60 },
+    ge:   { name: 'Germanium', symbol: 'Ge', ni300: 2.4e13, epsR: 16.0, Eg: 0.66, Is300: 2e-6, ideality: 1.35 },
+    gaas: { name: 'Gallium arsenide', symbol: 'GaAs', ni300: 2.0e6, epsR: 12.9, Eg: 1.42, Is300: 2e-14, ideality: 1.65 }
+  };
+
+  const state = {
+    view: 'simulation',
+    theme: 'light',
+    biasMode: 'equilibrium',
+    magnitude: 0,
+    voltage: 0,
+    material: 'si',
+    pExp: 16,
+    nExp: 16,
+    temperature: 300,
+    seriesResistance: 220,
+    speed: 1,
+    showCarriers: true,
+    showField: true,
+    paused: false,
+    time: 0,
+    graphScale: 'log'
+  };
+
+  const els = {
+    themeToggle: document.getElementById('themeToggle'),
+    navTabs: [...document.querySelectorAll('.nav-tab')],
+    views: [...document.querySelectorAll('.view')],
+    biasButtons: [...document.querySelectorAll('[data-bias]')],
+    voltageRange: document.getElementById('voltageRange'),
+    voltageNumber: document.getElementById('voltageNumber'),
+    voltageOut: document.getElementById('voltageOut'),
+    voltageHint: document.getElementById('voltageHint'),
+    materialSelect: document.getElementById('materialSelect'),
+    pDoping: document.getElementById('pDoping'),
+    pDopingOut: document.getElementById('pDopingOut'),
+    nDoping: document.getElementById('nDoping'),
+    nDopingOut: document.getElementById('nDopingOut'),
+    temperature: document.getElementById('temperature'),
+    temperatureOut: document.getElementById('temperatureOut'),
+    seriesResistance: document.getElementById('seriesResistance'),
+    seriesResistanceOut: document.getElementById('seriesResistanceOut'),
+    animationSpeed: document.getElementById('animationSpeed'),
+    animationSpeedOut: document.getElementById('animationSpeedOut'),
+    showCarriers: document.getElementById('showCarriers'),
+    showField: document.getElementById('showField'),
+    pauseButton: document.getElementById('pauseButton'),
+    resetButton: document.getElementById('resetButton'),
+    snapshotButton: document.getElementById('snapshotButton'),
+    graphScale: document.getElementById('graphScale'),
+    junctionCanvas: document.getElementById('junctionCanvas'),
+    ivCanvas: document.getElementById('ivCanvas'),
+    bandCanvas: document.getElementById('bandCanvas'),
+    statusBadge: document.getElementById('statusBadge'),
+    quickVoltage: document.getElementById('quickVoltage'),
+    quickCurrent: document.getElementById('quickCurrent'),
+    quickWidth: document.getElementById('quickWidth'),
+    quickBarrier: document.getElementById('quickBarrier'),
+    metricState: document.getElementById('metricState'),
+    metricJunctionVoltage: document.getElementById('metricJunctionVoltage'),
+    metricThermal: document.getElementById('metricThermal'),
+    metricBuiltIn: document.getElementById('metricBuiltIn'),
+    metricBarrier: document.getElementById('metricBarrier'),
+    metricWidth: document.getElementById('metricWidth'),
+    metricXp: document.getElementById('metricXp'),
+    metricXn: document.getElementById('metricXn'),
+    metricField: document.getElementById('metricField'),
+    metricCapacitance: document.getElementById('metricCapacitance'),
+    metricBreakdown: document.getElementById('metricBreakdown'),
+    metricCarriers: document.getElementById('metricCarriers'),
+    explanationTitle: document.getElementById('explanationTitle'),
+    explanationText: document.getElementById('explanationText'),
+    formulaInterpretation: document.getElementById('formulaInterpretation'),
+    stateChecklist: document.getElementById('stateChecklist'),
+    quizForm: document.getElementById('quizForm'),
+    resetQuizButton: document.getElementById('resetQuizButton'),
+    quizResult: document.getElementById('quizResult'),
+    quizScore: document.getElementById('quizScore'),
+    quizMessage: document.getElementById('quizMessage'),
+    quizProgress: document.getElementById('quizProgress')
+  };
+
+  const q = 1.602176634e-19;
+  const k = 1.380649e-23;
+  const kEv = 8.617333262e-5;
+  const eps0PerCm = 8.8541878128e-14;
+  let graphsDirty = true;
+  let currentModel = null;
+  let previousTimestamp = performance.now();
+
+  function clamp(value, min, max) { return Math.min(max, Math.max(min, value)); }
+
+  function css(name) {
+    return getComputedStyle(document.documentElement).getPropertyValue(name).trim();
+  }
+
+  function superscriptExponent(exp) {
+    const chars = { '-':'⁻', '0':'⁰', '1':'¹', '2':'²', '3':'³', '4':'⁴', '5':'⁵', '6':'⁶', '7':'⁷', '8':'⁸', '9':'⁹', '.':'·' };
+    return String(exp).split('').map(ch => chars[ch] || ch).join('');
+  }
+
+  function formatDoping(exp) {
+    const floor = Math.floor(exp);
+    const mantissa = Math.pow(10, exp - floor);
+    return `${mantissa.toFixed(1)} × 10${superscriptExponent(floor)} cm⁻³`;
+  }
+
+  function formatVoltage(v, digits = 3) {
+    if (Math.abs(v) < 1e-6) return '0 V';
+    if (Math.abs(v) < 1) return `${v.toFixed(digits)} V`;
+    return `${v.toFixed(2)} V`;
+  }
+
+  function formatCurrent(i) {
+    const a = Math.abs(i);
+    if (a < 5e-15) return '≈ 0 A';
+    if (a < 1e-12) return `${(i * 1e15).toFixed(2)} fA`;
+    if (a < 1e-9) return `${(i * 1e12).toFixed(2)} pA`;
+    if (a < 1e-6) return `${(i * 1e9).toFixed(2)} nA`;
+    if (a < 1e-3) return `${(i * 1e6).toFixed(2)} µA`;
+    if (a < 1) return `${(i * 1e3).toFixed(2)} mA`;
+    return `${i.toFixed(2)} A`;
+  }
+
+  function formatLengthUm(um) {
+    if (um < 0.001) return `${(um * 1000).toFixed(2)} nm`;
+    if (um < 1) return `${um.toFixed(3)} µm`;
+    return `${um.toFixed(2)} µm`;
+  }
+
+  function formatField(vPerCm) {
+    const a = Math.abs(vPerCm);
+    if (a >= 1e6) return `${(a / 1e6).toFixed(2)} MV/cm`;
+    if (a >= 1e3) return `${(a / 1e3).toFixed(2)} kV/cm`;
+    return `${a.toFixed(1)} V/cm`;
+  }
+
+  function intrinsicDensity(mat, temp) {
+    const ratio = Math.pow(temp / 300, 1.5);
+    const exponent = -mat.Eg / (2 * kEv) * (1 / temp - 1 / 300);
+    return mat.ni300 * ratio * Math.exp(clamp(exponent, -50, 50));
+  }
+
+  function saturationCurrent(mat, temp, pExp, nExp) {
+    const tempFactor = Math.pow(temp / 300, 3) * Math.exp(clamp(-mat.Eg / kEv * (1 / temp - 1 / 300), -50, 50));
+    const dopingFactor = 1 / Math.sqrt(Math.pow(10, pExp - 16) * Math.pow(10, nExp - 16));
+    return mat.Is300 * tempFactor * clamp(dopingFactor, 0.01, 100);
+  }
+
+  function breakdownEstimate(pExp, nExp) {
+    const lighterSideExp = Math.min(pExp, nExp);
+    const voltage = clamp(24 * Math.pow(10, -0.32 * (lighterSideExp - 15)), 3.2, 30);
+    const mechanism = voltage <= 5.5 ? 'Zener tunnelling' : 'Avalanche multiplication';
+    return { voltage, mechanism };
+  }
+
+  function solveForwardCurrent(sourceVoltage, Is, nVt, seriesResistance) {
+    const rs = Math.max(0.1, seriesResistance);
+    let low = 0;
+    let high = Math.min(0.25, sourceVoltage / rs + 1e-12);
+    for (let iteration = 0; iteration < 70; iteration++) {
+      const mid = (low + high) / 2;
+      const junctionVoltage = sourceVoltage - mid * rs;
+      const exponent = clamp(junctionVoltage / nVt, -80, 45);
+      const diodeCurrent = Is * (Math.exp(exponent) - 1);
+      if (mid > diodeCurrent) high = mid;
+      else low = mid;
+    }
+    return (low + high) / 2;
+  }
+
+  function computeAtVoltage(sourceVoltage) {
+    const mat = materials[state.material];
+    const temp = state.temperature;
+    const Vt = k * temp / q;
+    const Na = Math.pow(10, state.pExp);
+    const Nd = Math.pow(10, state.nExp);
+    const ni = intrinsicDensity(mat, temp);
+    const ratio = Math.max(1.000001, Na * Nd / (ni * ni));
+    const Vbi = Math.max(0.025, Vt * Math.log(ratio));
+    const Is = saturationCurrent(mat, temp, state.pExp, state.nExp);
+    const nVt = mat.ideality * Vt;
+    const breakdown = breakdownEstimate(state.pExp, state.nExp);
+    let current = 0;
+    let junctionVoltage = sourceVoltage;
+
+    if (sourceVoltage > 0) {
+      current = solveForwardCurrent(sourceVoltage, Is, nVt, state.seriesResistance);
+      junctionVoltage = sourceVoltage - current * state.seriesResistance;
+    } else if (sourceVoltage < 0 && Math.abs(sourceVoltage) < breakdown.voltage) {
+      current = -Is;
+      junctionVoltage = sourceVoltage - current * state.seriesResistance;
+    } else if (sourceVoltage < 0) {
+      const excess = Math.max(0, Math.abs(sourceVoltage) - breakdown.voltage);
+      current = -(Is + excess / (state.seriesResistance + 45));
+      current = Math.max(current, -0.25);
+      junctionVoltage = sourceVoltage - current * state.seriesResistance;
+    }
+
+    const barrier = Math.max(0.012, Vbi - junctionVoltage);
+    const eps = eps0PerCm * mat.epsR;
+    const Wcm = Math.sqrt(Math.max(0, 2 * eps / q * (1 / Na + 1 / Nd) * barrier));
+    const xpCm = Wcm * Nd / (Na + Nd);
+    const xnCm = Wcm * Na / (Na + Nd);
+    const Emax = Wcm > 0 ? 2 * barrier / Wcm : 0;
+    const capacitancePerArea = Wcm > 0 ? eps / Wcm : 0;
+
+    let region = 'Equilibrium';
+    let regionKey = 'equilibrium';
+    if (sourceVoltage > 0) {
+      region = current < 1e-6 ? 'Weak forward bias' : 'Forward conduction';
+      regionKey = 'forward';
+    } else if (sourceVoltage < 0 && Math.abs(sourceVoltage) < breakdown.voltage) {
+      region = 'Reverse bias';
+      regionKey = 'reverse';
+    } else if (sourceVoltage < 0) {
+      region = breakdown.mechanism.includes('Zener') ? 'Zener breakdown' : 'Avalanche breakdown';
+      regionKey = 'breakdown';
+    }
+
+    return {
+      mat, temp, Vt, Na, Nd, ni, Vbi, Is, current, sourceVoltage, junctionVoltage,
+      barrier, Wcm, Wum: Wcm * 1e4, xpUm: xpCm * 1e4, xnUm: xnCm * 1e4,
+      Emax, capacitancePerArea, breakdown, region, regionKey
+    };
+  }
+
+  function setBiasMode(mode, keepMagnitude = false) {
+    state.biasMode = mode;
+    els.biasButtons.forEach(button => button.classList.toggle('active', button.dataset.bias === mode));
+    const equilibrium = mode === 'equilibrium';
+    els.voltageRange.disabled = equilibrium;
+    els.voltageNumber.disabled = equilibrium;
+
+    if (equilibrium) {
+      state.magnitude = 0;
+      els.voltageRange.min = '0';
+      els.voltageRange.max = '1.2';
+      els.voltageRange.step = '0.01';
+      els.voltageHint.textContent = 'No external bias is applied.';
+    } else if (mode === 'forward') {
+      els.voltageRange.min = '0';
+      els.voltageRange.max = '1.2';
+      els.voltageRange.step = '0.01';
+      els.voltageNumber.min = '0';
+      els.voltageNumber.max = '1.2';
+      els.voltageNumber.step = '0.01';
+      if (!keepMagnitude) state.magnitude = 0.65;
+      state.magnitude = clamp(state.magnitude, 0, 1.2);
+      els.voltageHint.textContent = 'P is connected positive relative to N.';
+    } else {
+      els.voltageRange.min = '0';
+      els.voltageRange.max = '30';
+      els.voltageRange.step = '0.1';
+      els.voltageNumber.min = '0';
+      els.voltageNumber.max = '30';
+      els.voltageNumber.step = '0.1';
+      if (!keepMagnitude) state.magnitude = 5;
+      state.magnitude = clamp(state.magnitude, 0, 30);
+      els.voltageHint.textContent = 'P is connected negative relative to N.';
+    }
+    syncVoltageControls();
+    updateAll();
+  }
+
+  function syncVoltageControls() {
+    els.voltageRange.value = String(state.magnitude);
+    els.voltageNumber.value = String(state.magnitude);
+    state.voltage = state.biasMode === 'forward' ? state.magnitude : state.biasMode === 'reverse' ? -state.magnitude : 0;
+    els.voltageOut.textContent = `${state.voltage >= 0 ? '' : '−'}${Math.abs(state.voltage).toFixed(state.biasMode === 'reverse' ? 1 : 2)} V`;
+  }
+
+  function syncControlsFromState() {
+    els.materialSelect.value = state.material;
+    els.pDoping.value = String(state.pExp);
+    els.nDoping.value = String(state.nExp);
+    els.temperature.value = String(state.temperature);
+    els.seriesResistance.value = String(state.seriesResistance);
+    els.animationSpeed.value = String(state.speed);
+    els.showCarriers.checked = state.showCarriers;
+    els.showField.checked = state.showField;
+    els.graphScale.value = state.graphScale;
+    els.pDopingOut.textContent = formatDoping(state.pExp);
+    els.nDopingOut.textContent = formatDoping(state.nExp);
+    els.temperatureOut.textContent = `${state.temperature} K`;
+    els.seriesResistanceOut.textContent = `${state.seriesResistance} Ω`;
+    els.animationSpeedOut.textContent = `${state.speed.toFixed(2).replace(/0$/, '')}×`;
+    syncVoltageControls();
+  }
+
+  function updateAnalysis(model) {
+    currentModel = model;
+    const stateClass = {
+      equilibrium: 'status-equilibrium',
+      forward: 'status-forward',
+      reverse: 'status-reverse',
+      breakdown: 'status-breakdown'
+    }[model.regionKey];
+    els.statusBadge.className = `status-badge ${stateClass}`;
+    els.statusBadge.textContent = `● ${model.region}`;
+
+    els.quickVoltage.textContent = formatVoltage(model.sourceVoltage, 2);
+    els.quickCurrent.textContent = formatCurrent(model.current);
+    els.quickWidth.textContent = formatLengthUm(model.Wum);
+    els.quickBarrier.textContent = `${model.barrier.toFixed(3)} V`;
+
+    els.metricState.textContent = model.region;
+    els.metricJunctionVoltage.textContent = formatVoltage(model.junctionVoltage, 3);
+    els.metricThermal.textContent = `${(model.Vt * 1000).toFixed(2)} mV`;
+    els.metricBuiltIn.textContent = `${model.Vbi.toFixed(3)} V`;
+    els.metricBarrier.textContent = `${model.barrier.toFixed(3)} V`;
+    els.metricWidth.textContent = formatLengthUm(model.Wum);
+    els.metricXp.textContent = formatLengthUm(model.xpUm);
+    els.metricXn.textContent = formatLengthUm(model.xnUm);
+    els.metricField.textContent = formatField(model.Emax);
+    els.metricCapacitance.textContent = `${(model.capacitancePerArea * 1e9).toFixed(2)} nF/cm²`;
+    els.metricBreakdown.textContent = `${model.breakdown.voltage.toFixed(1)} V · ${model.breakdown.mechanism}`;
+
+    if (model.regionKey === 'equilibrium') {
+      els.metricCarriers.textContent = 'Balanced diffusion and drift';
+      els.explanationTitle.textContent = 'Dynamic equilibrium';
+      els.explanationText.innerHTML = 'Majority carriers initially diffuse across the junction and recombine. The uncovered ions create a built-in field that produces an equal opposing drift current, so the <strong>net current is zero</strong>.';
+      els.formulaInterpretation.textContent = 'At VJ = 0, the ideal diode equation gives zero net terminal current.';
+      els.stateChecklist.innerHTML = checklist([
+        'The depletion region contains fixed ions but very few mobile carriers.',
+        'The built-in electric field points from the N-side donor ions toward the P-side acceptor ions.',
+        'Diffusion and drift currents are both present, but cancel.'
+      ]);
+    } else if (model.regionKey === 'forward') {
+      els.metricCarriers.textContent = 'Majority holes and electrons';
+      els.explanationTitle.textContent = model.current < 1e-6 ? 'Barrier is being lowered' : 'Majority-carrier injection';
+      els.explanationText.innerHTML = `Forward bias makes P positive relative to N. It <strong>reduces the barrier to ${model.barrier.toFixed(3)} V</strong> and narrows the depletion region. Holes move P→N and electrons move N→P; the terminal current rises exponentially.`;
+      els.formulaInterpretation.textContent = 'A small increase in forward junction voltage multiplies the current; the series resistor then limits it.';
+      els.stateChecklist.innerHTML = checklist([
+        'The external field opposes the built-in field.',
+        'The depletion region is narrower than at equilibrium.',
+        'Conventional current is from P to N through the diode.'
+      ]);
+    } else if (model.regionKey === 'reverse') {
+      els.metricCarriers.textContent = 'Thermally generated minority carriers';
+      els.explanationTitle.textContent = 'Majority carriers are blocked';
+      els.explanationText.innerHTML = `Reverse bias adds to the built-in field, increasing the barrier to <strong>${model.barrier.toFixed(3)} V</strong> and widening the depletion region. Only the small reverse saturation current flows before breakdown.`;
+      els.formulaInterpretation.textContent = 'For sufficiently negative VJ and before breakdown, the ideal current approaches −IS.';
+      els.stateChecklist.innerHTML = checklist([
+        'The external field reinforces the built-in field.',
+        'The depletion region widens and junction capacitance falls.',
+        'Sparse minority carriers are swept across the junction.'
+      ]);
+    } else {
+      const isZener = model.breakdown.mechanism.includes('Zener');
+      els.metricCarriers.textContent = isZener ? 'Tunnelling carriers' : 'Avalanche-generated pairs';
+      els.explanationTitle.textContent = model.breakdown.mechanism;
+      els.explanationText.innerHTML = isZener
+        ? `Heavy doping produces a very narrow junction. The strong reverse field allows <strong>quantum tunnelling</strong>, causing a large current near the estimated ${model.breakdown.voltage.toFixed(1)} V breakdown voltage.`
+        : `Carriers gain enough energy from the reverse field to create new electron–hole pairs by <strong>impact ionisation</strong>. Multiplication rapidly increases current beyond about ${model.breakdown.voltage.toFixed(1)} V.`;
+      els.formulaInterpretation.textContent = 'The simple diode equation alone does not model breakdown; the simulator adds a current-limited breakdown approximation.';
+      els.stateChecklist.innerHTML = checklist([
+        'Reverse current is now large and must be limited by external resistance.',
+        isZener ? 'The junction is heavily doped and narrow.' : 'Carrier collisions create additional electron–hole pairs.',
+        'Breakdown is not automatically destructive when current and power are kept within rated limits.'
+      ]);
+    }
+  }
+
+  function checklist(items) {
+    return items.map(item => `<li><span class="check-dot"></span><span>${item}</span></li>`).join('');
+  }
+
+  function updateAll() {
+    syncVoltageControls();
+    els.pDopingOut.textContent = formatDoping(state.pExp);
+    els.nDopingOut.textContent = formatDoping(state.nExp);
+    els.temperatureOut.textContent = `${state.temperature} K`;
+    els.seriesResistanceOut.textContent = `${state.seriesResistance} Ω`;
+    els.animationSpeedOut.textContent = `${state.speed.toFixed(2).replace(/0$/, '')}×`;
+    updateAnalysis(computeAtVoltage(state.voltage));
+    graphsDirty = true;
+  }
+
+  function applyPreset(name) {
+    if (name === 'equilibrium') {
+      state.material = 'si'; state.pExp = 16; state.nExp = 16; state.temperature = 300; state.seriesResistance = 220;
+      state.magnitude = 0; syncControlsFromState(); setBiasMode('equilibrium', true);
+    } else if (name === 'forward') {
+      state.material = 'si'; state.pExp = 16; state.nExp = 16; state.temperature = 300; state.seriesResistance = 220; state.magnitude = 0.72;
+      syncControlsFromState(); setBiasMode('forward', true);
+    } else if (name === 'reverse') {
+      state.material = 'si'; state.pExp = 16; state.nExp = 16; state.temperature = 300; state.seriesResistance = 220; state.magnitude = 5;
+      syncControlsFromState(); setBiasMode('reverse', true);
+    } else if (name === 'avalanche') {
+      state.material = 'si'; state.pExp = 16; state.nExp = 16; state.temperature = 300; state.seriesResistance = 680;
+      const b = breakdownEstimate(state.pExp, state.nExp); state.magnitude = Math.min(30, b.voltage * 1.18);
+      syncControlsFromState(); setBiasMode('reverse', true);
+    } else if (name === 'zener') {
+      state.material = 'si'; state.pExp = 18.2; state.nExp = 18.2; state.temperature = 300; state.seriesResistance = 680;
+      const b = breakdownEstimate(state.pExp, state.nExp); state.magnitude = Math.min(30, b.voltage * 1.18);
+      syncControlsFromState(); setBiasMode('reverse', true);
+    } else if (name === 'asymmetric') {
+      state.material = 'si'; state.pExp = 18; state.nExp = 15; state.temperature = 300; state.seriesResistance = 220; state.magnitude = 0;
+      syncControlsFromState(); setBiasMode('equilibrium', true);
+    }
+  }
+
+  function resetSimulation() {
+    Object.assign(state, {
+      biasMode: 'equilibrium', magnitude: 0, voltage: 0, material: 'si', pExp: 16, nExp: 16,
+      temperature: 300, seriesResistance: 220, speed: 1, showCarriers: true, showField: true,
+      paused: false, graphScale: 'log'
+    });
+    els.pauseButton.textContent = '⏸ Pause';
+    syncControlsFromState();
+    setBiasMode('equilibrium', true);
+  }
+
+  function setView(view) {
+    state.view = view;
+    els.navTabs.forEach(tab => {
+      const active = tab.dataset.view === view;
+      tab.classList.toggle('active', active);
+      tab.setAttribute('aria-selected', String(active));
+    });
+    els.views.forEach(section => section.classList.toggle('active', section.id === `view-${view}`));
+    if (view === 'simulation') {
+      graphsDirty = true;
+      requestAnimationFrame(() => drawJunction(currentModel || computeAtVoltage(state.voltage)));
+    }
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }
+
+  function setTheme(theme) {
+    state.theme = theme;
+    document.documentElement.dataset.theme = theme;
+    document.querySelector('meta[name="theme-color"]').setAttribute('content', theme === 'dark' ? '#0d1320' : '#f4f7fb');
+    els.themeToggle.textContent = theme === 'dark' ? '☀️ Light' : '🌙 Dark';
+    els.themeToggle.setAttribute('aria-label', `Switch to ${theme === 'dark' ? 'light' : 'dark'} theme`);
+    try { localStorage.setItem('pn-junction-theme', theme); } catch (_) {}
+    graphsDirty = true;
+  }
+
+  function fitCanvas(canvas) {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const width = Math.max(10, Math.round(rect.width));
+    const height = Math.max(10, Math.round(rect.height));
+    const pixelWidth = Math.round(width * dpr);
+    const pixelHeight = Math.round(height * dpr);
+    if (canvas.width !== pixelWidth || canvas.height !== pixelHeight) {
+      canvas.width = pixelWidth;
+      canvas.height = pixelHeight;
+    }
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, width, height);
+    return { ctx, width, height };
+  }
+
+  function roundedRect(ctx, x, y, width, height, radius) {
+    const r = Math.min(radius, width / 2, height / 2);
+    ctx.beginPath();
+    ctx.moveTo(x + r, y);
+    ctx.arcTo(x + width, y, x + width, y + height, r);
+    ctx.arcTo(x + width, y + height, x, y + height, r);
+    ctx.arcTo(x, y + height, x, y, r);
+    ctx.arcTo(x, y, x + width, y, r);
+    ctx.closePath();
+  }
+
+  function drawArrow(ctx, x1, y1, x2, y2, color, width = 2, head = 8) {
+    const angle = Math.atan2(y2 - y1, x2 - x1);
+    ctx.strokeStyle = color;
+    ctx.fillStyle = color;
+    ctx.lineWidth = width;
+    ctx.beginPath(); ctx.moveTo(x1, y1); ctx.lineTo(x2, y2); ctx.stroke();
+    ctx.beginPath();
+    ctx.moveTo(x2, y2);
+    ctx.lineTo(x2 - head * Math.cos(angle - Math.PI / 6), y2 - head * Math.sin(angle - Math.PI / 6));
+    ctx.lineTo(x2 - head * Math.cos(angle + Math.PI / 6), y2 - head * Math.sin(angle + Math.PI / 6));
+    ctx.closePath(); ctx.fill();
+  }
+
+  function drawCarrier(ctx, x, y, type, alpha = 1, size = 7) {
+    const color = type === 'hole' ? css('--pink') : css('--cyan');
+    ctx.save();
+    ctx.globalAlpha = alpha;
+    ctx.fillStyle = color;
+    ctx.beginPath(); ctx.arc(x, y, size, 0, Math.PI * 2); ctx.fill();
+    ctx.fillStyle = '#ffffff';
+    ctx.font = `800 ${Math.max(8, size + 2)}px system-ui`;
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(type === 'hole' ? '+' : '−', x, y + 0.3);
+    ctx.restore();
+  }
+
+  function drawFixedIon(ctx, x, y, sign) {
+    const color = sign === '+' ? css('--n-region-deep') : css('--p-region-deep');
+    ctx.fillStyle = color;
+    ctx.globalAlpha = 0.9;
+    roundedRect(ctx, x - 7, y - 7, 14, 14, 4); ctx.fill();
+    ctx.fillStyle = css('--surface');
+    ctx.font = '800 10px system-ui';
+    ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(sign, x, y + 0.5);
+    ctx.globalAlpha = 1;
+  }
+
+  function deterministicPoint(index, x0, x1, y0, y1) {
+    const fx = ((index * 0.61803398875 + 0.17) % 1 + 1) % 1;
+    const fy = ((index * 0.41421356237 + 0.31) % 1 + 1) % 1;
+    return { x: x0 + fx * (x1 - x0), y: y0 + fy * (y1 - y0) };
+  }
+
+  function drawJunction(model) {
+    const { ctx, width: W, height: H } = fitCanvas(els.junctionCanvas);
+    if (W < 50 || H < 50) return;
+    const text = css('--text');
+    const muted = css('--muted');
+    const border = css('--border');
+    const plot = css('--plot');
+    const pFill = css('--p-region');
+    const nFill = css('--n-region');
+    const pDeep = css('--p-region-deep');
+    const nDeep = css('--n-region-deep');
+    const wire = css('--wire');
+    const amber = css('--amber');
+    const purple = css('--purple');
+
+    ctx.fillStyle = plot; ctx.fillRect(0, 0, W, H);
+
+    const x0 = Math.max(38, W * 0.07);
+    const x1 = W - x0;
+    const y0 = 70;
+    const y1 = Math.min(H - 115, 310);
+    const mid = (x0 + x1) / 2;
+    const bodyH = y1 - y0;
+    const maxDep = Math.min((x1 - x0) * 0.48, 245);
+    const depPixels = clamp(42 + 65 * Math.log10(1 + model.Wum / 0.08), 44, maxDep);
+    const xpRatio = model.xpUm / Math.max(model.Wum, 1e-12);
+    const depLeft = mid - depPixels * xpRatio;
+    const depRight = mid + depPixels * (1 - xpRatio);
+
+    ctx.save();
+    ctx.shadowColor = 'rgba(0,0,0,.12)'; ctx.shadowBlur = 14; ctx.shadowOffsetY = 6;
+    roundedRect(ctx, x0, y0, x1 - x0, bodyH, 16); ctx.fillStyle = css('--surface'); ctx.fill();
+    ctx.restore();
+
+    ctx.save();
+    roundedRect(ctx, x0, y0, x1 - x0, bodyH, 16); ctx.clip();
+    ctx.fillStyle = pFill; ctx.fillRect(x0, y0, mid - x0, bodyH);
+    ctx.fillStyle = nFill; ctx.fillRect(mid, y0, x1 - mid, bodyH);
+    ctx.fillStyle = css('--depletion'); ctx.fillRect(depLeft, y0, depRight - depLeft, bodyH);
+    const grad = ctx.createLinearGradient(depLeft, 0, depRight, 0);
+    grad.addColorStop(0, 'rgba(255,255,255,.08)'); grad.addColorStop(.5, 'rgba(255,255,255,.32)'); grad.addColorStop(1, 'rgba(255,255,255,.08)');
+    ctx.fillStyle = grad; ctx.fillRect(depLeft, y0, depRight - depLeft, bodyH);
+    ctx.restore();
+
+    ctx.strokeStyle = border; ctx.lineWidth = 1.4; roundedRect(ctx, x0, y0, x1 - x0, bodyH, 16); ctx.stroke();
+    ctx.strokeStyle = colorWithAlpha(text, 0.35); ctx.setLineDash([5, 5]); ctx.beginPath(); ctx.moveTo(mid, y0); ctx.lineTo(mid, y1); ctx.stroke(); ctx.setLineDash([]);
+
+    ctx.fillStyle = text; ctx.font = '800 17px system-ui'; ctx.textAlign = 'center';
+    ctx.fillText('P-type', (x0 + depLeft) / 2, y0 + 28);
+    ctx.fillText('N-type', (depRight + x1) / 2, y0 + 28);
+    ctx.font = '700 11px system-ui'; ctx.fillStyle = muted;
+    ctx.fillText(`Nₐ = ${formatDoping(state.pExp).replace(' cm⁻³','')}`, (x0 + depLeft) / 2, y0 + 47);
+    ctx.fillText(`Nᴅ = ${formatDoping(state.nExp).replace(' cm⁻³','')}`, (depRight + x1) / 2, y0 + 47);
+
+    const ionRows = Math.max(2, Math.floor(bodyH / 42));
+    const pIonCols = Math.max(1, Math.floor((mid - depLeft) / 28));
+    const nIonCols = Math.max(1, Math.floor((depRight - mid) / 28));
+    for (let row = 0; row < ionRows; row++) {
+      const y = y0 + 66 + row * ((bodyH - 84) / Math.max(1, ionRows - 1));
+      for (let col = 0; col < pIonCols; col++) {
+        const x = depLeft + 13 + col * ((mid - depLeft - 26) / Math.max(1, pIonCols - 1));
+        drawFixedIon(ctx, x, y, '−');
+      }
+      for (let col = 0; col < nIonCols; col++) {
+        const x = mid + 13 + col * ((depRight - mid - 26) / Math.max(1, nIonCols - 1));
+        drawFixedIon(ctx, x, y, '+');
+      }
+    }
+
+    if (state.showCarriers) {
+      const staticCount = W < 620 ? 13 : 20;
+      for (let i = 0; i < staticCount; i++) {
+        const p = deterministicPoint(i, x0 + 20, Math.max(x0 + 24, depLeft - 18), y0 + 65, y1 - 22);
+        drawCarrier(ctx, p.x, p.y, 'hole', 0.58, 6);
+        const n = deterministicPoint(i + 37, Math.min(x1 - 24, depRight + 18), x1 - 20, y0 + 65, y1 - 22);
+        drawCarrier(ctx, n.x, n.y, 'electron', 0.58, 6);
+      }
+      drawMovingCarriers(ctx, model, x0, x1, y0, y1, depLeft, depRight);
+    }
+
+    ctx.fillStyle = colorWithAlpha(amber, 0.16);
+    roundedRect(ctx, depLeft - 7, y0 + 8, depRight - depLeft + 14, 26, 8); ctx.fill();
+    ctx.fillStyle = amber; ctx.font = '800 11px system-ui'; ctx.textAlign = 'center';
+    ctx.fillText(`Depletion region  W = ${formatLengthUm(model.Wum)}`, (depLeft + depRight) / 2, y0 + 25);
+
+    if (state.showField) {
+      const fy = y1 - 34;
+      drawArrow(ctx, depRight - 14, fy, depLeft + 14, fy, purple, 2.5, 9);
+      ctx.fillStyle = purple; ctx.font = '800 11px system-ui'; ctx.textAlign = 'center';
+      ctx.fillText('Built-in electric field  E  (N → P)', (depLeft + depRight) / 2, fy - 10);
+    }
+
+    ctx.strokeStyle = wire; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(x0, (y0 + y1) / 2); ctx.lineTo(x0 - 24, (y0 + y1) / 2); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x1, (y0 + y1) / 2); ctx.lineTo(x1 + 24, (y0 + y1) / 2); ctx.stroke();
+    ctx.fillStyle = wire; ctx.beginPath(); ctx.arc(x0 - 26, (y0 + y1) / 2, 4, 0, Math.PI * 2); ctx.fill();
+    ctx.beginPath(); ctx.arc(x1 + 26, (y0 + y1) / 2, 4, 0, Math.PI * 2); ctx.fill();
+
+    drawBiasCircuit(ctx, model, x0 - 26, x1 + 26, y1 + 28, H - 30);
+
+    ctx.strokeStyle = colorWithAlpha(muted, .65); ctx.lineWidth = 1; ctx.setLineDash([4,4]);
+    ctx.beginPath(); ctx.moveTo(depLeft, y1 + 5); ctx.lineTo(depLeft, y1 + 24); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(mid, y1 + 5); ctx.lineTo(mid, y1 + 24); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(depRight, y1 + 5); ctx.lineTo(depRight, y1 + 24); ctx.stroke();
+    ctx.setLineDash([]);
+    drawDimension(ctx, depLeft, mid, y1 + 15, `xₚ ${formatLengthUm(model.xpUm)}`, pDeep);
+    drawDimension(ctx, mid, depRight, y1 + 15, `xₙ ${formatLengthUm(model.xnUm)}`, nDeep);
+  }
+
+  function colorWithAlpha(color, alpha) {
+    if (color.startsWith('#')) {
+      const hex = color.slice(1);
+      const full = hex.length === 3 ? hex.split('').map(c => c + c).join('') : hex;
+      const r = parseInt(full.slice(0,2),16), g = parseInt(full.slice(2,4),16), b = parseInt(full.slice(4,6),16);
+      return `rgba(${r},${g},${b},${alpha})`;
+    }
+    return color;
+  }
+
+  function drawDimension(ctx, x1, x2, y, label, color) {
+    if (x2 - x1 < 22) return;
+    ctx.strokeStyle = color; ctx.fillStyle = color; ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x2, y); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(x1, y); ctx.lineTo(x1 + 5, y - 3); ctx.lineTo(x1 + 5, y + 3); ctx.closePath(); ctx.fill();
+    ctx.beginPath(); ctx.moveTo(x2, y); ctx.lineTo(x2 - 5, y - 3); ctx.lineTo(x2 - 5, y + 3); ctx.closePath(); ctx.fill();
+    ctx.font = '700 9px system-ui'; ctx.textAlign = 'center'; ctx.fillText(label, (x1 + x2) / 2, y + 13);
+  }
+
+  function drawBiasCircuit(ctx, model, leftContact, rightContact, topY, bottomY) {
+    const wire = css('--wire');
+    const text = css('--text');
+    const muted = css('--muted');
+    const primary = css('--primary');
+    const red = css('--red');
+    const center = (leftContact + rightContact) / 2;
+    const sourceWidth = Math.min(190, (rightContact - leftContact) * .34);
+    const sourceLeft = center - sourceWidth / 2;
+    const sourceRight = center + sourceWidth / 2;
+    const sourceY = bottomY - 18;
+
+    ctx.strokeStyle = wire; ctx.lineWidth = 2;
+    ctx.beginPath(); ctx.moveTo(leftContact, topY - 38); ctx.lineTo(leftContact, sourceY); ctx.lineTo(sourceLeft, sourceY); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(sourceRight, sourceY); ctx.lineTo(rightContact, sourceY); ctx.lineTo(rightContact, topY - 38); ctx.stroke();
+
+    roundedRect(ctx, sourceLeft, sourceY - 18, sourceWidth, 36, 11);
+    ctx.fillStyle = css('--surface-2'); ctx.fill(); ctx.strokeStyle = css('--border'); ctx.stroke();
+
+    const leftSign = state.biasMode === 'forward' ? '+' : state.biasMode === 'reverse' ? '−' : '○';
+    const rightSign = state.biasMode === 'forward' ? '−' : state.biasMode === 'reverse' ? '+' : '○';
+    ctx.fillStyle = state.biasMode === 'equilibrium' ? muted : primary;
+    ctx.font = '900 16px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+    ctx.fillText(leftSign, sourceLeft + 22, sourceY);
+    ctx.fillText(rightSign, sourceRight - 22, sourceY);
+    ctx.fillStyle = text; ctx.font = '800 12px system-ui';
+    ctx.fillText(`DC source  ${formatVoltage(model.sourceVoltage, 2)}`, center, sourceY);
+
+    ctx.font = '800 11px system-ui';
+    ctx.fillStyle = css('--p-region-deep'); ctx.fillText('P contact', leftContact, sourceY + 26);
+    ctx.fillStyle = css('--n-region-deep'); ctx.fillText('N contact', rightContact, sourceY + 26);
+
+    if (model.regionKey !== 'equilibrium') {
+      const arrowY = topY - 50;
+      if (model.regionKey === 'forward') {
+        drawArrow(ctx, leftContact + 20, arrowY, rightContact - 20, arrowY, primary, 2.2, 8);
+        ctx.fillStyle = primary; ctx.fillText('Conventional current I', center, arrowY - 9);
+      } else {
+        drawArrow(ctx, rightContact - 20, arrowY, leftContact + 20, arrowY, model.regionKey === 'breakdown' ? red : primary, 2.2, 8);
+        ctx.fillStyle = model.regionKey === 'breakdown' ? red : primary; ctx.fillText('Reverse conventional current', center, arrowY - 9);
+      }
+    } else {
+      ctx.fillStyle = muted; ctx.font = '700 10px system-ui'; ctx.fillText('No external source · net current = 0', center, topY - 48);
+    }
+  }
+
+  function drawMovingCarriers(ctx, model, x0, x1, y0, y1, depLeft, depRight) {
+    const t = state.time * state.speed;
+    const currentLevel = clamp((Math.log10(Math.abs(model.current) + 1e-14) + 14) / 11, 0, 1);
+    if (model.regionKey === 'equilibrium') {
+      const p = (Math.sin(t * 1.2) + 1) / 2;
+      drawCarrier(ctx, depLeft - 18 + p * 22, y0 + 98, 'hole', .65, 6);
+      drawCarrier(ctx, depRight + 18 - p * 22, y0 + 134, 'electron', .65, 6);
+      drawArrow(ctx, depLeft - 24, y0 + 98, depLeft + 9, y0 + 98, css('--pink'), 1.2, 5);
+      drawArrow(ctx, depRight + 24, y0 + 134, depRight - 9, y0 + 134, css('--cyan'), 1.2, 5);
+      return;
+    }
+
+    if (model.regionKey === 'forward') {
+      const count = 3 + Math.round(currentLevel * 12);
+      for (let i = 0; i < count; i++) {
+        const p = (t * (0.12 + currentLevel * .32) + i / count) % 1;
+        const y = y0 + 78 + (i % 5) * ((y1 - y0 - 120) / 4);
+        const hx = x0 + 30 + p * (x1 - x0 - 60);
+        const ex = x1 - 30 - p * (x1 - x0 - 60);
+        drawCarrier(ctx, hx, y, 'hole', .9, 6.5);
+        drawCarrier(ctx, ex, y + 16, 'electron', .9, 6.5);
+      }
+      return;
+    }
+
+    if (model.regionKey === 'reverse') {
+      for (let i = 0; i < 3; i++) {
+        const p = (t * .12 + i / 3) % 1;
+        const y = y0 + 105 + i * 42;
+        drawCarrier(ctx, depLeft - 30 + p * (depRight - depLeft + 60), y, 'electron', .75, 6);
+        drawCarrier(ctx, depRight + 30 - p * (depRight - depLeft + 60), y + 20, 'hole', .75, 6);
+      }
+      return;
+    }
+
+    const count = 14;
+    for (let i = 0; i < count; i++) {
+      const p = (t * .42 + i / count) % 1;
+      const y = y0 + 64 + (i % 6) * ((y1 - y0 - 95) / 5);
+      const x = depRight + 40 - p * (depRight - depLeft + 80);
+      drawCarrier(ctx, x, y, i % 2 ? 'hole' : 'electron', .92, 6.4);
+      if (p > .35 && p < .58 && i % 3 === 0) {
+        ctx.strokeStyle = css('--amber'); ctx.lineWidth = 1.4;
+        ctx.beginPath(); ctx.moveTo(x, y); ctx.lineTo(x + 12, y - 10); ctx.lineTo(x + 18, y + 4); ctx.stroke();
+        drawCarrier(ctx, x + 20, y - 8, 'electron', .75, 4.8);
+        drawCarrier(ctx, x + 24, y + 10, 'hole', .75, 4.8);
+      }
+    }
+  }
+
+  function xMapVoltage(v, left, right, reverseMax) {
+    const zero = left + (right - left) * 0.66;
+    if (v <= 0) return left + (v + reverseMax) / reverseMax * (zero - left);
+    return zero + v / 1.15 * (right - zero);
+  }
+
+  function symlogCurrent(i) {
+    return Math.sign(i) * Math.log10(1 + Math.abs(i) / 1e-12);
+  }
+
+  function drawIVGraph(model) {
+    const { ctx, width: W, height: H } = fitCanvas(els.ivCanvas);
+    if (W < 50 || H < 50) return;
+    const bg = css('--plot'), text = css('--text'), muted = css('--muted'), grid = css('--grid');
+    const primary = css('--primary'), red = css('--red'), green = css('--green'), amber = css('--amber');
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+    const m = { l: 52, r: 18, t: 18, b: 40 };
+    const left = m.l, right = W - m.r, top = m.t, bottom = H - m.b;
+    const reverseMax = Math.max(30, model.breakdown.voltage * 1.35);
+    const zeroX = xMapVoltage(0, left, right, reverseMax);
+    const scale = state.graphScale;
+    const maxLinear = 0.05;
+    const maxLog = symlogCurrent(0.1);
+
+    function yMap(current) {
+      const yValue = scale === 'linear' ? clamp(current, -maxLinear, maxLinear) / maxLinear : clamp(symlogCurrent(current), -maxLog, maxLog) / maxLog;
+      return bottom - (yValue + 1) / 2 * (bottom - top);
+    }
+
+    ctx.strokeStyle = grid; ctx.lineWidth = 1;
+    const yTicks = scale === 'linear'
+      ? [-.05, -.025, 0, .025, .05]
+      : [-1e-3, -1e-6, -1e-9, 0, 1e-9, 1e-6, 1e-3];
+    yTicks.forEach(value => {
+      const y = yMap(value);
+      ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(right, y); ctx.stroke();
+      ctx.fillStyle = muted; ctx.font = '10px system-ui'; ctx.textAlign = 'right'; ctx.textBaseline = 'middle';
+      const label = scale === 'linear' ? `${(value * 1000).toFixed(0)} mA` : value === 0 ? '0' : formatCurrent(value).replace('.00','');
+      ctx.fillText(label, left - 6, y);
+    });
+
+    const xTicks = [-reverseMax, -model.breakdown.voltage, -5, 0, .3, .6, .9, 1.1];
+    const seen = new Set();
+    xTicks.forEach(value => {
+      const rounded = Math.round(value * 10) / 10;
+      if (seen.has(rounded) || value < -reverseMax || value > 1.15) return;
+      seen.add(rounded);
+      const x = xMapVoltage(value, left, right, reverseMax);
+      ctx.strokeStyle = grid; ctx.beginPath(); ctx.moveTo(x, top); ctx.lineTo(x, bottom); ctx.stroke();
+      ctx.fillStyle = muted; ctx.font = '10px system-ui'; ctx.textAlign = 'center'; ctx.textBaseline = 'top';
+      ctx.fillText(value === 0 ? '0' : value.toFixed(Math.abs(value) < 2 ? 1 : 0), x, bottom + 7);
+    });
+
+    ctx.strokeStyle = text; ctx.lineWidth = 1.5;
+    ctx.beginPath(); ctx.moveTo(left, yMap(0)); ctx.lineTo(right, yMap(0)); ctx.stroke();
+    ctx.beginPath(); ctx.moveTo(zeroX, top); ctx.lineTo(zeroX, bottom); ctx.stroke();
+
+    const breakdownX = xMapVoltage(-model.breakdown.voltage, left, right, reverseMax);
+    ctx.strokeStyle = amber; ctx.setLineDash([5, 4]); ctx.beginPath(); ctx.moveTo(breakdownX, top); ctx.lineTo(breakdownX, bottom); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle = amber; ctx.font = '700 9px system-ui'; ctx.textAlign = 'center'; ctx.fillText('−VBR', breakdownX, top + 3);
+
+    const reversePoints = [];
+    for (let i = 0; i <= 160; i++) {
+      const v = -reverseMax + reverseMax * i / 160;
+      reversePoints.push([xMapVoltage(v, left, right, reverseMax), yMap(computeAtVoltage(v).current)]);
+    }
+    const forwardPoints = [];
+    for (let i = 0; i <= 130; i++) {
+      const v = 1.15 * i / 130;
+      forwardPoints.push([xMapVoltage(v, left, right, reverseMax), yMap(computeAtVoltage(v).current)]);
+    }
+
+    ctx.lineWidth = 2.3; ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+    ctx.strokeStyle = primary; ctx.beginPath(); reversePoints.forEach((p, i) => i ? ctx.lineTo(...p) : ctx.moveTo(...p)); ctx.stroke();
+    ctx.strokeStyle = green; ctx.beginPath(); forwardPoints.forEach((p, i) => i ? ctx.lineTo(...p) : ctx.moveTo(...p)); ctx.stroke();
+
+    const px = xMapVoltage(clamp(model.sourceVoltage, -reverseMax, 1.15), left, right, reverseMax);
+    const py = yMap(model.current);
+    ctx.fillStyle = model.regionKey === 'breakdown' ? red : css('--pink');
+    ctx.beginPath(); ctx.arc(px, py, 6.5, 0, Math.PI * 2); ctx.fill();
+    ctx.strokeStyle = css('--surface'); ctx.lineWidth = 2; ctx.stroke();
+
+    ctx.fillStyle = muted; ctx.font = '700 10px system-ui'; ctx.textAlign = 'center';
+    ctx.fillText('Reverse voltage', (left + zeroX) / 2, H - 9);
+    ctx.fillText('Forward voltage', (zeroX + right) / 2, H - 9);
+    ctx.save(); ctx.translate(12, (top + bottom) / 2); ctx.rotate(-Math.PI / 2); ctx.fillText(scale === 'linear' ? 'Current (mA)' : 'Current (signed logarithmic scale)', 0, 0); ctx.restore();
+  }
+
+  function drawBandDiagram(model) {
+    const { ctx, width: W, height: H } = fitCanvas(els.bandCanvas);
+    if (W < 50 || H < 50) return;
+    const bg = css('--plot'), text = css('--text'), muted = css('--muted'), grid = css('--grid');
+    const primary = css('--primary'), pink = css('--pink'), cyan = css('--cyan'), amber = css('--amber');
+    ctx.fillStyle = bg; ctx.fillRect(0, 0, W, H);
+    const left = 40, right = W - 20, top = 22, bottom = H - 35;
+    const mid = (left + right) / 2;
+    ctx.strokeStyle = grid; ctx.lineWidth = 1;
+    for (let i = 0; i < 5; i++) {
+      const y = top + i * (bottom - top) / 4;
+      ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(right, y); ctx.stroke();
+    }
+    ctx.fillStyle = colorWithAlpha(pink, .09); ctx.fillRect(left, top, mid - left, bottom - top);
+    ctx.fillStyle = colorWithAlpha(cyan, .09); ctx.fillRect(mid, top, right - mid, bottom - top);
+
+    const step = clamp(35 + model.barrier * 55, 34, 125);
+    const gap = clamp(58 + model.mat.Eg * 20, 68, 96);
+    const centerY = top + 58;
+    const pointsEc = [], pointsEv = [];
+    for (let i = 0; i <= 120; i++) {
+      const x = left + (right - left) * i / 120;
+      const s = 1 / (1 + Math.exp(-(x - mid) / Math.max(12, W * .045)));
+      const ec = centerY + step * (s - .5);
+      pointsEc.push([x, ec]);
+      pointsEv.push([x, ec + gap]);
+    }
+    ctx.strokeStyle = primary; ctx.lineWidth = 2.2; ctx.beginPath(); pointsEc.forEach((p,i)=>i?ctx.lineTo(...p):ctx.moveTo(...p)); ctx.stroke();
+    ctx.strokeStyle = css('--purple'); ctx.beginPath(); pointsEv.forEach((p,i)=>i?ctx.lineTo(...p):ctx.moveTo(...p)); ctx.stroke();
+
+    const fermiBase = bottom - 46;
+    ctx.strokeStyle = amber; ctx.setLineDash([6,4]); ctx.lineWidth = 1.6;
+    if (model.regionKey === 'equilibrium') {
+      ctx.beginPath(); ctx.moveTo(left, fermiBase); ctx.lineTo(right, fermiBase); ctx.stroke();
+      ctx.fillStyle = amber; ctx.font = '700 10px system-ui'; ctx.textAlign = 'right'; ctx.fillText('Eᶠ (flat at equilibrium)', right, fermiBase - 5);
+    } else {
+      const split = clamp(model.sourceVoltage * 15, -58, 38);
+      ctx.beginPath(); ctx.moveTo(left, fermiBase - split / 2); ctx.lineTo(mid - 8, fermiBase - split / 2); ctx.stroke();
+      ctx.beginPath(); ctx.moveTo(mid + 8, fermiBase + split / 2); ctx.lineTo(right, fermiBase + split / 2); ctx.stroke();
+      ctx.fillStyle = amber; ctx.font = '700 9px system-ui'; ctx.textAlign = 'left'; ctx.fillText('Fₚ', left, fermiBase - split / 2 - 5);
+      ctx.textAlign = 'right'; ctx.fillText('Fₙ', right, fermiBase + split / 2 - 5);
+    }
+    ctx.setLineDash([]);
+
+    ctx.fillStyle = primary; ctx.font = '800 10px system-ui'; ctx.textAlign = 'left'; ctx.fillText('Eᶜ', left + 5, pointsEc[0][1] - 7);
+    ctx.fillStyle = css('--purple'); ctx.fillText('Eᵛ', left + 5, pointsEv[0][1] + 14);
+    ctx.fillStyle = text; ctx.font = '800 11px system-ui'; ctx.textAlign = 'center';
+    ctx.fillText('P side', (left + mid) / 2, bottom + 20);
+    ctx.fillText('N side', (mid + right) / 2, bottom + 20);
+    ctx.fillStyle = muted; ctx.font = '700 9px system-ui';
+    ctx.fillText(`Barrier ≈ q × ${model.barrier.toFixed(3)} V`, mid, top + 10);
+
+    const yA = pointsEc[4][1], yB = pointsEc[116][1];
+    drawArrow(ctx, mid - 8, Math.min(yA,yB), mid - 8, Math.max(yA,yB), amber, 1.4, 5);
+  }
+
+  function saveSnapshot() {
+    drawJunction(currentModel || computeAtVoltage(state.voltage));
+    const source = els.junctionCanvas;
+    const exportCanvas = document.createElement('canvas');
+    exportCanvas.width = source.width;
+    exportCanvas.height = source.height;
+    const exportCtx = exportCanvas.getContext('2d');
+    exportCtx.drawImage(source, 0, 0);
+    const link = document.createElement('a');
+    link.download = `pn-junction-${state.biasMode}-${Date.now()}.png`;
+    link.href = exportCanvas.toDataURL('image/png');
+    link.click();
+  }
+
+  function handleQuizSubmit(event) {
+    event.preventDefault();
+    const questions = [...els.quizForm.querySelectorAll('.quiz-question')];
+    let score = 0;
+    let answered = 0;
+    questions.forEach(question => {
+      question.classList.add('reviewed');
+      const correct = question.dataset.answer;
+      const selected = question.querySelector('input:checked');
+      if (selected) answered++;
+      question.querySelectorAll('.quiz-option').forEach(option => {
+        option.classList.remove('correct', 'incorrect');
+        const input = option.querySelector('input');
+        if (input.value === correct) option.classList.add('correct');
+        if (selected && input === selected && selected.value !== correct) option.classList.add('incorrect');
+      });
+      if (selected && selected.value === correct) score++;
+    });
+    els.quizResult.classList.add('show');
+    els.quizScore.textContent = `Score: ${score} / 5`;
+    els.quizProgress.style.width = `${score * 20}%`;
+    if (answered < 5) els.quizMessage.textContent = `You answered ${answered} of 5 questions. Unanswered questions count as incorrect.`;
+    else if (score === 5) els.quizMessage.textContent = 'Excellent. You connected bias, carrier motion, depletion width and breakdown correctly.';
+    else if (score >= 3) els.quizMessage.textContent = 'Good progress. Review the explanations for the questions you missed.';
+    else els.quizMessage.textContent = 'Revisit the Concepts section, then try the simulator presets before retaking the quiz.';
+    els.quizResult.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+  }
+
+  function resetQuiz() {
+    els.quizForm.reset();
+    els.quizForm.querySelectorAll('.quiz-question').forEach(question => question.classList.remove('reviewed'));
+    els.quizForm.querySelectorAll('.quiz-option').forEach(option => option.classList.remove('correct', 'incorrect'));
+    els.quizResult.classList.remove('show');
+    els.quizProgress.style.width = '0%';
+  }
+
+  function bindEvents() {
+    els.navTabs.forEach(tab => tab.addEventListener('click', () => setView(tab.dataset.view)));
+    els.themeToggle.addEventListener('click', () => setTheme(state.theme === 'dark' ? 'light' : 'dark'));
+    els.biasButtons.forEach(button => button.addEventListener('click', () => setBiasMode(button.dataset.bias)));
+
+    const voltageChange = value => {
+      state.magnitude = clamp(Number(value) || 0, 0, state.biasMode === 'reverse' ? 30 : 1.2);
+      syncVoltageControls(); updateAll();
+    };
+    els.voltageRange.addEventListener('input', event => voltageChange(event.target.value));
+    els.voltageNumber.addEventListener('input', event => voltageChange(event.target.value));
+
+    els.materialSelect.addEventListener('change', event => { state.material = event.target.value; updateAll(); });
+    els.pDoping.addEventListener('input', event => { state.pExp = Number(event.target.value); updateAll(); });
+    els.nDoping.addEventListener('input', event => { state.nExp = Number(event.target.value); updateAll(); });
+    els.temperature.addEventListener('input', event => { state.temperature = Number(event.target.value); updateAll(); });
+    els.seriesResistance.addEventListener('input', event => { state.seriesResistance = Number(event.target.value); updateAll(); });
+    els.animationSpeed.addEventListener('input', event => { state.speed = Number(event.target.value); els.animationSpeedOut.textContent = `${state.speed.toFixed(2).replace(/0$/, '')}×`; });
+    els.showCarriers.addEventListener('change', event => { state.showCarriers = event.target.checked; });
+    els.showField.addEventListener('change', event => { state.showField = event.target.checked; });
+    els.graphScale.addEventListener('change', event => { state.graphScale = event.target.value; graphsDirty = true; });
+
+    document.querySelectorAll('[data-preset]').forEach(button => button.addEventListener('click', () => applyPreset(button.dataset.preset)));
+    document.querySelectorAll('[data-experiment]').forEach(button => button.addEventListener('click', () => {
+      const experiment = button.dataset.experiment;
+      setView('simulation');
+      if (experiment === 'knee') { applyPreset('forward'); state.magnitude = 0.45; syncVoltageControls(); updateAll(); }
+      if (experiment === 'width') applyPreset('asymmetric');
+      if (experiment === 'breakdown') applyPreset('avalanche');
+      document.querySelector('.lab-grid').scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }));
+
+    els.pauseButton.addEventListener('click', () => {
+      state.paused = !state.paused;
+      els.pauseButton.textContent = state.paused ? '▶ Resume' : '⏸ Pause';
+    });
+    els.resetButton.addEventListener('click', resetSimulation);
+    els.snapshotButton.addEventListener('click', saveSnapshot);
+    els.quizForm.addEventListener('submit', handleQuizSubmit);
+    els.resetQuizButton.addEventListener('click', resetQuiz);
+
+    const resizeObserver = new ResizeObserver(() => { graphsDirty = true; });
+    resizeObserver.observe(els.junctionCanvas);
+    resizeObserver.observe(els.ivCanvas);
+    resizeObserver.observe(els.bandCanvas);
+  }
+
+  function animationLoop(timestamp) {
+    const dt = Math.min(0.05, (timestamp - previousTimestamp) / 1000);
+    previousTimestamp = timestamp;
+    if (!state.paused) state.time += dt;
+    if (state.view === 'simulation') {
+      const model = currentModel || computeAtVoltage(state.voltage);
+      drawJunction(model);
+      if (graphsDirty) {
+        drawIVGraph(model);
+        drawBandDiagram(model);
+        graphsDirty = false;
+      }
+    }
+    requestAnimationFrame(animationLoop);
+  }
+
+  function initialise() {
+    let savedTheme = null;
+    try { savedTheme = localStorage.getItem('pn-junction-theme'); } catch (_) {}
+    const preferredDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    setTheme(savedTheme || (preferredDark ? 'dark' : 'light'));
+    bindEvents();
+    syncControlsFromState();
+    setBiasMode('equilibrium', true);
+    updateAll();
+    requestAnimationFrame(animationLoop);
+  }
+
+  initialise();
+})();
+</script>
+</body>
+</html>

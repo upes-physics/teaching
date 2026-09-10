@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>3D Phase Space: Lorenz Attractor</title>
+    <style>
+        body { 
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; 
+            background-color: #050505; 
+            color: #ffffff; 
+            margin: 0; 
+            display: flex; 
+            height: 100vh; 
+            overflow: hidden; 
+        }
+        #sidebar { 
+            width: 320px; 
+            background: #111111; 
+            padding: 25px; 
+            box-shadow: 2px 0 15px rgba(0,0,0,0.9); 
+            z-index: 10; 
+            overflow-y: auto; 
+            border-right: 1px solid #333;
+        }
+        #canvas-container { 
+            flex-grow: 1; 
+            position: relative; 
+            background: #000000;
+            overflow: hidden;
+        }
+        h2 { margin-top: 0; font-size: 1.4rem; color: #00ffff; text-shadow: 0 0 10px rgba(0,255,255,0.4); }
+        .equation { 
+            background: #1a1a1a; 
+            padding: 15px; 
+            border-radius: 6px; 
+            font-family: 'Courier New', Courier, monospace; 
+            font-size: 1rem; 
+            line-height: 1.5;
+            text-align: left; 
+            margin-bottom: 25px; 
+            color: #ffaa00;
+            border: 1px solid #333;
+        }
+        .control-group { margin-bottom: 25px; }
+        label { display: block; margin-bottom: 8px; font-size: 0.95rem; color: #ccc; }
+        input[type="range"] { width: 100%; cursor: pointer; accent-color: #00ffff; }
+        .value-display { float: right; font-weight: bold; color: #00ffff; font-family: monospace; }
+        
+        button { 
+            width: 100%; 
+            padding: 12px; 
+            background: #00ffff; 
+            color: #000; 
+            border: none; 
+            border-radius: 6px; 
+            font-size: 1rem; 
+            font-weight: bold; 
+            cursor: pointer; 
+            margin-top: 10px; 
+            transition: all 0.2s; 
+            box-shadow: 0 0 15px rgba(0,255,255,0.3);
+        }
+        button:hover { background: #00cccc; box-shadow: 0 0 20px rgba(0,255,255,0.6); }
+        button.secondary {
+            background: #333;
+            color: #fff;
+            box-shadow: none;
+        }
+        button.secondary:hover { background: #444; }
+        #instructions {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            color: rgba(255,255,255,0.5);
+            font-size: 0.9rem;
+            pointer-events: none;
+        }
+    </style>
+    <!-- Load Three.js for 3D rendering and OrbitControls for camera interaction -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+</head>
+<body>
+
+<div id="sidebar">
+    <h2>Lorenz Attractor</h2>
+    <div class="equation">
+        dx/dt = σ(y - x)<br>
+        dy/dt = x(ρ - z) - y<br>
+        dz/dt = xy - βz
+    </div>
+    
+    <div class="control-group">
+        <label>Sigma (σ): <span id="sigma-val" class="value-display">10.0</span></label>
+        <input type="range" id="sigma-slider" min="1" max="30" step="0.1" value="10.0">
+        <small style="color:#777; display:block; margin-top:4px;">Prandtl number (viscosity / thermal cond.)</small>
+    </div>
+
+    <div class="control-group">
+        <label>Rho (ρ): <span id="rho-val" class="value-display">28.0</span></label>
+        <input type="range" id="rho-slider" min="1" max="60" step="0.5" value="28.0">
+        <small style="color:#777; display:block; margin-top:4px;">Rayleigh number (temperature diff.)</small>
+    </div>
+
+    <div class="control-group">
+        <label>Beta (β): <span id="beta-val" class="value-display">2.667</span></label>
+        <input type="range" id="beta-slider" min="0.5" max="10" step="0.01" value="2.667">
+        <small style="color:#777; display:block; margin-top:4px;">Box dimensions geometry</small>
+    </div>
+
+    <div class="control-group" style="border-top: 1px solid #333; padding-top: 20px;">
+        <label>Simulation Speed: <span id="speed-val" class="value-display">1.0x</span></label>
+        <input type="range" id="speed-slider" min="0.1" max="5.0" step="0.1" value="1.0">
+    </div>
+
+    <button id="reset-btn">Reset Trajectory</button>
+    <button id="classic-btn" class="secondary">Load Classic Chaos (10, 28, 8/3)</button>
+</div>
+
+<div id="canvas-container">
+    <div id="instructions">Left Click + Drag to Rotate | Scroll to Zoom</div>
+</div>
+
+<script>
+    const container = document.getElementById('canvas-container');
+    const scene = new THREE.Scene();
+    
+    // Set up a perspective camera looking at the center of the attractor
+    const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
+    camera.position.set(0, 0, 100); 
+    
+    // Set up WebGL renderer with antialiasing
+    const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: false });
+    renderer.setSize(container.clientWidth, container.clientHeight);
+    renderer.setPixelRatio(window.devicePixelRatio);
+    container.appendChild(renderer.domElement);
+
+    // Add OrbitControls so the user can interactively rotate the 3D phase space
+    const controls = new THREE.OrbitControls(camera, renderer.domElement);
+    controls.enableDamping = true;
+    controls.dampingFactor = 0.05;
+    controls.target.set(0, 25, 0); // Center the view roughly around the Z-axis shift
+
+    // Physics parameters
+    let sigma = 10.0;
+    let rho = 28.0;
+    let beta = 8.0 / 3.0;
+    let speedMult = 1.0;
+    
+    // Initial State (x0, y0, z0)
+    let x = 1.0;
+    let y = 1.0;
+    let z = 1.0;
+    const dt = 0.005; // Time step for RK4 integration
+
+    // 1. Tracer Particle (A glowing neon red/pink sphere)
+    const particleGeo = new THREE.SphereGeometry(0.8, 16, 16);
+    const particleMat = new THREE.MeshBasicMaterial({ color: 0xff0055 });
+    const particle = new THREE.Mesh(particleGeo, particleMat);
+    scene.add(particle);
+
+    // 2. Trailing Path (A dynamically updating BufferGeometry line)
+    const MAX_POINTS = 15000; // Keep the last 15k points in memory
+    const trailGeometry = new THREE.BufferGeometry();
+    const positions = new Float32Array(MAX_POINTS * 3);
+    trailGeometry.setAttribute('position', new THREE.BufferAttribute(positions, 3));
+    trailGeometry.setDrawRange(0, 0);
+    
+    const trailMaterial = new THREE.LineBasicMaterial({ 
+        color: 0x00ffff, 
+        linewidth: 2,
+        transparent: true,
+        opacity: 0.6,
+        blending: THREE.AdditiveBlending
+    });
+    const trail = new THREE.Line(trailGeometry, trailMaterial);
+    scene.add(trail);
+
+    let pointCount = 0;
+
+    // The Lorenz Equations
+    function dx_dt(x, y, z) { return sigma * (y - x); }
+    function dy_dt(x, y, z) { return x * (rho - z) - y; }
+    function dz_dt(x, y, z) { return x * y - beta * z; }
+
+    // High-accuracy step function
+    function stepRK4() {
+        let k1x = dx_dt(x, y, z) * dt;
+        let k1y = dy_dt(x, y, z) * dt;
+        let k1z = dz_dt(x, y, z) * dt;
+
+        let k2x = dx_dt(x + k1x/2, y + k1y/2, z + k1z/2) * dt;
+        let k2y = dy_dt(x + k1x/2, y + k1y/2, z + k1z/2) * dt;
+        let k2z = dz_dt(x + k1x/2, y + k1y/2, z + k1z/2) * dt;
+
+        let k3x = dx_dt(x + k2x/2, y + k2y/2, z + k2z/2) * dt;
+        let k3y = dy_dt(x + k2x/2, y + k2y/2, z + k2z/2) * dt;
+        let k3z = dz_dt(x + k2x/2, y + k2y/2, z + k2z/2) * dt;
+
+        let k4x = dx_dt(x + k3x, y + k3y, z + k3z) * dt;
+        let k4y = dy_dt(x + k3x, y + k3y, z + k3z) * dt;
+        let k4z = dz_dt(x + k3x, y + k3y, z + k3z) * dt;
+
+        x += (k1x + 2*k2x + 2*k3x + k4x) / 6.0;
+        y += (k1y + 2*k2y + 2*k3y + k4y) / 6.0;
+        z += (k1z + 2*k2z + 2*k3z + k4z) / 6.0;
+    }
+
+    function updateTrail() {
+        if (pointCount < MAX_POINTS) {
+            // Append to the end of the array
+            positions[pointCount * 3] = x;
+            positions[pointCount * 3 + 1] = y;
+            positions[pointCount * 3 + 2] = z;
+            pointCount++;
+            trailGeometry.setDrawRange(0, pointCount);
+        } else {
+            // Extremely fast array shift using copyWithin to create a rolling buffer
+            positions.copyWithin(0, 3, MAX_POINTS * 3);
+            // Insert newest point at the very end
+            positions[(MAX_POINTS - 1) * 3] = x;
+            positions[(MAX_POINTS - 1) * 3 + 1] = y;
+            positions[(MAX_POINTS - 1) * 3 + 2] = z;
+        }
+        // Tell Three.js the GPU needs to re-read this array
+        trailGeometry.attributes.position.needsUpdate = true;
+    }
+
+    const UI = {
+        sigma: document.getElementById('sigma-slider'),
+        rho: document.getElementById('rho-slider'),
+        beta: document.getElementById('beta-slider'),
+        speed: document.getElementById('speed-slider'),
+        sVal: document.getElementById('sigma-val'),
+        rVal: document.getElementById('rho-val'),
+        bVal: document.getElementById('beta-val'),
+        spVal: document.getElementById('speed-val')
+    };
+
+    function resetSimulation() {
+        x = 1.0; y = 1.0; z = 1.0;
+        pointCount = 0;
+        trailGeometry.setDrawRange(0, 0);
+    }
+
+    UI.sigma.addEventListener('input', (e) => { sigma = parseFloat(e.target.value); UI.sVal.innerText = sigma.toFixed(1); resetSimulation(); });
+    UI.rho.addEventListener('input', (e) => { rho = parseFloat(e.target.value); UI.rVal.innerText = rho.toFixed(1); resetSimulation(); });
+    UI.beta.addEventListener('input', (e) => { beta = parseFloat(e.target.value); UI.bVal.innerText = beta.toFixed(3); resetSimulation(); });
+    UI.speed.addEventListener('input', (e) => { speedMult = parseFloat(e.target.value); UI.spVal.innerText = speedMult.toFixed(1) + 'x'; });
+
+    document.getElementById('reset-btn').addEventListener('click', resetSimulation);
+    document.getElementById('classic-btn').addEventListener('click', () => {
+        sigma = 10.0; rho = 28.0; beta = 8.0/3.0;
+        UI.sigma.value = sigma; UI.sVal.innerText = sigma.toFixed(1);
+        UI.rho.value = rho; UI.rVal.innerText = rho.toFixed(1);
+        UI.beta.value = beta; UI.bVal.innerText = beta.toFixed(3);
+        resetSimulation();
+    });
+
+    window.addEventListener('resize', () => {
+        camera.aspect = container.clientWidth / container.clientHeight;
+        camera.updateProjectionMatrix();
+        renderer.setSize(container.clientWidth, container.clientHeight);
+    });
+
+    function animate() {
+        requestAnimationFrame(animate);
+
+        // Calculate multiple steps per frame based on the speed slider
+        // This ensures the animation speeds up without losing RK4 precision
+        let stepsPerFrame = Math.max(1, Math.floor(4 * speedMult));
+        
+        for(let i=0; i<stepsPerFrame; i++) {
+            stepRK4();
+            
+            // Only capture the trail every few steps to stretch the 15k points over a longer time
+            if (i % 2 === 0) {
+                updateTrail();
+            }
+        }
+        
+        // Move the tracer sphere to the newest calculated position
+        particle.position.set(x, y, z);
+
+        // Slowly auto-rotate the camera if the user isn't actively dragging it
+        // controls.autoRotate = true; // Optional: enable auto-rotate
+        controls.update();
+
+        renderer.render(scene, camera);
+    }
+
+    // Start the loop
+    animate();
+</script>
+</body>
+</html>

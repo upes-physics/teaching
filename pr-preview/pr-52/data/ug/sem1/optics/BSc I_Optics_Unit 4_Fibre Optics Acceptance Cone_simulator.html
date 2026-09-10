@@ -1,0 +1,702 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fibre Optics Acceptance Cone & Numerical Aperture Simulator</title>
+    <!-- KaTeX for math rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, { delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}] });"></script>
+
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f8fafc;
+            --accent: #2563eb;
+            --cyan: #22d3ee;
+            --yellow: #fbbf24;
+            --amber: #f59e0b;
+            --red: #ef4444;
+            --green: #10b981;
+        }
+
+        *, *::before, *::after {
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            margin: 0;
+            padding: 20px;
+            background-color: var(--bg);
+            color: var(--text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1600px;
+            width: 100%;
+        }
+
+        /* Standardized Course Metadata Section */
+        .metadata-card {
+            background: rgba(34, 211, 238, 0.08);
+            border: 1px solid rgba(34, 211, 238, 0.3);
+            border-left: 5px solid var(--cyan);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+        }
+
+        .metadata-item span {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metadata-item strong {
+            font-size: 1rem;
+            color: var(--text);
+        }
+
+        header {
+            background: linear-gradient(135deg, #1e3a8a 0%, #0f172a 100%);
+            color: #fff;
+            padding: 16px 24px;
+            text-align: center;
+            border-bottom: 1px solid #2563eb;
+            box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+            border-radius: 10px;
+            margin-bottom: 20px;
+        }
+
+        header h1 {
+            margin: 0;
+            font-size: 22px;
+            font-weight: 700;
+            letter-spacing: 0.5px;
+        }
+
+        header p {
+            margin: 4px 0 0 0;
+            color: #93c5fd;
+            font-size: 13px;
+        }
+
+        .main-container {
+            display: flex;
+            flex: 1;
+            gap: 20px;
+            width: 100%;
+        }
+
+        .panel {
+            background: var(--card);
+            border: 1px solid #334155;
+            border-radius: 10px;
+            padding: 20px;
+        }
+
+        .left-panel {
+            flex: 1.1;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .right-panel {
+            flex: 1.9;
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .panel-title {
+            font-size: 14px;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.8px;
+            color: var(--cyan);
+            margin: 0 0 10px 0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        .controls-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 12px;
+        }
+
+        .control-group {
+            background: #0f172a;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+        }
+
+        .control-group label {
+            font-weight: 600;
+            font-size: 12px;
+            color: #cbd5e1;
+        }
+
+        .control-group input[type="range"] {
+            width: 100%;
+            accent-color: var(--cyan);
+            cursor: pointer;
+        }
+
+        .control-group .value-display {
+            font-size: 12px;
+            color: var(--cyan);
+            font-weight: 700;
+            text-align: right;
+        }
+
+        .preset-container {
+            background: #0f172a;
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+        }
+
+        .preset-title {
+            font-size: 11px;
+            font-weight: 700;
+            color: #94a3b8;
+            text-transform: uppercase;
+        }
+
+        .preset-buttons {
+            display: flex;
+            gap: 6px;
+            flex-wrap: wrap;
+        }
+
+        .preset-btn {
+            font-size: 11px;
+            padding: 6px 10px;
+            border-radius: 6px;
+            border: 1px solid #334155;
+            background: #1e293b;
+            color: #cbd5e1;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            font-weight: 600;
+        }
+
+        .preset-btn:hover {
+            background: #334155;
+            color: #fff;
+            border-color: var(--cyan);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 10px;
+        }
+
+        .stat-card {
+            background: #0f172a;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            text-align: center;
+        }
+
+        .stat-card .label {
+            font-size: 10px;
+            color: #94a3b8;
+            text-transform: uppercase;
+            font-weight: 700;
+            margin-bottom: 4px;
+        }
+
+        .stat-card .value {
+            font-size: 15px;
+            font-weight: 800;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 11px;
+            font-weight: 700;
+            text-align: center;
+            letter-spacing: 0.5px;
+        }
+
+        .status-ok { background: #064e3b; color: #a7f3d0; border: 1px solid #10b981; box-shadow: 0 0 8px rgba(16,185,129,0.3); }
+        .status-err { background: #7f1d1d; color: #fecaca; border: 1px solid #ef4444; box-shadow: 0 0 8px rgba(239,68,68,0.3); }
+
+        .canvas-container {
+            position: relative;
+            background: #020617;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            overflow: hidden;
+            height: 480px;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+        }
+
+        .info-box {
+            background: #0f172a;
+            border-left: 4px solid var(--cyan);
+            padding: 12px;
+            border-radius: 0 8px 8px 0;
+            font-size: 12px;
+            line-height: 1.5;
+            color: #cbd5e1;
+        }
+
+        .info-title {
+            font-weight: 700;
+            color: var(--cyan);
+            margin-bottom: 4px;
+            font-size: 13px;
+        }
+
+        .legend-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 8px;
+            background: #0f172a;
+            padding: 10px;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            font-size: 11px;
+        }
+
+        .legend-item { display: flex; align-items: center; gap: 6px; }
+        .legend-dot { width: 10px; height: 10px; border-radius: 50%; }
+
+        ul.clo-list {
+            margin: 4px 0 0 16px;
+            padding: 0;
+        }
+
+        ul.clo-list li {
+            margin-bottom: 3px;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- Course Metadata Segment -->
+    <div class="metadata-card">
+        <div class="metadata-item">
+            <span>Course Name</span>
+            <strong>Optics for B.Sc. Physics 1st Semester</strong>
+        </div>
+        <div class="metadata-item">
+            <span>Target Level</span>
+            <strong>B.Sc. 1st Semester</strong>
+        </div>
+    </div>
+
+    <header>
+        <h1>Fibre Optics Acceptance Cone & Numerical Aperture Simulator</h1>
+        <p>Total Internal Reflection (TIR) • Acceptance Angle ($\theta_{acc}$) • Numerical Aperture ($\text{NA}$) • Optical Waveguide Modes ($V$-Number)</p>
+    </header>
+
+    <div class="main-container">
+        <!-- Left Panel: Controls & Dynamic Telemetry -->
+        <div class="left-panel panel">
+            <div class="panel-title">
+                <span>Parametric Controls</span>
+                <span id="status-tag" class="status-badge status-ok">TIR SATISFIED</span>
+            </div>
+
+            <div class="controls-grid">
+                <div class="control-group">
+                    <label for="sl-n1">Core Index ($n_1$)</label>
+                    <input type="range" id="sl-n1" min="1.30" max="1.80" value="1.50" step="0.01" oninput="onInput()">
+                    <div class="value-display" id="out-n1">1.50</div>
+                </div>
+                <div class="control-group">
+                    <label for="sl-n2">Cladding Index ($n_2$)</label>
+                    <input type="range" id="sl-n2" min="1.20" max="1.75" value="1.35" step="0.01" oninput="onInput()">
+                    <div class="value-display" id="out-n2">1.35</div>
+                </div>
+                <div class="control-group">
+                    <label for="sl-n0">Medium Index ($n_0$)</label>
+                    <input type="range" id="sl-n0" min="1.00" max="1.50" value="1.00" step="0.01" oninput="onInput()">
+                    <div class="value-display" id="out-n0">1.00</div>
+                </div>
+                <div class="control-group">
+                    <label for="sl-ray">Custom Ray Angle ($\theta_i$)</label>
+                    <input type="range" id="sl-ray" min="0" max="90" value="25" step="0.5" oninput="onInput()">
+                    <div class="value-display" id="out-ray">25.0°</div>
+                </div>
+            </div>
+
+            <div class="preset-container">
+                <div class="preset-title">Standard Optical Presets</div>
+                <div class="preset-buttons">
+                    <button class="preset-btn" onclick="setPreset(1.50,1.35,1.00)">Standard MMF</button>
+                    <button class="preset-btn" onclick="setPreset(1.62,1.52,1.00)">High-NA Fiber</button>
+                    <button class="preset-btn" onclick="setPreset(1.46,1.44,1.00)">Low-NA SMF</button>
+                    <button class="preset-btn" onclick="setPreset(1.50,1.48,1.33)">Water-Coupled</button>
+                    <button class="preset-btn" onclick="setPreset(1.45,1.45,1.00)">No Guiding ⚠</button>
+                </div>
+            </div>
+
+            <div class="panel-title" style="margin-top: 4px;">Waveguide Metrics</div>
+            <div class="stats-grid">
+                <div class="stat-card">
+                    <div class="label">Numerical Aperture</div>
+                    <div class="value" id="m-na" style="color: #22d3ee;">0.654</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Half-Angle $\theta_{acc}$</div>
+                    <div class="value" id="m-acc" style="color: #fbbf24;">40.8°</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">Critical Angle $\theta_c$</div>
+                    <div class="value" id="m-crit" style="color: #38bdf8;">64.2°</div>
+                </div>
+                <div class="stat-card">
+                    <div class="label">$V$-Number ($\lambda=850\text{nm}$)</div>
+                    <div class="value" id="m-v" style="color: #a7f3d0;">150.9</div>
+                </div>
+            </div>
+
+            <div class="legend-grid">
+                <div class="legend-item"><span class="legend-dot" style="background:#3b82f6;"></span> Accepted Ray ($\theta_i &lt \theta_{acc}$)</div>
+                <div class="legend-item"><span class="legend-dot" style="background:#ef4444;"></span> Leaky Ray ($\theta_i &gt \theta_{acc}$)</div>
+                <div class="legend-item"><span class="legend-dot" style="background:#f59e0b;"></span> Marginal Ray ($\theta_i = \theta_{acc}$)</div>
+                <div class="legend-item"><span class="legend-dot" style="background:#22c55e;"></span> Custom Active Launch Ray</div>
+            </div>
+
+            <div class="info-box">
+                <div class="info-title">Course Learning Outcomes (CLOs)</div>
+                <ul class="clo-list">
+                    <li><b>CLO 1:</b> Formulate acceptance angle $\theta_{acc} = \arcsin\left(\frac{\sqrt{n_1^2 - n_2^2}}{n_0}\right)$ and Numerical Aperture ($\text{NA}$).</li>
+                    <li><b>CLO 2:</b> Determine boundary condition for Total Internal Reflection ($\theta_{core} \ge \theta_c = \arcsin(n_2/n_1)$).</li>
+                    <li><b>CLO 3:</b> Analyze optical waveguide parameter $V = \frac{\pi d}{\lambda} \text{NA}$ and distinguish single-mode ($V &lt 2.405$) vs multi-mode operation.</li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Right Panel: Visualizer & Theory -->
+        <div class="right-panel panel">
+            <div class="panel-title">Interactive Waveguide Ray Optics Visualizer</div>
+            <div class="canvas-container">
+                <canvas id="cv-fiber"></canvas>
+            </div>
+
+            <div class="info-box" style="background: #0f172a; border-left-color: #38bdf8;">
+                <div class="info-title" style="color: #38bdf8;">Optical Waveguide Principles</div>
+                <b>1. Light Acceptance & Numerical Aperture ($\text{NA}$):</b> Light entering the fiber core within the acceptance cone ($2\theta_{acc}$) undergoes Total Internal Reflection (TIR) at the core-cladding boundary.<br>
+                <b>2. Mathematical Formulation:</b>
+                $$\text{NA} = \sqrt{n_1^2 - n_2^2} = n_0 \sin\theta_{acc}$$
+                <b>3. Critical Angle Condition:</b> At the core-cladding interface, light reflects back into the core if the angle of incidence exceeds the critical angle:
+                $$\theta_c = \arcsin\left(\frac{n_2}{n_1}\right)$$
+                <b>4. Normalized Frequency ($V$-Number):</b> Quantifies the number of guided modes in a fiber core of diameter $d$:
+                $$V = \frac{\pi d}{\lambda} \sqrt{n_1^2 - n_2^2}$$
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+    let n1 = 1.50, n2 = 1.35, n0 = 1.00, userRayAngle = 25.0;
+    let phase = 0;
+
+    const canvas = document.getElementById('cv-fiber');
+    const ctx = canvas.getContext('2d');
+
+    function resizeCanvas() {
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = canvas.parentElement.clientHeight;
+    }
+    window.addEventListener('resize', resizeCanvas);
+    resizeCanvas();
+
+    function setPreset(a, b, c) {
+        n1 = a; n2 = b; n0 = c;
+        document.getElementById('sl-n1').value = a;
+        document.getElementById('sl-n2').value = b;
+        document.getElementById('sl-n0').value = c;
+        onInput();
+    }
+
+    function onInput() {
+        n1 = parseFloat(document.getElementById('sl-n1').value);
+        n2 = parseFloat(document.getElementById('sl-n2').value);
+        n0 = parseFloat(document.getElementById('sl-n0').value);
+        userRayAngle = parseFloat(document.getElementById('sl-ray').value);
+
+        if (n2 >= n1) {
+            n2 = n1 - 0.01;
+            document.getElementById('sl-n2').value = n2.toFixed(2);
+        }
+
+        updateMetrics();
+    }
+
+    function updateMetrics() {
+        document.getElementById('out-n1').textContent = n1.toFixed(2);
+        document.getElementById('out-n2').textContent = n2.toFixed(2);
+        document.getElementById('out-n0').textContent = n0.toFixed(2);
+        document.getElementById('out-ray').textContent = userRayAngle.toFixed(1) + '°';
+
+        const canGuide = n1 > n2;
+        const statusTag = document.getElementById('status-tag');
+
+        if (!canGuide) {
+            statusTag.textContent = 'NO TIR (n₁ ≤ n₂)';
+            statusTag.className = 'status-badge status-err';
+            document.getElementById('m-na').textContent = '—';
+            document.getElementById('m-acc').textContent = '—';
+            document.getElementById('m-crit').textContent = '—';
+            document.getElementById('m-v').textContent = '—';
+            return;
+        }
+
+        const NA = Math.sqrt(n1 * n1 - n2 * n2);
+        const sinAcc = NA / n0;
+        const thetaCrit = Math.asin(n2 / n1) * 180 / Math.PI;
+
+        statusTag.className = 'status-badge status-ok';
+        statusTag.textContent = 'TIR SATISFIED';
+
+        document.getElementById('m-crit').textContent = thetaCrit.toFixed(1) + '°';
+        document.getElementById('m-na').textContent = NA.toFixed(3);
+
+        if (sinAcc >= 1) {
+            document.getElementById('m-acc').textContent = '90° (Full)';
+            statusTag.textContent = 'FULL HEMISPHERE';
+        } else {
+            const thetaAcc = Math.asin(sinAcc) * 180 / Math.PI;
+            document.getElementById('m-acc').textContent = thetaAcc.toFixed(1) + '°';
+        }
+
+        const dCore = 62.5e-6; // 62.5 um standard core
+        const lambda = 850e-9;  // 850 nm wavelength
+        const Vnum = (Math.PI * dCore * NA) / lambda;
+        document.getElementById('m-v').textContent = Vnum.toFixed(1);
+    }
+
+    function draw() {
+        const W = canvas.width;
+        const H = canvas.height;
+        ctx.clearRect(0, 0, W, H);
+
+        phase += 0.02;
+
+        const canGuide = n1 > n2;
+        const NA = canGuide ? Math.sqrt(n1 * n1 - n2 * n2) : 0;
+        const sinAcc = NA / n0;
+        const thetaAcc = sinAcc >= 1 ? Math.PI / 2 : Math.asin(sinAcc);
+        const thetaCrit = canGuide ? Math.asin(n2 / n1) : Math.PI / 2;
+
+        const fiberX = W * 0.32;
+        const fiberW = W - fiberX - 25;
+        const coreH = 110;
+        const cladH = 60;
+        const midY = H / 2;
+        const coreY = midY - coreH / 2;
+        const cladY1 = coreY - cladH;
+        const cladY2 = coreY + coreH;
+
+        // Draw Cladding
+        ctx.fillStyle = '#1e293b';
+        ctx.fillRect(fiberX, cladY1, fiberW, cladH);
+        ctx.fillRect(fiberX, cladY2, fiberW, cladH);
+
+        // Draw Core
+        ctx.fillStyle = '#0f2744';
+        ctx.fillRect(fiberX, coreY, fiberW, coreH);
+
+        // Waveguide Boundaries
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 1.5;
+        ctx.strokeRect(fiberX, cladY1, fiberW, cladH * 2 + coreH);
+        ctx.strokeStyle = '#38bdf8';
+        ctx.lineWidth = 1;
+        ctx.strokeRect(fiberX, coreY, fiberW, coreH);
+
+        // Labels
+        ctx.font = 'bold 12px sans-serif';
+        ctx.fillStyle = '#94a3b8';
+        ctx.fillText(`Cladding (n₂ = ${n2.toFixed(2)})`, fiberX + 12, cladY1 + cladH / 2 + 4);
+        ctx.fillText(`Cladding (n₂ = ${n2.toFixed(2)})`, fiberX + 12, cladY2 + cladH / 2 + 4);
+        ctx.fillStyle = '#38bdf8';
+        ctx.fillText(`Core (n₁ = ${n1.toFixed(2)})`, fiberX + 12, midY + 4);
+
+        const srcX = 40;
+        const entrX = fiberX;
+
+        // Draw Acceptance Cone
+        if (sinAcc < 1 && canGuide) {
+            const coneLen = entrX - srcX;
+            const coneH = Math.tan(thetaAcc) * coneLen;
+
+            ctx.fillStyle = 'rgba(245, 158, 11, 0.12)';
+            ctx.beginPath();
+            ctx.moveTo(srcX, midY);
+            ctx.lineTo(entrX, midY - coneH);
+            ctx.lineTo(entrX, midY + coneH);
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.strokeStyle = '#f59e0b';
+            ctx.lineWidth = 1.5;
+            ctx.setLineDash([5, 3]);
+            ctx.beginPath();
+            ctx.moveTo(srcX, midY);
+            ctx.lineTo(entrX, midY - coneH);
+            ctx.moveTo(srcX, midY);
+            ctx.lineTo(entrX, midY + coneH);
+            ctx.stroke();
+            ctx.setLineDash([]);
+
+            // Angle Annotation
+            ctx.font = '11px sans-serif';
+            ctx.fillStyle = '#fbbf24';
+            ctx.textAlign = 'center';
+            ctx.fillText(`2θ_acc = ${(thetaAcc * 180 / Math.PI * 2).toFixed(1)}°`, srcX + coneLen / 2, midY + coneH + 18);
+        }
+
+        // Standard Rays Array
+        const rays = [
+            { frac: 0.0, type: 'accepted' },
+            { frac: 0.5, type: 'accepted' },
+            { frac: 1.0, type: 'marginal' },
+            { frac: 1.4, type: 'leaky' }
+        ];
+
+        rays.forEach((ray, ri) => {
+            const incAngle = ray.frac * thetaAcc;
+            const isLeaky = ray.type === 'leaky';
+            const isMarg = ray.type === 'marginal';
+            const rayCol = isLeaky ? '#ef4444' : (isMarg ? '#f59e0b' : '#3b82f6');
+
+            const sign = (ri % 2 === 0) ? 1 : -1;
+            const entryY = midY + sign * (ri * 7);
+
+            renderRayPath(srcX, midY, entrX, entryY, incAngle, sign, rayCol, false, canGuide, fiberW, endX = fiberX + fiberW, coreH, midY);
+        });
+
+        // User Custom Launch Ray
+        const userRad = (userRayAngle * Math.PI) / 180;
+        const userSign = -1;
+        const isUserLeaky = userRad > thetaAcc;
+        const userColor = '#22c55e'; // Vibrant green
+
+        renderRayPath(srcX, midY, entrX, midY, userRad, userSign, userColor, true, canGuide, fiberW, fiberX + fiberW, coreH, midY);
+
+        // Incident Medium Label
+        ctx.font = '11px sans-serif';
+        ctx.fillStyle = '#94a3b8';
+        ctx.textAlign = 'right';
+        ctx.fillText(`Medium n₀ = ${n0.toFixed(2)}`, entrX - 10, midY - 12);
+        ctx.fillText(`θ_c = ${thetaCrit.toFixed(1)}°`, fiberX + fiberW - 12, coreY - 8);
+
+        requestAnimationFrame(draw);
+    }
+
+    function renderRayPath(srcX, srcY, entrX, entryY, incAngle, sign, rayCol, isUser, canGuide, fiberW, endX, coreH, midY) {
+        ctx.strokeStyle = rayCol;
+        ctx.lineWidth = isUser ? 2.5 : 1.2;
+        ctx.globalAlpha = isUser ? 1.0 : 0.65;
+
+        // Air/Medium Ray
+        ctx.beginPath();
+        ctx.moveTo(srcX, srcY);
+        ctx.lineTo(entrX, entryY);
+        ctx.stroke();
+
+        if (!canGuide) {
+            ctx.globalAlpha = 1.0;
+            return;
+        }
+
+        const sinIn = (n0 * Math.sin(incAngle)) / n1;
+        if (sinIn > 1) return; // Beyond physical refraction
+
+        const refractAngle = Math.asin(sinIn);
+        const coreHalf = coreH / 2;
+        let dirY = Math.tan(refractAngle) * sign;
+        let curX = entrX;
+        let curY = entryY;
+        const segW = 40;
+        let bounces = 0;
+
+        ctx.beginPath();
+        ctx.moveTo(curX, curY);
+
+        if (incAngle > Math.asin(Math.sqrt(n1 * n1 - n2 * n2) / n0) + 1e-4) {
+            // Leaky Ray (Refracts into cladding)
+            const leakX = entrX + 120;
+            const leakY = entryY + dirY * 120;
+            ctx.lineTo(leakX, leakY);
+            ctx.stroke();
+
+            ctx.beginPath();
+            ctx.setLineDash([4, 4]);
+            ctx.strokeStyle = '#ef4444';
+            ctx.lineTo(leakX + 80, leakY + dirY * 80);
+            ctx.stroke();
+            ctx.setLineDash([]);
+        } else {
+            // Total Internal Reflection inside Core
+            while (curX < endX && bounces < 20) {
+                let nextX = curX + segW;
+                let nextY = curY + dirY * segW;
+                const topBound = midY - coreHalf;
+                const botBound = midY + coreHalf;
+
+                if (nextY < topBound) {
+                    const t = (topBound - curY) / (nextY - curY);
+                    const bx = curX + t * segW;
+                    ctx.lineTo(bx, topBound);
+                    curX = bx; curY = topBound; dirY = -dirY; bounces++;
+                } else if (nextY > botBound) {
+                    const t = (botBound - curY) / (nextY - curY);
+                    const bx = curX + t * segW;
+                    ctx.lineTo(bx, botBound);
+                    curX = bx; curY = botBound; dirY = -dirY; bounces++;
+                } else {
+                    ctx.lineTo(nextX, nextY);
+                    curX = nextX; curY = nextY;
+                }
+            }
+            ctx.stroke();
+        }
+
+        ctx.globalAlpha = 1.0;
+    }
+
+    onInput();
+    requestAnimationFrame(draw);
+</script>
+
+</body>
+</html>

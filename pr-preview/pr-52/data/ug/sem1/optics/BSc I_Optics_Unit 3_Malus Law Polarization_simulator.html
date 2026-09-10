@@ -1,0 +1,924 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Malus's Law Polarization Simulator & Interactive Guide</title>
+    <!-- KaTeX for math rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, { delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true}] });"></script>
+
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f1f5f9;
+            --accent: #38bdf8;
+            --cyan: #22d3ee;
+            --yellow: #fbbf24;
+            --green: #34d399;
+            --red: #ef4444;
+            --border: #334155;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 1100px;
+            width: 100%;
+            background: var(--card);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-sizing: border-box;
+        }
+
+        /* 1. Metadata Card */
+        .metadata-card {
+            background: rgba(34, 211, 238, 0.08);
+            border: 1px solid rgba(34, 211, 238, 0.3);
+            border-left: 5px solid var(--cyan);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+        }
+
+        .metadata-item span {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metadata-item strong {
+            font-size: 1rem;
+            color: var(--text);
+        }
+
+        /* Header */
+        .header { text-align: center; margin-bottom: 25px; }
+        .header h1 { color: var(--accent); margin: 0 0 5px 0; font-weight: 300; font-size: 2.2rem; }
+        .header p { color: #94a3b8; margin: 0; }
+
+        .section-title {
+            color: var(--cyan);
+            font-size: 1.25rem;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+            margin: 30px 0 15px 0;
+        }
+
+        /* 2. Experimental Setup Visualizer */
+        .setup-viz {
+            background: #ffffff;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: #000;
+            margin-bottom: 25px;
+        }
+
+        /* 3. Theory Section */
+        .theory-block {
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            border-radius: 10px;
+            line-height: 1.6;
+            color: #cbd5e1;
+            font-size: 0.95rem;
+            margin-bottom: 25px;
+        }
+
+        /* 4. Formulas Section */
+        .formulas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .formula-card {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .formula-card h4 {
+            margin: 0 0 8px 0;
+            color: var(--yellow);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        /* 5. Main Simulator Section */
+        .preset-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .preset-btn {
+            font-size: 0.85rem;
+            padding: 5px 12px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            background: rgba(0,0,0,0.3);
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .preset-btn:hover { background: rgba(56, 189, 248, 0.2); }
+        .preset-btn.active { background: var(--accent); color: #000; font-weight: 600; border-color: var(--accent); }
+
+        .sim-grid {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 20px;
+            align-items: start;
+            margin-bottom: 20px;
+        }
+
+        .ctrl-panel {
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .ctrl-row { display: flex; flex-direction: column; gap: 4px; }
+        .ctrl-label { display: flex; justify-content: space-between; font-size: 0.85rem; color: #94a3b8; }
+        .ctrl-label span:last-child { color: var(--cyan); font-weight: bold; }
+        
+        input[type=range] { accent-color: var(--accent); cursor: pointer; }
+        select {
+            width: 100%;
+            background: #0f172a;
+            color: var(--text);
+            border: 1px solid var(--border);
+            padding: 7px;
+            border-radius: 6px;
+            outline: none;
+            font-size: 0.85rem;
+        }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 5px; }
+        .btn-group button {
+            flex: 1;
+            padding: 8px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-group button:hover { background: var(--accent); color: #000; }
+
+        .right-col { display: flex; flex-direction: column; gap: 15px; }
+
+        /* Visualization Box & Tabs */
+        .viz-card {
+            background: #0b0f19;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+            margin-bottom: 12px;
+            justify-content: center;
+        }
+
+        .tab-btn {
+            font-size: 0.85rem;
+            padding: 6px 16px;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            background: rgba(0,0,0,0.4);
+            color: #94a3b8;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .tab-btn.active {
+            background: var(--accent);
+            color: #000;
+            font-weight: bold;
+            border-color: var(--accent);
+        }
+
+        canvas {
+            background: #030712;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            max-width: 100%;
+            height: auto;
+        }
+
+        /* AI Feedback Panel */
+        .ai-panel {
+            width: 100%;
+            margin-top: 15px;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: rgba(15, 23, 42, 0.8);
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .status-badge.max-trans { background: rgba(52, 211, 153, 0.2); color: var(--green); border: 1px solid var(--green); }
+        .status-badge.partial-trans { background: rgba(251, 191, 36, 0.2); color: var(--yellow); border: 1px solid var(--yellow); }
+        .status-badge.extinction { background: rgba(239, 68, 68, 0.2); color: var(--red); border: 1px solid var(--red); }
+
+        .ai-text {
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            flex-grow: 1;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+        }
+
+        .metric {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .metric-label { font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px; }
+        .metric-val { font-size: 1.05rem; font-weight: bold; color: var(--yellow); }
+
+        .table-wrap { overflow-x: auto; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid var(--border); }
+        table { width: 100%; font-size: 0.85rem; border-collapse: collapse; }
+        th { text-align: right; padding: 8px; color: var(--cyan); border-bottom: 1px solid var(--border); }
+        th:first-child { text-align: left; }
+        td { text-align: right; padding: 6px 8px; border-bottom: 1px solid rgba(51, 65, 85, 0.4); color: #cbd5e1; }
+        td:first-child { text-align: left; }
+
+        .formula-bar {
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--yellow);
+            background: rgba(0,0,0,0.3);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        @media(max-width: 850px) {
+            .sim-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 1. Metadata Segment -->
+    <div class="metadata-card">
+        <div class="metadata-item">
+            <span>Course Name</span>
+            <strong>Optics for B.Sc. 1st Semester</strong>
+        </div>
+        <div class="metadata-item">
+            <span>Target Level</span>
+            <strong>B.Sc. 1st Semester</strong>
+        </div>
+    </div>
+
+    <div class="header">
+        <h1>Malus's Law Polarization Simulator</h1>
+        <p>Polarization by Selective Absorption, Transmission Axes, Wave Propagation & Cosine-Squared Law</p>
+    </div>
+
+    <!-- 2. Experimental Setup & Ray Diagram -->
+    <div class="section-title">1. Experimental Setup & Ray Diagram</div>
+    <div class="setup-viz">
+        <div style="font-weight: bold; margin-bottom: 10px; font-size: 0.9rem; color: #333;">Schematic Optics Setup for Malus's Law Verification</div>
+        <svg id="schematic" width="560" height="200" viewBox="0 0 560 200">
+            <defs>
+                <marker id="arrow-amber" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                    <path d="M0,0 L0,6 L6,3 z" fill="#d97706" />
+                </marker>
+                <marker id="arrow-blue" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                    <path d="M0,0 L0,6 L6,3 z" fill="#0284c7" />
+                </marker>
+            </defs>
+
+            <!-- Light Source S -->
+            <circle cx="30" cy="100" r="14" fill="#fbbf24" stroke="#d97706" stroke-width="2" />
+            <text x="10" y="132" font-size="10" font-weight="bold" fill="#1e293b">Unpolarized Source (S)</text>
+
+            <!-- Unpolarized Beam 1 -->
+            <line x1="44" y1="100" x2="130" y2="100" stroke="#d97706" stroke-width="2.5" marker-end="url(#arrow-amber)" />
+            <text x="50" y="85" font-size="9" fill="#d97706" font-weight="bold">I_unpol (Random Vector)</text>
+
+            <!-- First Polarizer P -->
+            <rect x="130" y="45" width="14" height="110" fill="rgba(2, 132, 199, 0.2)" stroke="#0284c7" stroke-width="2" rx="3" />
+            <line x1="137" y1="50" x2="137" y2="150" stroke="#0284c7" stroke-width="2.5" />
+            <text x="108" y="35" font-size="11" font-weight="bold" fill="#0284c7">Polarizer (P)</text>
+            <text x="110" y="170" font-size="9" fill="#0284c7">Transmission Axis (0°)</text>
+
+            <!-- Linearly Polarized Beam 2 -->
+            <line x1="144" y1="100" x2="310" y2="100" stroke="#0284c7" stroke-width="2.5" marker-end="url(#arrow-blue)" />
+            <text x="180" y="85" font-size="9" fill="#0284c7" font-weight="bold">Linearly Polarized (I₀ = ½ I_unpol)</text>
+
+            <!-- Analyzer A -->
+            <rect x="310" y="45" width="14" height="110" fill="rgba(217, 119, 6, 0.2)" stroke="#d97706" stroke-width="2" rx="3" />
+            <line x1="317" y1="52" x2="317" y2="148" stroke="#d97706" stroke-width="2.5" stroke-dasharray="4,2" />
+            <text x="290" y="35" font-size="11" font-weight="bold" fill="#d97706">Analyzer (A)</text>
+            <text x="295" y="170" font-size="9" fill="#d97706">Rotated by Angle (θ)</text>
+
+            <!-- Transmitted Beam 3 -->
+            <line x1="324" y1="100" x2="450" y2="100" stroke="#2563eb" stroke-width="2" marker-end="url(#arrow-blue)" />
+            <text x="350" y="85" font-size="9" fill="#2563eb" font-weight="bold">I = I₀ cos²θ</text>
+
+            <!-- Detector / Photocell -->
+            <rect x="450" y="75" width="45" height="50" fill="#334155" stroke="#1e293b" stroke-width="2" rx="4" />
+            <circle cx="472" cy="100" r="10" fill="#22d3ee" />
+            <text x="445" y="142" font-size="10" font-weight="bold" fill="#1e293b">Photodetector</text>
+        </svg>
+    </div>
+
+    <!-- 3. Theory Section -->
+    <div class="section-title">2. Background, Concept & Theory</div>
+    <div class="theory-block">
+        <p>
+            <strong>Malus's Law</strong> states that when a completely plane-polarized light wave is incident on an analyzer, the intensity \(I\) of light transmitted through the analyzer varies directly as the square of the cosine of the angle \(\theta\) between the transmission axis of the polarizer and the transmission axis of the analyzer.
+        </p>
+        <p>
+            Key Physical Concepts:
+        </p>
+        <ul>
+            <li><strong>Unpolarized Light to Polarized Light:</strong> Natural light from an incandescent or sodium source contains electric field vectors oscillating randomly in all transverse planes. Passing unpolarized light through an initial ideal polarizer reduces its intensity by half (\(I_0 = \frac{1}{2} I_{\text{unpolarized}}\)) and aligns all electric field vectors along a single axis.</li>
+            <li><strong>Electric Field Vector Resolution:</strong> When linearly polarized light with electric field amplitude \(E_0\) encounters an analyzer set at an angle \(\theta\) relative to the polarizer axis, the field vector breaks into two perpendicular components:
+                <ul>
+                    <li>Parallel component: \(E = E_0 \cos\theta\) (transmitted by analyzer).</li>
+                    <li>Perpendicular component: \(E_\perp = E_0 \sin\theta\) (absorbed or reflected by analyzer).</li>
+                </ul>
+            </li>
+            <li><strong>Intensity Relationship:</strong> Since light wave intensity is proportional to the square of its electric field amplitude (\(I \propto E^2\)), the transmitted intensity is given by:
+                <div style="text-align: center; margin: 10px 0; font-weight: bold; color: var(--yellow);">
+                    \(I = I_0 \cos^2\theta\)
+                </div>
+            </li>
+            <li><strong>Crossed Polarizers (\(\theta = 90^\circ, 270^\circ\)):</strong> When the analyzer is perpendicular to the polarizer, \(\cos 90^\circ = 0\), leading to total light extinction (\(I = 0\)).</li>
+        </ul>
+    </div>
+
+    <!-- 4. Necessary Formulas -->
+    <div class="section-title">3. Governing Formulas & Equations</div>
+    <div class="formulas-grid">
+        <div class="formula-card">
+            <h4>Malus's Law Equation</h4>
+            <div>$$I(\theta) = I_0 \cos^2\theta$$</div>
+            <span style="font-size: 0.75rem; color: #94a3b8;">\(I_0\): Incident polarized intensity, \(\theta\): Relative axis angle</span>
+        </div>
+        <div class="formula-card">
+            <h4>Transmitted Electric Field Amplitude</h4>
+            <div>$$E(\theta) = E_0 \cos\theta$$</div>
+            <span style="font-size: 0.75rem; color: #94a3b8;">\(E_0\): Incident electric field amplitude</span>
+        </div>
+        <div class="formula-card">
+            <h4>Transmission Ratio & Percentage</h4>
+            <div>$$\frac{I}{I_0} = \cos^2\theta \implies \text{Transmission (\%)} = 100 \cdot \cos^2\theta$$</div>
+            <span style="font-size: 0.75rem; color: #94a3b8;">Independent of total source power</span>
+        </div>
+    </div>
+
+    <!-- 5. Main Simulator Section -->
+    <div class="section-title">4. Interactive Malus's Law Simulator</div>
+
+    <div class="preset-row" id="presets">
+        <span style="font-size:0.85rem; color: #94a3b8;">Presets:</span>
+        <button class="preset-btn active" onclick="loadPreset(0)">θ = 0° (Max Transmitted Light)</button>
+        <button class="preset-btn" onclick="loadPreset(30)">θ = 30° (75% Transmission)</button>
+        <button class="preset-btn" onclick="loadPreset(45)">θ = 45° (50% Transmission)</button>
+        <button class="preset-btn" onclick="loadPreset(60)">θ = 60° (25% Transmission)</button>
+        <button class="preset-btn" onclick="loadPreset(90)">θ = 90° (Crossed / Extinction)</button>
+        <button class="preset-btn" onclick="loadPreset(180)">θ = 180° (Parallel Axis)</button>
+    </div>
+
+    <div class="sim-grid">
+        <div class="ctrl-panel">
+            <div class="ctrl-row">
+                <div class="ctrl-label"><span>Incident Intensity (I₀)</span><span id="i0Val">100 u</span></div>
+                <input type="range" id="sl-i0" min="10" max="100" step="1" value="100" oninput="onSlider()">
+            </div>
+
+            <div class="ctrl-row">
+                <div class="ctrl-label"><span>Analyzer Angle (θ)</span><span id="thetaVal">45°</span></div>
+                <input type="range" id="sl-theta" min="0" max="360" step="1" value="45" oninput="onSlider()">
+            </div>
+
+            <div class="ctrl-row">
+                <div class="ctrl-label"><span>Animation Speed</span><span id="speedVal">1.0x</span></div>
+                <input type="range" id="sl-speed" min="0.2" max="3.0" step="0.1" value="1.0" oninput="onSlider()">
+            </div>
+
+            <div class="ctrl-row">
+                <label style="font-size:0.85rem; color:#94a3b8;">Light Wavelength / Color</label>
+                <select id="laserColor" onchange="onSlider()">
+                    <option value="cyan" selected>Cyan / Monochromatic (488 nm)</option>
+                    <option value="green">Laser Green (532 nm)</option>
+                    <option value="red">He-Ne Red (632.8 nm)</option>
+                    <option value="amber">Sodium Amber (589 nm)</option>
+                </select>
+            </div>
+
+            <div class="btn-group">
+                <button onclick="setTheta(90)">Cross Axis (90°)</button>
+                <button onclick="resetSim()">Reset All</button>
+            </div>
+        </div>
+
+        <div class="right-col">
+            <div class="viz-card">
+                <div class="tabs">
+                    <button class="tab-btn active" id="tab-wave" onclick="setTab('wave')">Animated Wave View</button>
+                    <button class="tab-btn" id="tab-polar" onclick="setTab('polar')">Polar Plot (I vs θ)</button>
+                    <button class="tab-btn" id="tab-intensity" onclick="setTab('intensity')">Intensity Curve</button>
+                </div>
+
+                <canvas id="cv-wave" width="640" height="230"></canvas>
+                <canvas id="cv-polar" width="640" height="280" style="display:none"></canvas>
+                <canvas id="cv-intensity" width="640" height="230" style="display:none"></canvas>
+
+                <div class="ai-panel">
+                    <div id="aiStatusBadge" class="status-badge partial-trans">Partial Transmission</div>
+                    <div id="aiTextFeedback" class="ai-text">Adjust the analyzer slider to observe cosine-squared modulation.</div>
+                </div>
+            </div>
+
+            <div class="metrics">
+                <div class="metric"><div class="metric-label">Transmitted Intensity (I)</div><div class="metric-val" id="m-it">50.0 u</div></div>
+                <div class="metric"><div class="metric-label">Transmission Ratio</div><div class="metric-val" id="m-ratio">50.0%</div></div>
+                <div class="metric"><div class="metric-label">cos²θ Value</div><div class="metric-val" id="m-cos2">0.500</div></div>
+                <div class="metric"><div class="metric-label">Amplitude (E / E₀)</div><div class="metric-val" id="m-amp">0.707</div></div>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Optical Stage</th>
+                            <th>Component</th>
+                            <th>Axis Angle</th>
+                            <th>E-Field Amplitude</th>
+                            <th>Transmitted Intensity</th>
+                            <th>State</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+
+            <div class="formula-bar" id="formulaBox"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+/* --- State --- */
+var TAB = 'wave';
+var phase = 0;
+var rafId = null;
+var I0 = 100, thetaDeg = 45, spd = 1.0;
+var laserColor = 'cyan';
+
+/* --- Colors Map --- */
+function getColorHex(colorKey) {
+    if (colorKey === 'green') return '#34d399';
+    if (colorKey === 'red') return '#ef4444';
+    if (colorKey === 'amber') return '#fbbf24';
+    return '#38bdf8'; // cyan default
+}
+
+/* --- Helpers --- */
+function readSliders() {
+    I0 = parseFloat(document.getElementById('sl-i0').value);
+    thetaDeg = parseFloat(document.getElementById('sl-theta').value);
+    spd = parseFloat(document.getElementById('sl-speed').value);
+    laserColor = document.getElementById('laserColor').value;
+}
+
+function updateMetrics() {
+    var rad = thetaDeg * Math.PI / 180;
+    var cosVal = Math.cos(rad);
+    var cos2 = cosVal * cosVal;
+    var It = I0 * cos2;
+    var ampRatio = Math.abs(cosVal);
+
+    document.getElementById('i0Val').textContent = Math.round(I0) + ' u';
+    document.getElementById('thetaVal').textContent = thetaDeg + '°';
+    document.getElementById('speedVal').textContent = spd.toFixed(1) + 'x';
+
+    document.getElementById('m-it').textContent = It.toFixed(1) + ' u';
+    document.getElementById('m-ratio').textContent = (cos2 * 100).toFixed(1) + '%';
+    document.getElementById('m-cos2').textContent = cos2.toFixed(3);
+    document.getElementById('m-amp').textContent = ampRatio.toFixed(3);
+
+    // AI Status Badge & Feedback Logic
+    var badge = document.getElementById('aiStatusBadge');
+    var feedback = document.getElementById('aiTextFeedback');
+
+    if (cos2 > 0.98) {
+        badge.textContent = "Maximum Transmission";
+        badge.className = "status-badge max-trans";
+        feedback.innerHTML = `Parallel axes (\\(\\theta = ${thetaDeg}^\\circ\\)). Maximum possible light transmitted: <strong>${It.toFixed(1)} u (100%)</strong>.`;
+    } else if (cos2 < 0.02) {
+        badge.textContent = "Complete Extinction";
+        badge.className = "status-badge extinction";
+        feedback.innerHTML = `Crossed polarizers (\\(\\theta = ${thetaDeg}^\\circ\\)). Transmitted intensity drops to <strong>0.0 u (0%)</strong>.`;
+    } else {
+        badge.textContent = "Partial Transmission";
+        badge.className = "status-badge partial-trans";
+        feedback.innerHTML = `At \\(\\theta = ${thetaDeg}^\\circ\\), transmitted intensity is modulated by \\(\\cos^2(${thetaDeg}^\\circ) = ${cos2.toFixed(3)}\\).`;
+    }
+
+    // Update Table
+    var tableHTML = `
+        <tr><td>Stage 1</td><td>Initial Source (Unpolarized)</td><td>Random</td><td>E_unpol</td><td>${(I0 * 2).toFixed(1)} u</td><td>Unpolarized</td></tr>
+        <tr><td>Stage 2</td><td>Polarizer (P) Axis</td><td>0.0°</td><td>E₀ = 1.00</td><td>${I0.toFixed(1)} u (I₀)</td><td>Linearly Polarized</td></tr>
+        <tr><td>Stage 3</td><td>Analyzer (A) Axis</td><td>${thetaDeg.toFixed(1)}°</td><td>E = ${ampRatio.toFixed(3)} E₀</td><td>${It.toFixed(1)} u</td><td>${cos2 < 0.02 ? 'Blocked (Extinction)' : 'Polarized Transmitted'}</td></tr>
+    `;
+    document.getElementById('tableBody').innerHTML = tableHTML;
+
+    // Update Formula Box
+    var formulaText = `Malus's Law: \\(I = I_0 \\cos^2\\theta = ${I0.toFixed(0)} \\times \\cos^2(${thetaDeg}^\\circ) = ${It.toFixed(1)}\\text{ u}\\) &nbsp;|&nbsp; Transmission: \\(${(cos2 * 100).toFixed(1)}\\%\\)`;
+    document.getElementById('formulaBox').innerHTML = formulaText;
+
+    if (window.renderMathInElement) {
+        renderMathInElement(document.getElementById('formulaBox'), {
+            delimiters: [{left: '\\(', right: '\\)', display: false}]
+        });
+        renderMathInElement(feedback, {
+            delimiters: [{left: '\\(', right: '\\)', display: false}]
+        });
+    }
+}
+
+function onSlider() {
+    readSliders();
+    updateMetrics();
+}
+
+function setTheta(v) {
+    thetaDeg = v;
+    document.getElementById('sl-theta').value = v;
+    onSlider();
+}
+
+function resetSim() {
+    document.getElementById('sl-i0').value = 100;
+    document.getElementById('sl-theta').value = 45;
+    document.getElementById('sl-speed').value = 1.0;
+    document.getElementById('laserColor').value = 'cyan';
+    loadPreset(45);
+}
+
+function loadPreset(deg) {
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    if (event && event.target) event.target.classList.add('active');
+    setTheta(deg);
+}
+
+/* --- Tab Switching --- */
+function setTab(t) {
+    TAB = t;
+    ['wave', 'polar', 'intensity'].forEach(function(id) {
+        document.getElementById('cv-' + id).style.display = (id === t) ? 'block' : 'none';
+        document.getElementById('tab-' + id).classList.toggle('active', id === t);
+    });
+    if (rafId) { cancelAnimationFrame(rafId); rafId = null; }
+    tick();
+}
+
+/* --- Master Animation Loop --- */
+function tick() {
+    if (TAB === 'wave') {
+        drawWave();
+    } else if (TAB === 'polar') {
+        drawPolar();
+    } else {
+        drawIntensity();
+    }
+    rafId = requestAnimationFrame(tick);
+}
+
+/* =========================================================
+   1. WAVE VIEW CANVAS
+   ========================================================= */
+function drawWave() {
+    var cv = document.getElementById('cv-wave');
+    var ctx = cv.getContext('2d');
+    var W = cv.width, H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+
+    var rad = thetaDeg * Math.PI / 180;
+    var cosVal = Math.cos(rad);
+    var cos2 = cosVal * cosVal;
+    var ampIn = (I0 / 100) * 45;
+    var ampOut = ampIn * Math.abs(cosVal);
+    phase += 0.04 * spd;
+
+    var px1 = W * 0.32, px2 = W * 0.65, cy = H / 2 + 8;
+    var waveColor = getColorHex(laserColor);
+
+    /* Section Header Labels */
+    ctx.font = '11px Segoe UI, sans-serif';
+    ctx.fillStyle = '#94a3b8';
+    ctx.textAlign = 'center';
+    ctx.fillText('Unpolarized Light', W * 0.15, 18);
+    ctx.fillText('Polarizer (0°)', px1, 18);
+    ctx.fillText('Analyzer (' + thetaDeg + '°)', px2, 18);
+    ctx.fillText('Transmitted Beam', W * 0.84, 18);
+
+    /* Polarizer Plate (P) */
+    ctx.fillStyle = 'rgba(51, 65, 85, 0.4)';
+    ctx.fillRect(px1 - 8, 28, 16, H - 42);
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath(); ctx.moveTo(px1, 28); ctx.lineTo(px1, H - 14); ctx.stroke();
+    ctx.setLineDash([]);
+
+    /* Analyzer Plate (A) */
+    ctx.fillStyle = 'rgba(51, 65, 85, 0.4)';
+    ctx.fillRect(px2 - 8, 28, 16, H - 42);
+    ctx.strokeStyle = '#fbbf24';
+    ctx.lineWidth = 2;
+    ctx.setLineDash([4, 3]);
+    ctx.beginPath(); ctx.moveTo(px2, 28); ctx.lineTo(px2, H - 14); ctx.stroke();
+    ctx.setLineDash([]);
+
+    /* Unpolarized Incoming Waves (Random orientations) - ENHANCED BRIGHTNESS */
+    for (var ang = 0; ang < 180; ang += 30) {
+        var a = ang * Math.PI / 180;
+        // Increased stroke opacity and line width for high contrast & clear visibility
+        ctx.strokeStyle = 'rgba(251, 191, 36, 0.75)';
+        ctx.lineWidth = 1.8;
+        ctx.beginPath();
+        for (var x = 15; x < px1 - 6; x += 2) {
+            var y = cy + ampIn * Math.sin(x * 0.065 - phase) * Math.cos(a);
+            x === 15 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+    }
+
+    /* Polarized Wave (Between Polarizer and Analyzer) */
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 2.2;
+    ctx.beginPath();
+    for (var x = px1 + 6; x < px2 - 6; x += 2) {
+        var y = cy + ampIn * Math.sin(x * 0.065 - phase);
+        x === px1 + 6 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke();
+
+    /* Transmitted Wave (After Analyzer) */
+    if (ampOut > 0.5) {
+        ctx.strokeStyle = waveColor;
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        for (var x = px2 + 6; x < W - 15; x += 2) {
+            var y = cy + ampOut * Math.sin(x * 0.065 - phase);
+            x === px2 + 6 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+        }
+        ctx.stroke();
+    }
+
+    /* Intensity Indicator Bars at Bottom */
+    var bY = H - 14, bW = 60;
+    ctx.fillStyle = '#1e293b'; ctx.fillRect(W * 0.48 - bW / 2, bY, bW, 5);
+    ctx.fillStyle = '#38bdf8'; ctx.fillRect(W * 0.48 - bW / 2, bY, bW * (I0 / 100), 5);
+
+    ctx.fillStyle = '#1e293b'; ctx.fillRect(W * 0.84 - bW / 2, bY, bW, 5);
+    ctx.fillStyle = waveColor; ctx.fillRect(W * 0.84 - bW / 2, bY, bW * cos2 * (I0 / 100), 5);
+
+    ctx.font = '10px Segoe UI, sans-serif';
+    ctx.fillStyle = '#cbd5e1';
+    ctx.textAlign = 'center';
+    ctx.fillText('I₀ = ' + I0.toFixed(0) + 'u', W * 0.48, bY - 4);
+    ctx.fillText('I = ' + (I0 * cos2).toFixed(1) + 'u', W * 0.84, bY - 4);
+}
+
+/* =========================================================
+   2. POLAR PLOT CANVAS
+   ========================================================= */
+function drawPolar() {
+    var cv = document.getElementById('cv-polar');
+    var ctx = cv.getContext('2d');
+    var W = cv.width, H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+
+    var cx = W / 2, cy = H / 2 + 2;
+    var R = Math.min(cx - 35, cy - 35);
+    var waveColor = getColorHex(laserColor);
+
+    /* Grid Rings */
+    [0.25, 0.50, 0.75, 1.00].forEach(function(f) {
+        ctx.beginPath();
+        ctx.arc(cx, cy, R * f, 0, Math.PI * 2);
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+        ctx.font = '10px Segoe UI, sans-serif';
+        ctx.fillStyle = '#64748b';
+        ctx.textAlign = 'left';
+        ctx.fillText((f * 100).toFixed(0) + '%', cx + R * f + 3, cy - 3);
+    });
+
+    /* Axes Lines & Angle Labels */
+    [0, 45, 90, 135].forEach(function(a) {
+        var r = a * Math.PI / 180;
+        ctx.beginPath();
+        ctx.moveTo(cx - (R + 6) * Math.cos(r), cy - (R + 6) * Math.sin(r));
+        ctx.lineTo(cx + (R + 6) * Math.cos(r), cy + (R + 6) * Math.sin(r));
+        ctx.strokeStyle = '#334155';
+        ctx.lineWidth = 1;
+        ctx.stroke();
+
+        ctx.font = '11px Segoe UI, sans-serif';
+        ctx.fillStyle = '#cbd5e1';
+        ctx.textAlign = 'center';
+        ctx.fillText(a + '°', cx + (R + 18) * Math.cos(r), cy + (R + 18) * Math.sin(r) + 4);
+        ctx.fillText((a + 180) + '°', cx - (R + 18) * Math.cos(r), cy - (R + 18) * Math.sin(r) + 4);
+    });
+
+    /* cos² Curve Area Fill */
+    ctx.beginPath();
+    for (var d = 0; d <= 361; d++) {
+        var r = d * Math.PI / 180;
+        var rho = R * Math.cos(r) * Math.cos(r);
+        d === 0 ? ctx.moveTo(cx + rho * Math.cos(r), cy + rho * Math.sin(r))
+                : ctx.lineTo(cx + rho * Math.cos(r), cy + rho * Math.sin(r));
+    }
+    ctx.closePath();
+    ctx.fillStyle = 'rgba(56, 189, 248, 0.12)';
+    ctx.fill();
+
+    /* cos² Curve Outline */
+    ctx.beginPath();
+    for (var d = 0; d <= 361; d++) {
+        var r = d * Math.PI / 180;
+        var rho = R * Math.cos(r) * Math.cos(r);
+        d === 0 ? ctx.moveTo(cx + rho * Math.cos(r), cy + rho * Math.sin(r))
+                : ctx.lineTo(cx + rho * Math.cos(r), cy + rho * Math.sin(r));
+    }
+    ctx.strokeStyle = '#38bdf8';
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    /* Current Angle Vector */
+    var rad = thetaDeg * Math.PI / 180;
+    var cos2 = Math.cos(rad) * Math.cos(rad);
+    var rho = R * cos2;
+    var vx = cx + rho * Math.cos(rad), vy = cy + rho * Math.sin(rad);
+
+    ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(vx, vy);
+    ctx.strokeStyle = waveColor;
+    ctx.lineWidth = 2.5;
+    ctx.stroke();
+
+    ctx.beginPath(); ctx.arc(vx, vy, 5, 0, Math.PI * 2);
+    ctx.fillStyle = waveColor;
+    ctx.fill();
+
+    ctx.font = '12px Segoe UI, sans-serif';
+    ctx.fillStyle = '#fbbf24';
+    ctx.textAlign = 'center';
+    ctx.fillText('θ = ' + thetaDeg + '°  |  I = ' + (I0 * cos2).toFixed(1) + ' u (' + (cos2 * 100).toFixed(1) + '%)', cx, H - 8);
+}
+
+/* =========================================================
+   3. INTENSITY vs THETA GRAPH CANVAS
+   ========================================================= */
+function drawIntensity() {
+    var cv = document.getElementById('cv-intensity');
+    var ctx = cv.getContext('2d');
+    var W = cv.width, H = cv.height;
+    ctx.clearRect(0, 0, W, H);
+
+    var pL = 50, pR = 20, pT = 22, pB = 38;
+    var gW = W - pL - pR, gH = H - pT - pB;
+    var waveColor = getColorHex(laserColor);
+
+    /* Y-Axis Grid Lines & Labels */
+    [0, 0.25, 0.50, 0.75, 1.00].forEach(function(f) {
+        var y = pT + gH * (1 - f);
+        ctx.beginPath(); ctx.moveTo(pL, y); ctx.lineTo(pL + gW, y);
+        ctx.strokeStyle = '#334155'; ctx.lineWidth = 1; ctx.stroke();
+        ctx.font = '10px Segoe UI, sans-serif'; ctx.fillStyle = '#94a3b8'; ctx.textAlign = 'right';
+        ctx.fillText((f * 100).toFixed(0) + '%', pL - 6, y + 4);
+    });
+
+    /* X-Axis Grid Lines & Angle Labels */
+    [0, 45, 90, 135, 180, 225, 270, 315, 360].forEach(function(deg) {
+        var x = pL + gW * deg / 360;
+        ctx.beginPath(); ctx.moveTo(x, pT); ctx.lineTo(x, pT + gH);
+        ctx.strokeStyle = '#334155'; ctx.lineWidth = 1; ctx.stroke();
+        ctx.font = '10px Segoe UI, sans-serif'; ctx.fillStyle = '#94a3b8'; ctx.textAlign = 'center';
+        ctx.fillText(deg + '°', x, pT + gH + 15);
+    });
+
+    /* Axis Titles */
+    ctx.save();
+    ctx.translate(14, pT + gH / 2); ctx.rotate(-Math.PI / 2);
+    ctx.font = '11px Segoe UI, sans-serif'; ctx.fillStyle = '#cbd5e1'; ctx.textAlign = 'center';
+    ctx.fillText('Transmitted Intensity (%)', 0, 0); ctx.restore();
+
+    ctx.font = '11px Segoe UI, sans-serif'; ctx.fillStyle = '#cbd5e1'; ctx.textAlign = 'center';
+    ctx.fillText('Analyzer Angle θ (Degrees)', pL + gW / 2, H - 4);
+
+    /* Graph Curve Fill */
+    ctx.beginPath(); ctx.moveTo(pL, pT + gH);
+    for (var d = 0; d <= 360; d++) {
+        var r = d * Math.PI / 180;
+        ctx.lineTo(pL + gW * d / 360, pT + gH * (1 - Math.cos(r) * Math.cos(r)));
+    }
+    ctx.lineTo(pL + gW, pT + gH); ctx.closePath();
+    ctx.fillStyle = 'rgba(56, 189, 248, 0.12)'; ctx.fill();
+
+    /* Graph Curve Line */
+    ctx.beginPath();
+    for (var d = 0; d <= 360; d++) {
+        var r = d * Math.PI / 180, val = Math.cos(r) * Math.cos(r);
+        var x = pL + gW * d / 360, y = pT + gH * (1 - val);
+        d === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.strokeStyle = '#38bdf8'; ctx.lineWidth = 2.5; ctx.stroke();
+
+    /* Marker for Current Position */
+    var rad = thetaDeg * Math.PI / 180;
+    var cos2 = Math.cos(rad) * Math.cos(rad);
+    var mX = pL + gW * thetaDeg / 360, mY = pT + gH * (1 - cos2);
+
+    ctx.beginPath(); ctx.moveTo(mX, pT); ctx.lineTo(mX, pT + gH);
+    ctx.strokeStyle = waveColor; ctx.lineWidth = 1.5; ctx.setLineDash([4, 3]); ctx.stroke(); ctx.setLineDash([]);
+
+    ctx.beginPath(); ctx.arc(mX, mY, 5, 0, Math.PI * 2);
+    ctx.fillStyle = waveColor; ctx.fill();
+
+    var lx = thetaDeg > 300 ? mX - 50 : mX + 8;
+    ctx.font = '11px Segoe UI, sans-serif'; ctx.fillStyle = waveColor; ctx.textAlign = 'left';
+    ctx.fillText((cos2 * 100).toFixed(1) + '%', lx, mY - 8);
+}
+
+/* --- Initial Startup --- */
+readSliders();
+updateMetrics();
+rafId = requestAnimationFrame(tick);
+</script>
+
+</body>
+</html>

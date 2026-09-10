@@ -1,0 +1,1819 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="color-scheme" content="light dark">
+  <meta name="description" content="Interactive educational simulator for ideal and practical operational-amplifier circuits.">
+  <title>Interactive Op-Amp Laboratory</title>
+  <style>
+    :root {
+      --bg: #eef3f8;
+      --surface: #ffffff;
+      --surface-2: #f5f8fc;
+      --surface-3: #eaf1f8;
+      --ink: #172033;
+      --muted: #64748b;
+      --line: #d8e2ee;
+      --primary: #2457d6;
+      --primary-strong: #173eaa;
+      --accent: #7c3aed;
+      --input: #0284c7;
+      --input-2: #ea580c;
+      --output: #c026d3;
+      --success: #15803d;
+      --warning: #b45309;
+      --danger: #b91c1c;
+      --focus: #38bdf8;
+      --shadow: 0 14px 38px rgba(15, 23, 42, 0.10);
+      --shadow-soft: 0 7px 22px rgba(15, 23, 42, 0.07);
+      --radius: 18px;
+    }
+
+    html[data-theme="dark"] {
+      --bg: #07101f;
+      --surface: #101b2d;
+      --surface-2: #142239;
+      --surface-3: #1a2b47;
+      --ink: #e6edf7;
+      --muted: #a4b2c7;
+      --line: #2b3d59;
+      --primary: #7aa2ff;
+      --primary-strong: #a7c0ff;
+      --accent: #c4a5fd;
+      --input: #38bdf8;
+      --input-2: #fb923c;
+      --output: #e879f9;
+      --success: #4ade80;
+      --warning: #fbbf24;
+      --danger: #fb7185;
+      --focus: #7dd3fc;
+      --shadow: 0 18px 44px rgba(0, 0, 0, 0.34);
+      --shadow-soft: 0 10px 28px rgba(0, 0, 0, 0.24);
+    }
+
+    * { box-sizing: border-box; }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      margin: 0;
+      min-height: 100vh;
+      background:
+        radial-gradient(circle at 10% 0%, color-mix(in srgb, var(--primary) 13%, transparent), transparent 28rem),
+        radial-gradient(circle at 100% 20%, color-mix(in srgb, var(--accent) 10%, transparent), transparent 25rem),
+        var(--bg);
+      color: var(--ink);
+      font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      line-height: 1.5;
+    }
+
+    button, select, input { font: inherit; }
+    button, select, input[type="range"] { accent-color: var(--primary); }
+
+    button:focus-visible,
+    select:focus-visible,
+    input:focus-visible,
+    [tabindex]:focus-visible {
+      outline: 3px solid color-mix(in srgb, var(--focus) 65%, transparent);
+      outline-offset: 2px;
+    }
+
+    .app-shell { min-height: 100vh; display: flex; flex-direction: column; }
+
+    .topbar {
+      position: sticky;
+      top: 0;
+      z-index: 50;
+      display: grid;
+      grid-template-columns: minmax(220px, 1fr) auto minmax(220px, 1fr);
+      align-items: center;
+      gap: 18px;
+      padding: 14px clamp(16px, 3vw, 34px);
+      border-bottom: 1px solid color-mix(in srgb, var(--line) 88%, transparent);
+      background: color-mix(in srgb, var(--surface) 88%, transparent);
+      backdrop-filter: blur(18px);
+      box-shadow: 0 2px 18px rgba(15, 23, 42, 0.05);
+    }
+
+    .brand {
+      min-width: 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+
+    .brand-mark {
+      width: 46px;
+      height: 46px;
+      flex: 0 0 46px;
+      display: grid;
+      place-items: center;
+      border-radius: 14px;
+      color: white;
+      background: linear-gradient(135deg, var(--primary), var(--accent));
+      box-shadow: 0 8px 22px color-mix(in srgb, var(--primary) 32%, transparent);
+    }
+
+    .brand-mark svg { width: 30px; height: 30px; }
+    .brand-copy { min-width: 0; }
+    .brand-copy strong { display: block; font-size: 1rem; letter-spacing: -0.02em; }
+    .brand-copy span { display: block; color: var(--muted); font-size: 0.75rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .nav-tabs {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+      padding: 5px;
+      border: 1px solid var(--line);
+      border-radius: 14px;
+      background: var(--surface-2);
+    }
+
+    .tab-btn {
+      border: 0;
+      border-radius: 10px;
+      padding: 8px 15px;
+      color: var(--muted);
+      background: transparent;
+      cursor: pointer;
+      font-size: 0.82rem;
+      font-weight: 750;
+      letter-spacing: 0.02em;
+      transition: transform 150ms ease, color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+    }
+
+    .tab-btn:hover { color: var(--ink); transform: translateY(-1px); }
+    .tab-btn.active {
+      color: white;
+      background: linear-gradient(135deg, var(--primary), var(--primary-strong));
+      box-shadow: 0 5px 14px color-mix(in srgb, var(--primary) 28%, transparent);
+    }
+
+    .top-actions { display: flex; justify-content: flex-end; gap: 8px; }
+
+    .icon-btn,
+    .btn {
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      color: var(--ink);
+      background: var(--surface);
+      cursor: pointer;
+      font-weight: 720;
+      transition: transform 150ms ease, border-color 150ms ease, background 150ms ease, box-shadow 150ms ease;
+    }
+
+    .icon-btn {
+      min-width: 42px;
+      min-height: 42px;
+      padding: 7px 11px;
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+    }
+
+    .icon-btn:hover, .btn:hover { transform: translateY(-1px); border-color: color-mix(in srgb, var(--primary) 55%, var(--line)); box-shadow: var(--shadow-soft); }
+    .icon-btn svg { width: 19px; height: 19px; }
+    .icon-label { font-size: 0.78rem; }
+
+    .page { display: none; width: 100%; }
+    .page.active { display: block; }
+
+    .sim-layout {
+      width: min(1600px, 100%);
+      margin: 0 auto;
+      padding: clamp(14px, 2vw, 28px);
+      display: grid;
+      grid-template-columns: minmax(250px, 300px) minmax(500px, 1fr) minmax(270px, 330px);
+      gap: 16px;
+      align-items: start;
+    }
+
+    .card {
+      border: 1px solid color-mix(in srgb, var(--line) 92%, transparent);
+      border-radius: var(--radius);
+      background: color-mix(in srgb, var(--surface) 96%, transparent);
+      box-shadow: var(--shadow);
+    }
+
+    .panel { padding: 17px; }
+    .controls-panel, .results-panel { position: sticky; top: 91px; max-height: calc(100vh - 110px); overflow: auto; }
+
+    .panel-heading {
+      display: flex;
+      align-items: flex-start;
+      justify-content: space-between;
+      gap: 10px;
+      margin-bottom: 15px;
+    }
+
+    .eyebrow {
+      color: var(--primary);
+      font-size: 0.69rem;
+      font-weight: 850;
+      letter-spacing: 0.12em;
+      text-transform: uppercase;
+    }
+
+    h1, h2, h3, h4, p { margin-top: 0; }
+    .panel-heading h2 { margin: 2px 0 0; font-size: 1rem; letter-spacing: -0.02em; }
+
+    .status-dot {
+      width: 10px;
+      height: 10px;
+      margin-top: 5px;
+      border-radius: 50%;
+      background: var(--success);
+      box-shadow: 0 0 0 5px color-mix(in srgb, var(--success) 18%, transparent);
+    }
+
+    .control-stack { display: grid; gap: 13px; }
+
+    .ctrl {
+      display: grid;
+      gap: 7px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid color-mix(in srgb, var(--line) 76%, transparent);
+    }
+
+    .ctrl:last-child { border-bottom: 0; padding-bottom: 0; }
+
+    .ctrl-row { display: flex; align-items: baseline; justify-content: space-between; gap: 10px; }
+    .ctrl label { color: var(--ink); font-size: 0.79rem; font-weight: 720; }
+    .ctrl small { color: var(--muted); font-size: 0.69rem; }
+
+    .value-pill {
+      flex: 0 0 auto;
+      padding: 2px 8px;
+      border: 1px solid color-mix(in srgb, var(--primary) 30%, var(--line));
+      border-radius: 999px;
+      color: var(--primary-strong);
+      background: color-mix(in srgb, var(--primary) 8%, var(--surface));
+      font-size: 0.72rem;
+      font-weight: 850;
+      font-variant-numeric: tabular-nums;
+    }
+
+    select {
+      width: 100%;
+      min-height: 39px;
+      padding: 8px 34px 8px 10px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      color: var(--ink);
+      background: var(--surface-2);
+    }
+
+    input[type="range"] { width: 100%; cursor: pointer; }
+
+    .preset-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; }
+    .preset-btn {
+      min-height: 38px;
+      padding: 7px 8px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      color: var(--ink);
+      background: var(--surface-2);
+      cursor: pointer;
+      font-size: 0.72rem;
+      font-weight: 730;
+    }
+    .preset-btn:hover { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 8%, var(--surface)); }
+
+    .visual-panel { min-width: 0; overflow: hidden; }
+    .visual-header {
+      padding: 17px 18px 13px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+      border-bottom: 1px solid var(--line);
+    }
+
+    .visual-header h2 { margin: 0; font-size: 1.03rem; letter-spacing: -0.02em; }
+    .visual-header p { margin: 3px 0 0; color: var(--muted); font-size: 0.73rem; }
+
+    .chip-row { display: flex; flex-wrap: wrap; justify-content: flex-end; gap: 6px; }
+    .chip {
+      padding: 4px 9px;
+      border: 1px solid var(--line);
+      border-radius: 999px;
+      color: var(--muted);
+      background: var(--surface-2);
+      font-size: 0.68rem;
+      font-weight: 760;
+      white-space: nowrap;
+    }
+    .chip strong { color: var(--ink); }
+
+    .canvas-wrap { position: relative; min-height: 390px; background: var(--surface); }
+    .canvas-wrap canvas, .wave-wrap canvas { display: block; width: 100%; height: 100%; }
+    #circuitCanvas { position: absolute; inset: 0; }
+
+    .canvas-help {
+      position: absolute;
+      left: 14px;
+      bottom: 12px;
+      max-width: min(75%, 560px);
+      padding: 7px 10px;
+      border: 1px solid color-mix(in srgb, var(--line) 82%, transparent);
+      border-radius: 10px;
+      color: var(--muted);
+      background: color-mix(in srgb, var(--surface) 88%, transparent);
+      backdrop-filter: blur(8px);
+      font-size: 0.69rem;
+      pointer-events: none;
+    }
+
+    .wave-section { border-top: 1px solid var(--line); padding: 14px 16px 16px; background: var(--surface-2); }
+    .section-head { display: flex; justify-content: space-between; align-items: center; gap: 12px; margin-bottom: 8px; }
+    .section-head h3 { margin: 0; font-size: 0.78rem; letter-spacing: 0.06em; text-transform: uppercase; }
+    .section-head span { color: var(--muted); font-size: 0.68rem; }
+    .wave-wrap { height: 230px; overflow: hidden; border: 1px solid var(--line); border-radius: 13px; background: #07101f; }
+
+    .legend { display: flex; flex-wrap: wrap; gap: 13px; margin-top: 9px; color: var(--muted); font-size: 0.69rem; }
+    .legend-item { display: inline-flex; align-items: center; gap: 5px; }
+    .legend-line { width: 18px; height: 3px; border-radius: 2px; }
+
+    .result-grid { display: grid; gap: 6px; }
+    .result-row {
+      min-height: 36px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      gap: 10px;
+      padding: 6px 0;
+      border-bottom: 1px solid color-mix(in srgb, var(--line) 72%, transparent);
+      font-size: 0.77rem;
+    }
+    .result-row:last-child { border-bottom: 0; }
+    .result-row span { color: var(--muted); }
+    .result-row strong { text-align: right; color: var(--ink); font-variant-numeric: tabular-nums; }
+
+    .status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 4px 9px;
+      border-radius: 999px;
+      font-size: 0.69rem;
+      font-weight: 850;
+    }
+    .status-badge.linear { color: var(--success); background: color-mix(in srgb, var(--success) 12%, transparent); }
+    .status-badge.warning { color: var(--warning); background: color-mix(in srgb, var(--warning) 13%, transparent); }
+    .status-badge.danger { color: var(--danger); background: color-mix(in srgb, var(--danger) 12%, transparent); }
+
+    .info-box {
+      margin-top: 13px;
+      padding: 12px 13px;
+      border: 1px solid var(--line);
+      border-left: 4px solid var(--primary);
+      border-radius: 11px;
+      color: var(--muted);
+      background: var(--surface-2);
+      font-size: 0.75rem;
+      line-height: 1.55;
+    }
+    .info-box strong { color: var(--ink); }
+    .info-box.formula { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .info-box.tip { border-left-color: var(--accent); }
+
+    .action-bar {
+      width: min(1600px, calc(100% - 28px));
+      margin: 0 auto 22px;
+      padding: 10px;
+      display: flex;
+      justify-content: flex-end;
+      flex-wrap: wrap;
+      gap: 8px;
+      border: 1px solid var(--line);
+      border-radius: 15px;
+      background: color-mix(in srgb, var(--surface) 94%, transparent);
+      box-shadow: var(--shadow-soft);
+    }
+
+    .btn { min-height: 39px; padding: 8px 14px; font-size: 0.77rem; }
+    .btn.primary { color: white; border-color: transparent; background: linear-gradient(135deg, var(--primary), var(--primary-strong)); }
+    .btn.ghost { background: var(--surface-2); }
+
+    .content-page {
+      width: min(1180px, 100%);
+      margin: 0 auto;
+      padding: clamp(20px, 3vw, 42px) clamp(14px, 3vw, 28px) 50px;
+    }
+
+    .hero-card {
+      position: relative;
+      overflow: hidden;
+      padding: clamp(22px, 4vw, 42px);
+      margin-bottom: 18px;
+      border-radius: 24px;
+      color: white;
+      background: linear-gradient(135deg, #1e40af, #6d28d9);
+      box-shadow: var(--shadow);
+    }
+    .hero-card::after {
+      content: "";
+      position: absolute;
+      width: 280px;
+      height: 280px;
+      right: -80px;
+      top: -110px;
+      border-radius: 50%;
+      background: rgba(255,255,255,0.10);
+    }
+    .hero-card h1 { max-width: 760px; margin-bottom: 8px; font-size: clamp(1.6rem, 4vw, 2.55rem); line-height: 1.1; letter-spacing: -0.04em; }
+    .hero-card p { max-width: 760px; margin: 0; color: rgba(255,255,255,0.84); }
+
+    .concept-grid { display: grid; grid-template-columns: repeat(12, 1fr); gap: 15px; }
+    .concept-card { grid-column: span 4; padding: 18px; }
+    .concept-card.wide { grid-column: span 6; }
+    .concept-card.full { grid-column: 1 / -1; }
+    .concept-card h3 { margin-bottom: 8px; font-size: 0.98rem; }
+    .concept-card p, .concept-card li { color: var(--muted); font-size: 0.82rem; }
+    .concept-card ul { margin: 9px 0 0; padding-left: 20px; }
+    .equation {
+      margin: 12px 0 0;
+      padding: 9px 11px;
+      border: 1px solid var(--line);
+      border-radius: 10px;
+      color: var(--primary-strong);
+      background: var(--surface-2);
+      font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace;
+      font-size: 0.78rem;
+      overflow-x: auto;
+    }
+
+    .comparison { width: 100%; border-collapse: collapse; margin-top: 12px; font-size: 0.77rem; }
+    .comparison th, .comparison td { padding: 9px 10px; border: 1px solid var(--line); text-align: left; vertical-align: top; }
+    .comparison th { color: white; background: var(--primary); }
+    .comparison tr:nth-child(even) td { background: var(--surface-2); }
+
+    .quiz-shell { max-width: 850px; margin: 0 auto; }
+    .quiz-toolbar { position: sticky; top: 84px; z-index: 12; padding: 14px 16px; margin-bottom: 15px; }
+    .quiz-topline { display: flex; justify-content: space-between; gap: 12px; align-items: center; }
+    .quiz-topline h2 { margin: 0; font-size: 1rem; }
+    .score-text { color: var(--muted); font-size: 0.78rem; }
+    .score-text strong { color: var(--primary-strong); }
+    .progress-track { height: 7px; margin-top: 11px; overflow: hidden; border-radius: 999px; background: var(--surface-3); }
+    .progress-bar { width: 0; height: 100%; border-radius: inherit; background: linear-gradient(90deg, var(--primary), var(--accent)); transition: width 240ms ease; }
+
+    .question-card { padding: 18px; margin-bottom: 14px; }
+    .question-number { color: var(--primary); font-size: 0.68rem; font-weight: 850; letter-spacing: 0.1em; text-transform: uppercase; }
+    .question-card h3 { margin: 4px 0 13px; font-size: 0.94rem; }
+    .option-list { display: grid; gap: 8px; }
+    .option-btn {
+      width: 100%;
+      padding: 10px 12px;
+      display: flex;
+      align-items: flex-start;
+      gap: 9px;
+      border: 1px solid var(--line);
+      border-radius: 11px;
+      color: var(--ink);
+      background: var(--surface-2);
+      text-align: left;
+      cursor: pointer;
+      font-size: 0.8rem;
+    }
+    .option-btn:hover:not(:disabled) { border-color: var(--primary); background: color-mix(in srgb, var(--primary) 7%, var(--surface)); }
+    .option-btn:disabled { cursor: default; }
+    .option-btn.correct { border-color: var(--success); color: var(--success); background: color-mix(in srgb, var(--success) 11%, transparent); }
+    .option-btn.wrong { border-color: var(--danger); color: var(--danger); background: color-mix(in srgb, var(--danger) 10%, transparent); }
+    .option-key { flex: 0 0 25px; height: 25px; display: grid; place-items: center; border: 1px solid currentColor; border-radius: 8px; font-size: 0.67rem; font-weight: 850; }
+    .feedback { display: none; margin-top: 11px; padding: 10px 12px; border-radius: 10px; color: var(--muted); background: var(--surface-2); font-size: 0.77rem; }
+    .feedback.show { display: block; }
+    .feedback strong { color: var(--ink); }
+    .quiz-summary { display: none; padding: 22px; text-align: center; }
+    .quiz-summary.show { display: block; }
+    .quiz-summary h3 { margin-bottom: 5px; }
+    .quiz-summary p { color: var(--muted); }
+
+    .modal-backdrop {
+      position: fixed;
+      inset: 0;
+      z-index: 90;
+      display: none;
+      align-items: flex-end;
+      justify-content: flex-end;
+      padding: 22px;
+      background: rgba(2, 6, 23, 0.38);
+      backdrop-filter: blur(4px);
+    }
+    .modal-backdrop.open { display: flex; }
+    .coach {
+      width: min(410px, 100%);
+      max-height: min(680px, calc(100vh - 44px));
+      display: flex;
+      flex-direction: column;
+      overflow: hidden;
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      background: var(--surface);
+      box-shadow: 0 28px 80px rgba(0, 0, 0, 0.35);
+    }
+    .coach-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 15px; color: white; background: linear-gradient(135deg, var(--primary), var(--accent)); }
+    .coach-head strong { display: block; font-size: 0.88rem; }
+    .coach-head span { display: block; color: rgba(255,255,255,0.78); font-size: 0.65rem; }
+    .coach-close { border: 0; color: white; background: transparent; cursor: pointer; font-size: 1.4rem; }
+    .coach-messages { flex: 1; min-height: 250px; padding: 13px; overflow-y: auto; background: var(--surface-2); }
+    .message { max-width: 92%; margin-bottom: 9px; padding: 9px 11px; border-radius: 11px; color: var(--muted); background: var(--surface); font-size: 0.76rem; box-shadow: 0 2px 10px rgba(0,0,0,0.04); }
+    .message.user { margin-left: auto; color: white; background: var(--primary); }
+    .quick-prompts { display: flex; gap: 6px; padding: 9px 11px; overflow-x: auto; border-top: 1px solid var(--line); background: var(--surface); }
+    .quick-prompts button { flex: 0 0 auto; padding: 5px 8px; border: 1px solid var(--line); border-radius: 999px; color: var(--muted); background: var(--surface-2); cursor: pointer; font-size: 0.66rem; }
+    .coach-input { display: flex; gap: 7px; padding: 10px; border-top: 1px solid var(--line); background: var(--surface); }
+    .coach-input input { flex: 1; min-width: 0; padding: 8px 10px; border: 1px solid var(--line); border-radius: 10px; color: var(--ink); background: var(--surface-2); }
+    .coach-input button { border: 0; border-radius: 10px; padding: 8px 12px; color: white; background: var(--primary); cursor: pointer; font-weight: 750; }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0,0,0,0); white-space: nowrap; border: 0; }
+    [hidden] { display: none !important; }
+
+    @media (max-width: 1180px) {
+      .sim-layout { grid-template-columns: 270px minmax(0, 1fr); }
+      .results-panel { position: static; max-height: none; grid-column: 1 / -1; }
+      .result-grid { grid-template-columns: 1fr 1fr; gap: 0 18px; }
+      .controls-panel { top: 84px; }
+    }
+
+    @media (max-width: 900px) {
+      .topbar { grid-template-columns: 1fr auto; }
+      .nav-tabs { grid-column: 1 / -1; grid-row: 2; justify-self: center; }
+      .sim-layout { grid-template-columns: 1fr; }
+      .controls-panel, .results-panel { position: static; max-height: none; }
+      .canvas-wrap { min-height: 350px; }
+      .concept-card, .concept-card.wide { grid-column: span 6; }
+    }
+
+    @media (max-width: 640px) {
+      .topbar { padding: 10px 12px; gap: 10px; }
+      .brand-mark { width: 40px; height: 40px; flex-basis: 40px; }
+      .brand-copy span { display: none; }
+      .icon-label { display: none; }
+      .nav-tabs { width: 100%; }
+      .tab-btn { flex: 1; padding-inline: 8px; }
+      .sim-layout { padding: 10px; gap: 11px; }
+      .panel { padding: 14px; }
+      .canvas-wrap { min-height: 310px; }
+      .visual-header { align-items: flex-start; flex-direction: column; }
+      .chip-row { justify-content: flex-start; }
+      .wave-wrap { height: 210px; }
+      .result-grid { grid-template-columns: 1fr; }
+      .action-bar { justify-content: stretch; }
+      .action-bar .btn { flex: 1 1 145px; }
+      .concept-card, .concept-card.wide { grid-column: 1 / -1; }
+      .comparison { min-width: 680px; }
+      .table-scroll { overflow-x: auto; }
+      .modal-backdrop { padding: 0; align-items: flex-end; }
+      .coach { width: 100%; max-height: 88vh; border-radius: 18px 18px 0 0; }
+      .quiz-toolbar { top: 119px; }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      *, *::before, *::after { scroll-behavior: auto !important; transition-duration: 0.001ms !important; animation-duration: 0.001ms !important; }
+    }
+  </style>
+</head>
+<body>
+<div class="app-shell">
+  <header class="topbar">
+    <div class="brand" aria-label="Interactive Op-Amp Laboratory">
+      <div class="brand-mark" aria-hidden="true">
+        <svg viewBox="0 0 48 48" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <path d="M10 8v32l27-16L10 8Z" stroke="currentColor" stroke-width="3" stroke-linejoin="round"/>
+          <path d="M3 17h7M3 31h7M37 24h8" stroke="currentColor" stroke-width="3" stroke-linecap="round"/>
+          <path d="M5 13v8M2 17h6M2 31h6" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+        </svg>
+      </div>
+      <div class="brand-copy">
+        <strong>Interactive Op-Amp Laboratory</strong>
+        <span>Explore circuits, waveforms and practical limitations</span>
+      </div>
+    </div>
+
+    <nav class="nav-tabs" aria-label="Main sections">
+      <button class="tab-btn active" type="button" data-page="simulation" aria-selected="true">SIMULATOR</button>
+      <button class="tab-btn" type="button" data-page="concepts" aria-selected="false">CONCEPTS</button>
+      <button class="tab-btn" type="button" data-page="quiz" aria-selected="false">QUIZ</button>
+    </nav>
+
+    <div class="top-actions">
+      <button class="icon-btn" id="playButton" type="button" aria-pressed="false" title="Pause animation">
+        <svg id="playIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 5v14M16 5v14"/></svg>
+        <span class="icon-label" id="playLabel">Pause</span>
+      </button>
+      <button class="icon-btn" id="themeButton" type="button" title="Switch theme">
+        <svg id="themeIcon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z"/></svg>
+        <span class="icon-label" id="themeLabel">Dark</span>
+      </button>
+    </div>
+  </header>
+
+  <section class="page active" id="page-simulation" aria-labelledby="simulation-title">
+    <h1 id="simulation-title" class="sr-only">Op-amp circuit simulator</h1>
+    <div class="sim-layout">
+      <aside class="card panel controls-panel" aria-label="Simulation controls">
+        <div class="panel-heading">
+          <div><div class="eyebrow">Configure</div><h2>Experiment controls</h2></div>
+          <span class="status-dot" aria-hidden="true"></span>
+        </div>
+
+        <div class="control-stack">
+          <div class="ctrl">
+            <label for="modeSelect">Circuit mode</label>
+            <select id="modeSelect">
+              <option value="characteristics">Open-loop characteristics</option>
+              <option value="inverting" selected>Inverting amplifier</option>
+              <option value="noninverting">Non-inverting amplifier</option>
+              <option value="adder">Summing amplifier</option>
+              <option value="subtractor">Difference amplifier</option>
+              <option value="differentiator">Differentiator</option>
+              <option value="integrator">Integrator</option>
+            </select>
+          </div>
+
+          <div class="ctrl">
+            <label for="modelSelect">Op-amp model</label>
+            <select id="modelSelect">
+              <option value="ideal">Ideal op-amp within output rails</option>
+              <option value="ua741">Practical μA741 approximation</option>
+            </select>
+            <small id="modelHint">Infinite bandwidth and no slew-rate limitation.</small>
+          </div>
+
+          <div class="ctrl" id="groupVd" hidden>
+            <div class="ctrl-row"><label for="vdRange">Differential input amplitude</label><span class="value-pill" id="vdValue">25.0 μV</span></div>
+            <input id="vdRange" type="range" min="0.5" max="100" step="0.5" value="25">
+            <small>Peak value of V<sub>d</sub> = V<sub>+</sub> − V<sub>−</sub>.</small>
+          </div>
+
+          <div class="ctrl" id="groupVin">
+            <div class="ctrl-row"><label for="vinRange">Input V<sub>1</sub> amplitude</label><span class="value-pill" id="vinValue">1.00 V</span></div>
+            <input id="vinRange" type="range" min="0.05" max="5" step="0.05" value="1">
+          </div>
+
+          <div class="ctrl" id="groupVin2" hidden>
+            <div class="ctrl-row"><label for="vin2Range">Input V<sub>2</sub> amplitude</label><span class="value-pill" id="vin2Value">0.50 V</span></div>
+            <input id="vin2Range" type="range" min="0" max="5" step="0.05" value="0.5">
+            <small>Both inputs use the same frequency and phase for comparison.</small>
+          </div>
+
+          <div class="ctrl" id="groupRf">
+            <div class="ctrl-row"><label for="rfRange">Feedback resistance R<sub>f</sub></label><span class="value-pill" id="rfValue">100 kΩ</span></div>
+            <input id="rfRange" type="range" min="10" max="1000" step="10" value="100">
+          </div>
+
+          <div class="ctrl" id="groupRin">
+            <div class="ctrl-row"><label for="rinRange">Input resistance R<sub>in</sub></label><span class="value-pill" id="rinValue">10 kΩ</span></div>
+            <input id="rinRange" type="range" min="1" max="200" step="1" value="10">
+          </div>
+
+          <div class="ctrl" id="groupFreq">
+            <div class="ctrl-row"><label for="freqRange">Signal frequency</label><span class="value-pill" id="freqValue">1.0 kHz</span></div>
+            <input id="freqRange" type="range" min="0.1" max="100" step="0.1" value="1">
+          </div>
+
+          <div class="ctrl" id="groupTau" hidden>
+            <div class="ctrl-row"><label for="tauRange">RC time constant τ</label><span class="value-pill" id="tauValue">1.00 ms</span></div>
+            <input id="tauRange" type="range" min="0.05" max="10" step="0.05" value="1">
+            <small>τ = RC. The simulator varies the combined time constant.</small>
+          </div>
+
+          <div class="ctrl">
+            <div class="ctrl-row"><label for="vsatRange">Output limit ±V<sub>sat</sub></label><span class="value-pill" id="vsatValue">13.0 V</span></div>
+            <input id="vsatRange" type="range" min="5" max="15" step="0.5" value="13">
+          </div>
+
+          <div class="ctrl" id="presetGroup">
+            <label>Guided presets</label>
+            <div class="preset-grid">
+              <button class="preset-btn" type="button" data-preset="linear">Clean gain</button>
+              <button class="preset-btn" type="button" data-preset="clipping">Rail clipping</button>
+              <button class="preset-btn" type="button" data-preset="slew">Slew limit</button>
+              <button class="preset-btn" type="button" data-preset="integrator">Integrator</button>
+            </div>
+          </div>
+        </div>
+      </aside>
+
+      <section class="card visual-panel" aria-label="Circuit and waveform visualization">
+        <div class="visual-header">
+          <div>
+            <h2 id="circuitTitle">Inverting amplifier</h2>
+            <p id="circuitSubtitle">Negative feedback sets a predictable closed-loop gain.</p>
+          </div>
+          <div class="chip-row" aria-label="Current simulation summary">
+            <span class="chip">Model: <strong id="chipModel">Ideal</strong></span>
+            <span class="chip">f: <strong id="chipFreq">1.0 kHz</strong></span>
+            <span class="chip">Status: <strong id="chipStatus">Linear</strong></span>
+          </div>
+        </div>
+
+        <div class="canvas-wrap" id="circuitWrap">
+          <canvas id="circuitCanvas" aria-label="Interactive circuit diagram"></canvas>
+          <div class="canvas-help" id="canvasHelp">Blue shows the input path, magenta shows the output path, and moving dots indicate signal flow.</div>
+        </div>
+
+        <div class="wave-section">
+          <div class="section-head"><h3>Dual-channel waveform monitor</h3><span id="timeWindowLabel">2.5 cycles displayed</span></div>
+          <div class="wave-wrap"><canvas id="waveCanvas" aria-label="Input and output waveforms"></canvas></div>
+          <div class="legend">
+            <span class="legend-item"><span class="legend-line" style="background:var(--input)"></span>V<sub>1</sub></span>
+            <span class="legend-item" id="legendVin2" hidden><span class="legend-line" style="background:var(--input-2)"></span>V<sub>2</sub></span>
+            <span class="legend-item"><span class="legend-line" style="background:var(--output)"></span>V<sub>out</sub></span>
+            <span class="legend-item"><span class="legend-line" style="background:var(--warning)"></span>Output limit</span>
+          </div>
+        </div>
+      </section>
+
+      <aside class="card panel results-panel" aria-label="Computed results">
+        <div class="panel-heading"><div><div class="eyebrow">Observe</div><h2>Computed results</h2></div></div>
+        <div class="result-grid">
+          <div class="result-row"><span>Closed-loop gain</span><strong id="resultGain">−10.00 V/V</strong></div>
+          <div class="result-row"><span>Linear output demand</span><strong id="resultDemand">10.00 V pk</strong></div>
+          <div class="result-row"><span>Displayed output</span><strong id="resultActual">10.00 V pk</strong></div>
+          <div class="result-row"><span>Phase shift</span><strong id="resultPhase">180.0°</strong></div>
+          <div class="result-row"><span>Closed-loop bandwidth</span><strong id="resultBandwidth">∞</strong></div>
+          <div class="result-row"><span>Max linear input</span><strong id="resultMaxInput">1.30 V pk</strong></div>
+          <div class="result-row"><span>Operating condition</span><strong id="resultStatus"><span class="status-badge linear">● Linear</span></strong></div>
+        </div>
+
+        <div class="info-box formula" id="formulaBox"><strong>Transfer:</strong><br>A<sub>v</sub> = −R<sub>f</sub>/R<sub>in</sub> = −10.00</div>
+        <div class="info-box" id="explanationBox"><strong>What is happening?</strong><br>The op-amp drives its output so the inverting input remains close to virtual ground. The output is amplified and inverted.</div>
+        <div class="info-box tip" id="learningTip"><strong>Try this:</strong><br>Increase R<sub>f</sub> until the output reaches a rail, then reduce V<sub>in</sub> to restore linear operation.</div>
+      </aside>
+    </div>
+
+    <div class="action-bar" aria-label="Simulator actions">
+      <button class="btn ghost" type="button" id="resetButton">Reset defaults</button>
+      <button class="btn ghost" type="button" id="exportButton">Export current data</button>
+      <button class="btn primary" type="button" id="coachButton">Open study coach</button>
+    </div>
+  </section>
+
+  <section class="page" id="page-concepts" aria-labelledby="concepts-title">
+    <div class="content-page">
+      <div class="hero-card">
+        <h1 id="concepts-title">Operational amplifiers turn feedback into useful mathematics.</h1>
+        <p>An op-amp amplifies the voltage difference between its non-inverting and inverting terminals. Negative feedback makes the enormous open-loop gain behave as a stable, predictable closed-loop circuit.</p>
+      </div>
+
+      <div class="concept-grid">
+        <article class="card concept-card wide">
+          <div class="eyebrow">Foundation</div><h3>The two ideal analysis rules</h3>
+          <p>For an ideal op-amp operating linearly with negative feedback:</p>
+          <ul><li>No current enters either input terminal.</li><li>The feedback drives V<sub>+</sub> ≈ V<sub>−</sub>.</li></ul>
+          <div class="equation">i+ = i− = 0 &nbsp;&nbsp; and &nbsp;&nbsp; V+ ≈ V−</div>
+        </article>
+
+        <article class="card concept-card wide">
+          <div class="eyebrow">Reality check</div><h3>Why practical waveforms distort</h3>
+          <p>A real device has finite output swing, finite gain-bandwidth product and finite slew rate. The simulator's μA741 model uses typical educational values of 1 MHz GBP and 0.5 V/μs slew rate.</p>
+          <div class="equation">Vpk,max(slew) = SR / (2πf)</div>
+        </article>
+
+        <article class="card concept-card">
+          <h3>Inverting amplifier</h3>
+          <p>The source drives the − input through R<sub>in</sub>. The + input is grounded. Feedback through R<sub>f</sub> creates a 180° phase reversal.</p>
+          <div class="equation">Av = −Rf / Rin</div>
+        </article>
+
+        <article class="card concept-card">
+          <h3>Non-inverting amplifier</h3>
+          <p>The signal drives the + input directly. A feedback divider sets a positive gain, so output and input remain in phase.</p>
+          <div class="equation">Av = 1 + Rf / Rin</div>
+        </article>
+
+        <article class="card concept-card">
+          <h3>Summing amplifier</h3>
+          <p>Currents from several sources meet at the inverting summing node. Their weighted sum appears at the output with inverted polarity.</p>
+          <div class="equation">Vout = −Rf (V1/R1 + V2/R2 + …)</div>
+        </article>
+
+        <article class="card concept-card">
+          <h3>Difference amplifier</h3>
+          <p>A matched four-resistor network subtracts one input from another. Accurate resistor ratios are essential for good common-mode rejection.</p>
+          <div class="equation">Vout = (Rf/Rin)(V2 − V1)</div>
+        </article>
+
+        <article class="card concept-card">
+          <h3>Differentiator</h3>
+          <p>A capacitor at the input and resistor in feedback make output proportional to the rate of change. For a sine input, the inverting differentiator shifts phase by −90°.</p>
+          <div class="equation">Vout = −RC · dVin/dt</div>
+        </article>
+
+        <article class="card concept-card">
+          <h3>Integrator</h3>
+          <p>A resistor at the input and capacitor in feedback accumulate the signal over time. For a sine input, the ideal inverting integrator shifts phase by +90°.</p>
+          <div class="equation">Vout = −(1/RC) ∫ Vin dt</div>
+        </article>
+
+        <article class="card concept-card full">
+          <div class="eyebrow">Comparison</div><h3>Ideal versus practical behavior</h3>
+          <div class="table-scroll">
+            <table class="comparison">
+              <thead><tr><th>Parameter</th><th>Ideal op-amp</th><th>μA741 educational model</th><th>Visible effect in this simulator</th></tr></thead>
+              <tbody>
+                <tr><td>Open-loop gain</td><td>Infinite</td><td>Approximately 2 × 10<sup>5</sup></td><td>The open-loop transfer changes from a perfect step to a very steep finite slope.</td></tr>
+                <tr><td>Input impedance</td><td>Infinite</td><td>Approximately 2 MΩ</td><td>Input current is neglected in the circuit calculations, but the comparison remains conceptually important.</td></tr>
+                <tr><td>Output impedance</td><td>Zero</td><td>Approximately 75 Ω</td><td>Loading is not explicitly modeled in this version.</td></tr>
+                <tr><td>Gain-bandwidth product</td><td>Infinite</td><td>Approximately 1 MHz</td><td>High closed-loop gain reduces bandwidth and adds phase lag.</td></tr>
+                <tr><td>Slew rate</td><td>Infinite</td><td>Approximately 0.5 V/μs</td><td>Large, high-frequency outputs become slope-limited.</td></tr>
+                <tr><td>Output swing</td><td>Limited only by chosen rails</td><td>Typically below the supply rails</td><td>Waveforms flatten when they reach ±V<sub>sat</sub>.</td></tr>
+              </tbody>
+            </table>
+          </div>
+        </article>
+
+        <article class="card concept-card full">
+          <div class="eyebrow">How to investigate</div><h3>Three quick experiments</h3>
+          <ul>
+            <li><strong>Gain and clipping:</strong> choose the inverting circuit, increase R<sub>f</sub>, and watch the calculated output demand exceed ±V<sub>sat</sub>.</li>
+            <li><strong>Gain-bandwidth trade-off:</strong> choose the μA741 model, set a large closed-loop gain, then raise frequency and observe attenuation plus extra phase lag.</li>
+            <li><strong>Slew-rate limit:</strong> use the “Slew limit” preset. The practical output changes from a sine toward a slope-limited waveform even before rail clipping is dominant.</li>
+          </ul>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <section class="page" id="page-quiz" aria-labelledby="quiz-title">
+    <div class="content-page quiz-shell">
+      <div class="hero-card">
+        <h1 id="quiz-title">Check your op-amp understanding.</h1>
+        <p>Answer each question once. Immediate feedback explains the governing idea, not just the correct option.</p>
+      </div>
+
+      <div class="card quiz-toolbar">
+        <div class="quiz-topline"><h2>Self-assessment</h2><div class="score-text">Answered <strong id="answeredCount">0</strong>/8 · Score <strong id="quizScore">0</strong>/8</div></div>
+        <div class="progress-track" aria-hidden="true"><div class="progress-bar" id="quizProgress"></div></div>
+      </div>
+
+      <div id="quizContainer"></div>
+      <div class="card quiz-summary" id="quizSummary" aria-live="polite"></div>
+      <div style="text-align:center; margin-top:16px;"><button class="btn primary" type="button" id="resetQuizButton">Reset quiz</button></div>
+    </div>
+  </section>
+</div>
+
+<div class="modal-backdrop" id="coachBackdrop" role="dialog" aria-modal="true" aria-labelledby="coachTitle">
+  <section class="coach">
+    <div class="coach-head">
+      <div><strong id="coachTitle">Offline study coach</strong><span>Rule-based explanations; no internet connection required</span></div>
+      <button class="coach-close" type="button" id="coachClose" aria-label="Close study coach">×</button>
+    </div>
+    <div class="coach-messages" id="coachMessages" aria-live="polite"></div>
+    <div class="quick-prompts">
+      <button type="button" data-prompt="What is virtual ground?">Virtual ground</button>
+      <button type="button" data-prompt="Explain clipping">Clipping</button>
+      <button type="button" data-prompt="Explain slew rate">Slew rate</button>
+      <button type="button" data-prompt="Compare integrator and differentiator">Integrator vs differentiator</button>
+    </div>
+    <form class="coach-input" id="coachForm">
+      <label class="sr-only" for="coachInput">Ask an op-amp question</label>
+      <input id="coachInput" autocomplete="off" placeholder="Ask about gain, feedback, clipping…">
+      <button type="submit">Send</button>
+    </form>
+  </section>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  const $ = (id) => document.getElementById(id);
+  const root = document.documentElement;
+  const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+  const MODEL = {
+    ideal: { label: 'Ideal', aol: Infinity, gbp: Infinity, slew: Infinity, hint: 'Infinite bandwidth and no slew-rate limitation.' },
+    ua741: { label: 'μA741', aol: 2e5, gbp: 1e6, slew: 0.5e6, hint: 'Approximation: 1 MHz gain-bandwidth product and 0.5 V/μs slew rate.' }
+  };
+
+  const MODE_INFO = {
+    characteristics: { title: 'Open-loop characteristics', subtitle: 'Compare an ideal transfer step with the steep, finite μA741 transfer curve.' },
+    inverting: { title: 'Inverting amplifier', subtitle: 'Negative feedback sets a predictable gain and reverses signal phase.' },
+    noninverting: { title: 'Non-inverting amplifier', subtitle: 'The output follows the input polarity with gain greater than or equal to one.' },
+    adder: { title: 'Summing amplifier', subtitle: 'Input currents add at the virtual-ground summing node.' },
+    subtractor: { title: 'Difference amplifier', subtitle: 'A matched resistor network amplifies the difference V₂ − V₁.' },
+    differentiator: { title: 'Differentiator', subtitle: 'Output is proportional to the input rate of change.' },
+    integrator: { title: 'Integrator', subtitle: 'Output is proportional to the accumulated input area over time.' }
+  };
+
+  const controls = {
+    mode: $('modeSelect'), model: $('modelSelect'), vd: $('vdRange'), vin: $('vinRange'), vin2: $('vin2Range'),
+    rf: $('rfRange'), rin: $('rinRange'), freq: $('freqRange'), tau: $('tauRange'), vsat: $('vsatRange')
+  };
+
+  let running = !prefersReducedMotion;
+  let animationId = 0;
+  let lastTimestamp = 0;
+  let simPhase = 0;
+  let latestCalc = null;
+
+  function safeStorageGet(key) { try { return localStorage.getItem(key); } catch (_) { return null; } }
+  function safeStorageSet(key, value) { try { localStorage.setItem(key, value); } catch (_) {} }
+
+  function initTheme() {
+    const saved = safeStorageGet('opamp-theme');
+    const theme = saved || (window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light');
+    setTheme(theme);
+  }
+
+  function setTheme(theme) {
+    root.dataset.theme = theme;
+    const dark = theme === 'dark';
+    $('themeLabel').textContent = dark ? 'Light' : 'Dark';
+    $('themeButton').setAttribute('aria-label', dark ? 'Switch to light theme' : 'Switch to dark theme');
+    $('themeIcon').innerHTML = dark
+      ? '<circle cx="12" cy="12" r="4"></circle><path d="M12 2v2M12 20v2M4.93 4.93l1.42 1.42M17.66 17.66l1.41 1.41M2 12h2M20 12h2M4.93 19.07l1.42-1.42M17.66 6.34l1.41-1.41"></path>'
+      : '<path d="M12 3a9 9 0 1 0 9 9 7 7 0 0 1-9-9Z"></path>';
+    safeStorageSet('opamp-theme', theme);
+    renderNow();
+  }
+
+  function toggleTheme() { setTheme(root.dataset.theme === 'dark' ? 'light' : 'dark'); }
+
+  function setRunning(next) {
+    running = next;
+    $('playButton').setAttribute('aria-pressed', String(!running));
+    $('playLabel').textContent = running ? 'Pause' : 'Play';
+    $('playButton').title = running ? 'Pause animation' : 'Play animation';
+    $('playIcon').innerHTML = running
+      ? '<path d="M8 5v14M16 5v14"></path>'
+      : '<path d="m8 5 11 7-11 7V5Z"></path>';
+    if (running) {
+      lastTimestamp = 0;
+      cancelAnimationFrame(animationId);
+      animationId = requestAnimationFrame(loop);
+    } else {
+      cancelAnimationFrame(animationId);
+      renderNow();
+    }
+  }
+
+  function switchPage(page) {
+    document.querySelectorAll('.page').forEach((el) => el.classList.toggle('active', el.id === `page-${page}`));
+    document.querySelectorAll('.tab-btn').forEach((btn) => {
+      const active = btn.dataset.page === page;
+      btn.classList.toggle('active', active);
+      btn.setAttribute('aria-selected', String(active));
+    });
+    if (page === 'simulation') requestAnimationFrame(renderNow);
+  }
+
+  function number(id) { return Number(controls[id].value); }
+
+  function getParams() {
+    return {
+      mode: controls.mode.value,
+      model: controls.model.value,
+      vd: number('vd'),
+      vin: number('vin'),
+      vin2: number('vin2'),
+      rf: number('rf'),
+      rin: number('rin'),
+      freq: number('freq'),
+      tau: number('tau'),
+      vsat: number('vsat')
+    };
+  }
+
+  function clamp(value, min, max) { return Math.max(min, Math.min(max, value)); }
+  function deg(rad) { return rad * 180 / Math.PI; }
+  function normalizeDegrees(value) {
+    let n = value % 360;
+    if (n > 180) n -= 360;
+    if (n <= -180) n += 360;
+    return n;
+  }
+
+  function formatHz(value) {
+    if (!Number.isFinite(value)) return '∞';
+    if (value >= 1e6) return `${(value / 1e6).toFixed(value >= 10e6 ? 0 : 2)} MHz`;
+    if (value >= 1e3) return `${(value / 1e3).toFixed(value >= 10e3 ? 1 : 2)} kHz`;
+    return `${value.toFixed(1)} Hz`;
+  }
+
+  function formatGain(value, phase) {
+    const d = normalizeDegrees(deg(phase));
+    if (Math.abs(Math.abs(d) - 180) < 0.6) return `−${Math.abs(value).toFixed(2)} V/V`;
+    if (Math.abs(d) < 0.6) return `+${Math.abs(value).toFixed(2)} V/V`;
+    return `${Math.abs(value).toFixed(2)} ∠ ${d.toFixed(1)}°`;
+  }
+
+  function calculate(p) {
+    const model = MODEL[p.model];
+
+    if (p.mode === 'characteristics') {
+      const vdPeak = p.vd * 1e-6;
+      const demandPeak = p.model === 'ideal' ? Infinity : model.aol * vdPeak;
+      const actualPeak = p.model === 'ideal' ? p.vsat : Math.min(demandPeak, p.vsat);
+      return {
+        p, model, isCharacteristics: true, vdPeak, demandPeak, actualPeak,
+        transferMag: p.model === 'ideal' ? Infinity : model.aol,
+        phase: 0, fc: Infinity, slewPeak: Infinity,
+        saturation: p.model === 'ideal' ? vdPeak > 0 : demandPeak > p.vsat,
+        slewLimited: false, inputEquivalent: vdPeak,
+        status: p.model === 'ideal' || demandPeak > p.vsat ? 'Open-loop saturation' : 'Linear open-loop region'
+      };
+    }
+
+    const k = p.rf / p.rin;
+    const f = p.freq * 1000;
+    const omega = 2 * Math.PI * f;
+    const tau = p.tau / 1000;
+    let baseMag = 1;
+    let basePhase = 0;
+    let inputEquivalent = p.vin;
+    let noiseGain = 1 + k;
+    let formula = '';
+    let explanation = '';
+    let tip = '';
+
+    switch (p.mode) {
+      case 'inverting':
+        baseMag = k; basePhase = Math.PI; inputEquivalent = p.vin; noiseGain = 1 + k;
+        formula = `Aᵥ = −Rᶠ/Rᵢₙ = −${p.rf}/${p.rin} = −${k.toFixed(2)}`;
+        explanation = 'The feedback loop holds the inverting node near virtual ground. Input current through Rᵢₙ is redirected through Rᶠ, producing an amplified output with reversed polarity.';
+        tip = 'Increase Rᶠ or reduce Rᵢₙ to raise gain. Watch the output demand and rail limit together.';
+        break;
+      case 'noninverting':
+        baseMag = 1 + k; basePhase = 0; inputEquivalent = p.vin; noiseGain = baseMag;
+        formula = `Aᵥ = 1 + Rᶠ/Rᵢₙ = 1 + ${p.rf}/${p.rin} = ${baseMag.toFixed(2)}`;
+        explanation = 'The source drives the non-inverting input. The feedback divider forces the inverting input to follow, so the output stays in phase with the source.';
+        tip = 'Set Rᶠ close to zero conceptually to approach a voltage follower with gain near one.';
+        break;
+      case 'adder':
+        baseMag = k; basePhase = Math.PI; inputEquivalent = p.vin + p.vin2; noiseGain = 1 + 2 * k;
+        formula = `Vout = −(Rᶠ/R)(V₁ + V₂) = −${k.toFixed(2)}(${p.vin.toFixed(2)} + ${p.vin2.toFixed(2)}) Vpk`;
+        explanation = 'Currents from both sources add at the inverting summing node. With equal input resistors, each source receives the same weighting.';
+        tip = 'Change V₁ and V₂ independently to see superposition. The displayed inputs are assumed to be in phase.';
+        break;
+      case 'subtractor': {
+        const difference = p.vin2 - p.vin;
+        baseMag = k; basePhase = difference >= 0 ? 0 : Math.PI; inputEquivalent = Math.abs(difference); noiseGain = 1 + k;
+        formula = `Vout = (Rᶠ/Rᵢₙ)(V₂ − V₁) = ${k.toFixed(2)}(${p.vin2.toFixed(2)} − ${p.vin.toFixed(2)}) Vpk`;
+        explanation = 'The matched resistor network rejects the portion common to both inputs and amplifies their difference. The sign depends on which input is larger.';
+        tip = 'Set V₁ equal to V₂. An ideal difference amplifier then produces zero output.';
+        break;
+      }
+      case 'differentiator':
+        baseMag = omega * tau; basePhase = -Math.PI / 2; inputEquivalent = p.vin; noiseGain = Math.max(1, 1 + baseMag);
+        formula = `|Aᵥ| = ωτ = 2π(${p.freq.toFixed(1)} kHz)(${p.tau.toFixed(2)} ms) = ${baseMag.toFixed(2)}`;
+        explanation = 'The input capacitor responds strongly to rapid change. For a sine input, the ideal inverting differentiator produces −cosine, a −90° phase shift.';
+        tip = 'Raise frequency and observe the gain increase. Practical differentiators need extra components to control noise.';
+        break;
+      case 'integrator':
+        baseMag = 1 / Math.max(omega * tau, 1e-9); basePhase = Math.PI / 2; inputEquivalent = p.vin; noiseGain = Math.max(1, 1 + baseMag);
+        formula = `|Aᵥ| = 1/(ωτ) = 1/[2π(${p.freq.toFixed(1)} kHz)(${p.tau.toFixed(2)} ms)] = ${baseMag.toFixed(3)}`;
+        explanation = 'The feedback capacitor accumulates charge. For a sine input, the ideal inverting integrator produces +cosine, a +90° phase shift.';
+        tip = 'Lower frequency or reduce τ to increase the integrator output amplitude.';
+        break;
+    }
+
+    const fc = Number.isFinite(model.gbp) ? model.gbp / Math.max(noiseGain, 1) : Infinity;
+    const ratio = Number.isFinite(fc) ? f / fc : 0;
+    const attenuation = Number.isFinite(fc) ? 1 / Math.sqrt(1 + ratio * ratio) : 1;
+    const extraLag = Number.isFinite(fc) ? -Math.atan(ratio) : 0;
+    const transferMag = baseMag * attenuation;
+    const phase = basePhase + extraLag;
+    const demandPeak = inputEquivalent * transferMag;
+    const slewPeak = Number.isFinite(model.slew) ? model.slew / Math.max(omega, 1e-9) : Infinity;
+    const actualPeak = Math.min(demandPeak, p.vsat, slewPeak);
+    const saturation = demandPeak > p.vsat + 1e-6;
+    const slewLimited = demandPeak > slewPeak + 1e-6;
+    const maxInput = transferMag > 1e-12 ? Math.min(p.vsat, slewPeak) / transferMag : Infinity;
+
+    let status = 'Linear';
+    if (saturation && slewLimited) status = 'Rail and slew limited';
+    else if (saturation) status = 'Rail clipping';
+    else if (slewLimited) status = 'Slew-rate limited';
+    else if (Number.isFinite(fc) && f > fc) status = 'Bandwidth attenuated';
+
+    return {
+      p, model, isCharacteristics: false, k, f, omega, tau, baseMag, basePhase,
+      inputEquivalent, noiseGain, fc, attenuation, extraLag, transferMag, phase,
+      demandPeak, actualPeak, slewPeak, saturation, slewLimited, maxInput,
+      formula, explanation, tip, status
+    };
+  }
+
+  function updateControlVisibility() {
+    const mode = controls.mode.value;
+    const characteristics = mode === 'characteristics';
+    $('groupVd').hidden = !characteristics;
+    $('groupVin').hidden = characteristics;
+    $('groupVin2').hidden = !['adder', 'subtractor'].includes(mode);
+    $('groupRf').hidden = characteristics;
+    $('groupRin').hidden = characteristics;
+    $('groupFreq').hidden = characteristics;
+    $('groupTau').hidden = !['differentiator', 'integrator'].includes(mode);
+    $('presetGroup').hidden = characteristics;
+    $('legendVin2').hidden = !['adder', 'subtractor'].includes(mode);
+    $('timeWindowLabel').textContent = characteristics ? 'Open-loop response to a differential sine input' : '2.5 cycles displayed';
+  }
+
+  function updateLabels() {
+    $('vdValue').textContent = `${number('vd').toFixed(1)} μV`;
+    $('vinValue').textContent = `${number('vin').toFixed(2)} V`;
+    $('vin2Value').textContent = `${number('vin2').toFixed(2)} V`;
+    $('rfValue').textContent = `${number('rf').toFixed(0)} kΩ`;
+    $('rinValue').textContent = `${number('rin').toFixed(0)} kΩ`;
+    $('freqValue').textContent = `${number('freq').toFixed(1)} kHz`;
+    $('tauValue').textContent = `${number('tau').toFixed(2)} ms`;
+    $('vsatValue').textContent = `${number('vsat').toFixed(1)} V`;
+    $('modelHint').textContent = MODEL[controls.model.value].hint;
+  }
+
+  function statusMarkup(calc) {
+    if (calc.status === 'Linear' || calc.status === 'Linear open-loop region') return '<span class="status-badge linear">● Linear</span>';
+    if (calc.status === 'Bandwidth attenuated') return '<span class="status-badge warning">● Bandwidth limited</span>';
+    if (calc.status === 'Open-loop saturation') return '<span class="status-badge danger">● Saturated</span>';
+    return `<span class="status-badge danger">● ${calc.status}</span>`;
+  }
+
+  function updateResults(calc) {
+    const p = calc.p;
+    const info = MODE_INFO[p.mode];
+    $('circuitTitle').textContent = info.title;
+    $('circuitSubtitle').textContent = info.subtitle;
+    $('chipModel').textContent = calc.model.label;
+    $('chipFreq').textContent = p.mode === 'characteristics' ? `${p.vd.toFixed(1)} μV pk` : `${p.freq.toFixed(1)} kHz`;
+    $('chipStatus').textContent = calc.status;
+
+    if (calc.isCharacteristics) {
+      $('resultGain').textContent = p.model === 'ideal' ? '∞ open-loop' : `${calc.model.aol.toExponential(1)} V/V`;
+      $('resultDemand').textContent = p.model === 'ideal' ? 'Unbounded' : `${calc.demandPeak.toFixed(2)} V pk`;
+      $('resultActual').textContent = `${calc.actualPeak.toFixed(2)} V pk`;
+      $('resultPhase').textContent = '0° / polarity sensitive';
+      $('resultBandwidth').textContent = p.model === 'ideal' ? '∞' : 'Open-loop comparison';
+      $('resultMaxInput').textContent = p.model === 'ideal' ? 'Approaches 0 V' : `${(p.vsat / calc.model.aol * 1e6).toFixed(1)} μV pk`;
+      $('resultStatus').innerHTML = statusMarkup(calc);
+      $('formulaBox').innerHTML = p.model === 'ideal'
+        ? '<strong>Open-loop relation:</strong><br>Vout = Aol(V+ − V−), with Aol → ∞. Any non-zero differential input drives the output to a rail.'
+        : `<strong>Open-loop relation:</strong><br>Vout = clamp(Aol · Vd, ±Vsat)<br>Aol = 2 × 10<sup>5</sup>`;
+      $('explanationBox').innerHTML = '<strong>What is happening?</strong><br>Open-loop gain is so large that only a tiny differential voltage is needed to reach an output limit. Negative feedback is what creates a useful linear amplifier.';
+      $('learningTip').innerHTML = '<strong>Try this:</strong><br>Choose the μA741 model and reduce the differential amplitude below the listed maximum linear input to find the narrow unsaturated region.';
+      $('canvasHelp').textContent = 'The dashed curve is ideal. The solid curve is the μA741 approximation. The moving point follows the selected model.';
+      return;
+    }
+
+    $('resultGain').textContent = formatGain(calc.transferMag, calc.phase);
+    $('resultDemand').textContent = `${calc.demandPeak.toFixed(2)} V pk`;
+    $('resultActual').textContent = `${calc.actualPeak.toFixed(2)} V pk`;
+    $('resultPhase').textContent = `${normalizeDegrees(deg(calc.phase)).toFixed(1)}°`;
+    $('resultBandwidth').textContent = formatHz(calc.fc);
+    $('resultMaxInput').textContent = Number.isFinite(calc.maxInput) ? `${calc.maxInput.toFixed(3)} V pk` : '∞';
+    $('resultStatus').innerHTML = statusMarkup(calc);
+
+    const practicalLine = p.model === 'ua741'
+      ? `<br>Practical response factor = ${calc.attenuation.toFixed(3)}, extra phase lag = ${deg(calc.extraLag).toFixed(1)}°`
+      : '';
+    $('formulaBox').innerHTML = `<strong>Transfer:</strong><br>${calc.formula}${practicalLine}`;
+    $('explanationBox').innerHTML = `<strong>What is happening?</strong><br>${calc.explanation}`;
+
+    let warning = calc.tip;
+    if (calc.saturation && calc.slewLimited) warning = 'Both the output rails and slew rate are limiting the waveform. Reduce amplitude, gain or frequency.';
+    else if (calc.saturation) warning = 'The linear output demand exceeds ±Vₛₐₜ, so the waveform flattens at the rails. Reduce input amplitude or closed-loop gain.';
+    else if (calc.slewLimited) warning = 'The required output slope exceeds the practical slew rate. Reduce frequency, gain or amplitude.';
+    else if (p.model === 'ua741' && calc.f > calc.fc * 0.5) warning = 'The signal is approaching the closed-loop bandwidth, so amplitude falls and phase lag grows.';
+    $('learningTip').innerHTML = `<strong>Try this:</strong><br>${warning}`;
+    $('canvasHelp').textContent = 'Blue and orange show input paths; magenta shows the output and feedback path. Moving dots indicate signal flow.';
+  }
+
+  function css(name) { return getComputedStyle(root).getPropertyValue(name).trim(); }
+
+  function prepareCanvas(canvas) {
+    const rect = canvas.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    const width = Math.max(1, Math.round(rect.width));
+    const height = Math.max(1, Math.round(rect.height));
+    const pixelW = Math.round(width * dpr);
+    const pixelH = Math.round(height * dpr);
+    if (canvas.width !== pixelW || canvas.height !== pixelH) {
+      canvas.width = pixelW;
+      canvas.height = pixelH;
+    }
+    const ctx = canvas.getContext('2d');
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+    ctx.clearRect(0, 0, width, height);
+    return { ctx, width, height };
+  }
+
+  function fitLogical(ctx, width, height, logicalW = 900, logicalH = 470) {
+    const scale = Math.min(width / logicalW, height / logicalH);
+    const ox = (width - logicalW * scale) / 2;
+    const oy = (height - logicalH * scale) / 2;
+    ctx.save();
+    ctx.translate(ox, oy);
+    ctx.scale(scale, scale);
+    return () => ctx.restore();
+  }
+
+  function path(ctx, points, color, width = 3, dash = []) {
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.setLineDash(dash);
+    ctx.beginPath();
+    points.forEach((p, i) => i ? ctx.lineTo(p[0], p[1]) : ctx.moveTo(p[0], p[1]));
+    ctx.stroke();
+    ctx.restore();
+  }
+
+  function label(ctx, text, x, y, opts = {}) {
+    ctx.save();
+    ctx.fillStyle = opts.color || css('--ink');
+    ctx.font = `${opts.weight || 650} ${opts.size || 15}px Inter, Segoe UI, sans-serif`;
+    ctx.textAlign = opts.align || 'center';
+    ctx.textBaseline = opts.baseline || 'middle';
+    ctx.fillText(text, x, y);
+    ctx.restore();
+  }
+
+  function node(ctx, x, y, color = css('--ink'), r = 5) {
+    ctx.save(); ctx.fillStyle = color; ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+  }
+
+  function ground(ctx, x, y, color = css('--muted')) {
+    path(ctx, [[x, y], [x, y + 14]], color, 2.5);
+    path(ctx, [[x - 16, y + 14], [x + 16, y + 14]], color, 2.5);
+    path(ctx, [[x - 10, y + 20], [x + 10, y + 20]], color, 2.5);
+    path(ctx, [[x - 4, y + 26], [x + 4, y + 26]], color, 2.5);
+  }
+
+  function source(ctx, x, y, name, color) {
+    ctx.save();
+    ctx.strokeStyle = color; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(x, y, 22, 0, Math.PI * 2); ctx.stroke();
+    label(ctx, '~', x, y + 1, { color, size: 21, weight: 800 });
+    label(ctx, name, x, y - 37, { color, size: 14, weight: 800 });
+    ground(ctx, x, y + 22, css('--muted'));
+    ctx.restore();
+  }
+
+  function resistorH(ctx, x1, x2, y, text, color = css('--primary')) {
+    const left = Math.min(x1, x2), right = Math.max(x1, x2), mid = (left + right) / 2, body = 68;
+    path(ctx, [[left, y], [mid - body / 2, y]], color, 3);
+    const pts = [[mid - body / 2, y]];
+    for (let i = 1; i <= 8; i++) pts.push([mid - body / 2 + i * body / 8, y + (i % 2 ? -11 : 11)]);
+    pts.push([mid + body / 2, y]);
+    path(ctx, pts, color, 3);
+    path(ctx, [[mid + body / 2, y], [right, y]], color, 3);
+    label(ctx, text, mid, y - 25, { color: css('--muted'), size: 13, weight: 700 });
+  }
+
+  function resistorV(ctx, x, y1, y2, text, color = css('--primary')) {
+    const top = Math.min(y1, y2), bottom = Math.max(y1, y2), mid = (top + bottom) / 2, body = 68;
+    path(ctx, [[x, top], [x, mid - body / 2]], color, 3);
+    const pts = [[x, mid - body / 2]];
+    for (let i = 1; i <= 8; i++) pts.push([x + (i % 2 ? -11 : 11), mid - body / 2 + i * body / 8]);
+    pts.push([x, mid + body / 2]);
+    path(ctx, pts, color, 3);
+    path(ctx, [[x, mid + body / 2], [x, bottom]], color, 3);
+    label(ctx, text, x + 48, mid, { color: css('--muted'), size: 13, weight: 700 });
+  }
+
+  function capacitorH(ctx, x1, x2, y, text, color = css('--accent')) {
+    const left = Math.min(x1, x2), right = Math.max(x1, x2), mid = (left + right) / 2;
+    path(ctx, [[left, y], [mid - 10, y]], color, 3);
+    path(ctx, [[mid - 10, y - 22], [mid - 10, y + 22]], color, 3);
+    path(ctx, [[mid + 10, y - 22], [mid + 10, y + 22]], color, 3);
+    path(ctx, [[mid + 10, y], [right, y]], color, 3);
+    label(ctx, text, mid, y - 33, { color: css('--muted'), size: 13, weight: 700 });
+  }
+
+  function opAmp(ctx, cx = 520, cy = 240) {
+    const inputX = cx - 85, outputX = cx + 95, invY = cy - 42, nonY = cy + 42;
+    ctx.save();
+    ctx.beginPath();
+    ctx.moveTo(inputX, cy - 105); ctx.lineTo(inputX, cy + 105); ctx.lineTo(outputX, cy); ctx.closePath();
+    const grad = ctx.createLinearGradient(inputX, cy - 100, outputX, cy + 100);
+    grad.addColorStop(0, css('--surface-3')); grad.addColorStop(1, css('--surface'));
+    ctx.fillStyle = grad; ctx.fill();
+    ctx.strokeStyle = css('--primary'); ctx.lineWidth = 4; ctx.lineJoin = 'round'; ctx.stroke();
+    label(ctx, '−', inputX + 28, invY, { color: css('--primary-strong'), size: 27, weight: 800 });
+    label(ctx, '+', inputX + 28, nonY, { color: css('--primary-strong'), size: 25, weight: 800 });
+    path(ctx, [[inputX, invY], [inputX - 22, invY]], css('--primary'), 3);
+    path(ctx, [[inputX, nonY], [inputX - 22, nonY]], css('--primary'), 3);
+    path(ctx, [[outputX, cy], [outputX + 22, cy]], css('--primary'), 3);
+    path(ctx, [[cx, cy - 83], [cx, cy - 125]], css('--muted'), 2.5);
+    path(ctx, [[cx, cy + 83], [cx, cy + 125]], css('--muted'), 2.5);
+    label(ctx, '+V', cx + 19, cy - 124, { color: css('--muted'), size: 12, align: 'left' });
+    label(ctx, '−V', cx + 19, cy + 124, { color: css('--muted'), size: 12, align: 'left' });
+    ctx.restore();
+    return { inputX: inputX - 22, outputX: outputX + 22, invY, nonY, outY: cy, cx, cy };
+  }
+
+  function movingDot(ctx, x1, y1, x2, y2, fraction, color) {
+    const f = ((fraction % 1) + 1) % 1;
+    const x = x1 + (x2 - x1) * f;
+    const y = y1 + (y2 - y1) * f;
+    ctx.save();
+    ctx.fillStyle = color; ctx.shadowColor = color; ctx.shadowBlur = 14;
+    ctx.beginPath(); ctx.arc(x, y, 6, 0, Math.PI * 2); ctx.fill();
+    ctx.restore();
+  }
+
+  function feedbackPath(ctx, amp, component, componentLabel) {
+    const yTop = 72;
+    path(ctx, [[amp.inputX, amp.invY], [390, amp.invY], [390, yTop]], css('--output'), 3.5);
+    if (component === 'resistor') resistorH(ctx, 390, 720, yTop, componentLabel, css('--output'));
+    else capacitorH(ctx, 390, 720, yTop, componentLabel, css('--output'));
+    path(ctx, [[720, yTop], [720, amp.outY], [amp.outputX, amp.outY]], css('--output'), 3.5);
+    node(ctx, 390, amp.invY, css('--output'));
+    node(ctx, 720, amp.outY, css('--output'));
+    movingDot(ctx, 720, amp.outY, 720, yTop, simPhase * 0.08, css('--output'));
+    movingDot(ctx, 690, yTop, 430, yTop, simPhase * 0.08 + 0.35, css('--output'));
+  }
+
+  function outputWire(ctx, amp) {
+    path(ctx, [[amp.outputX, amp.outY], [830, amp.outY]], css('--output'), 4);
+    node(ctx, 830, amp.outY, css('--output'), 6);
+    label(ctx, 'Vout', 830, amp.outY - 27, { color: css('--output'), size: 15, weight: 850 });
+    movingDot(ctx, amp.outputX + 12, amp.outY, 820, amp.outY, simPhase * 0.12, css('--output'));
+  }
+
+  function drawCircuit(calc) {
+    const { ctx, width, height } = prepareCanvas($('circuitCanvas'));
+    ctx.fillStyle = css('--surface'); ctx.fillRect(0, 0, width, height);
+    if (calc.isCharacteristics) { drawCharacteristics(ctx, width, height, calc); return; }
+
+    const restore = fitLogical(ctx, width, height);
+    const p = calc.p;
+    const amp = opAmp(ctx);
+    const inputColor = css('--input');
+    const input2Color = css('--input-2');
+    const lineColor = css('--primary');
+
+    if (p.mode === 'inverting') {
+      source(ctx, 90, amp.invY, 'V1', inputColor);
+      resistorH(ctx, 112, amp.inputX, amp.invY, `Rin ${p.rin.toFixed(0)} kΩ`, inputColor);
+      path(ctx, [[amp.inputX, amp.nonY], [365, amp.nonY]], lineColor, 3); ground(ctx, 365, amp.nonY, css('--muted'));
+      feedbackPath(ctx, amp, 'resistor', `Rf ${p.rf.toFixed(0)} kΩ`);
+      outputWire(ctx, amp);
+      movingDot(ctx, 115, amp.invY, amp.inputX - 8, amp.invY, simPhase * 0.13, inputColor);
+    }
+
+    if (p.mode === 'noninverting') {
+      source(ctx, 100, amp.nonY, 'V1', inputColor);
+      path(ctx, [[122, amp.nonY], [amp.inputX, amp.nonY]], inputColor, 4);
+      movingDot(ctx, 125, amp.nonY, amp.inputX - 8, amp.nonY, simPhase * 0.13, inputColor);
+      path(ctx, [[amp.inputX, amp.invY], [365, amp.invY]], lineColor, 3);
+      resistorV(ctx, 365, amp.invY, 360, `Rin ${p.rin.toFixed(0)} kΩ`, lineColor);
+      ground(ctx, 365, 360, css('--muted'));
+      feedbackPath(ctx, amp, 'resistor', `Rf ${p.rf.toFixed(0)} kΩ`);
+      outputWire(ctx, amp);
+    }
+
+    if (p.mode === 'adder') {
+      source(ctx, 80, 165, 'V1', inputColor);
+      source(ctx, 80, 315, 'V2', input2Color);
+      resistorH(ctx, 102, 350, 165, `R ${p.rin.toFixed(0)} kΩ`, inputColor);
+      resistorH(ctx, 102, 350, 315, `R ${p.rin.toFixed(0)} kΩ`, input2Color);
+      path(ctx, [[350, 165], [390, 165], [390, amp.invY], [amp.inputX, amp.invY]], inputColor, 3.5);
+      path(ctx, [[350, 315], [390, 315], [390, amp.invY]], input2Color, 3.5);
+      node(ctx, 390, amp.invY, css('--output'));
+      path(ctx, [[amp.inputX, amp.nonY], [350, amp.nonY]], lineColor, 3); ground(ctx, 350, amp.nonY, css('--muted'));
+      feedbackPath(ctx, amp, 'resistor', `Rf ${p.rf.toFixed(0)} kΩ`);
+      outputWire(ctx, amp);
+      movingDot(ctx, 110, 165, 345, 165, simPhase * 0.13, inputColor);
+      movingDot(ctx, 110, 315, 345, 315, simPhase * 0.13 + 0.5, input2Color);
+    }
+
+    if (p.mode === 'subtractor') {
+      source(ctx, 80, amp.invY, 'V1', inputColor);
+      resistorH(ctx, 102, amp.inputX, amp.invY, `R1 ${p.rin.toFixed(0)} kΩ`, inputColor);
+      source(ctx, 80, amp.nonY, 'V2', input2Color);
+      resistorH(ctx, 102, amp.inputX, amp.nonY, `R3 ${p.rin.toFixed(0)} kΩ`, input2Color);
+      path(ctx, [[amp.inputX, amp.nonY], [390, amp.nonY]], lineColor, 3);
+      resistorV(ctx, 390, amp.nonY, 385, `R4 ${p.rf.toFixed(0)} kΩ`, lineColor);
+      ground(ctx, 390, 385, css('--muted'));
+      feedbackPath(ctx, amp, 'resistor', `R2 ${p.rf.toFixed(0)} kΩ`);
+      outputWire(ctx, amp);
+      movingDot(ctx, 110, amp.invY, amp.inputX - 8, amp.invY, simPhase * 0.13, inputColor);
+      movingDot(ctx, 110, amp.nonY, amp.inputX - 8, amp.nonY, simPhase * 0.13 + 0.45, input2Color);
+    }
+
+    if (p.mode === 'differentiator') {
+      source(ctx, 90, amp.invY, 'V1', inputColor);
+      capacitorH(ctx, 112, amp.inputX, amp.invY, 'C', inputColor);
+      path(ctx, [[amp.inputX, amp.nonY], [355, amp.nonY]], lineColor, 3); ground(ctx, 355, amp.nonY, css('--muted'));
+      feedbackPath(ctx, amp, 'resistor', `Rf · C = ${p.tau.toFixed(2)} ms`);
+      outputWire(ctx, amp);
+      movingDot(ctx, 115, amp.invY, amp.inputX - 8, amp.invY, simPhase * 0.13, inputColor);
+    }
+
+    if (p.mode === 'integrator') {
+      source(ctx, 90, amp.invY, 'V1', inputColor);
+      resistorH(ctx, 112, amp.inputX, amp.invY, `Rin ${p.rin.toFixed(0)} kΩ`, inputColor);
+      path(ctx, [[amp.inputX, amp.nonY], [355, amp.nonY]], lineColor, 3); ground(ctx, 355, amp.nonY, css('--muted'));
+      feedbackPath(ctx, amp, 'capacitor', `R · C = ${p.tau.toFixed(2)} ms`);
+      outputWire(ctx, amp);
+      movingDot(ctx, 115, amp.invY, amp.inputX - 8, amp.invY, simPhase * 0.13, inputColor);
+    }
+
+    label(ctx, calc.status, 520, 442, {
+      color: calc.status === 'Linear' ? css('--success') : css('--warning'),
+      size: 14, weight: 850
+    });
+    restore();
+  }
+
+  function drawCharacteristics(ctx, width, height, calc) {
+    const restore = fitLogical(ctx, width, height, 900, 470);
+    const x0 = 105, y0 = 55, graphW = 700, graphH = 340;
+    const midX = x0 + graphW / 2, midY = y0 + graphH / 2;
+    const xRangeUv = 100;
+    const vsat = calc.p.vsat;
+    const sx = graphW / (2 * xRangeUv);
+    const sy = graphH / (2 * vsat * 1.15);
+
+    ctx.fillStyle = css('--surface-2'); ctx.fillRect(x0, y0, graphW, graphH);
+    for (let i = 0; i <= 8; i++) {
+      const x = x0 + graphW * i / 8;
+      path(ctx, [[x, y0], [x, y0 + graphH]], css('--line'), 1);
+    }
+    for (let i = 0; i <= 6; i++) {
+      const y = y0 + graphH * i / 6;
+      path(ctx, [[x0, y], [x0 + graphW, y]], css('--line'), 1);
+    }
+    path(ctx, [[x0, midY], [x0 + graphW, midY]], css('--muted'), 2);
+    path(ctx, [[midX, y0], [midX, y0 + graphH]], css('--muted'), 2);
+    label(ctx, 'Differential input Vd (μV)', midX, 430, { color: css('--muted'), size: 14, weight: 700 });
+    ctx.save(); ctx.translate(38, midY); ctx.rotate(-Math.PI / 2); label(ctx, 'Output voltage Vout (V)', 0, 0, { color: css('--muted'), size: 14, weight: 700 }); ctx.restore();
+    label(ctx, '−100', x0, midY + 22, { color: css('--muted'), size: 12, align: 'center' });
+    label(ctx, '+100', x0 + graphW, midY + 22, { color: css('--muted'), size: 12, align: 'center' });
+    label(ctx, `+${vsat.toFixed(1)}`, midX + 8, midY - vsat * sy, { color: css('--muted'), size: 12, align: 'left' });
+    label(ctx, `−${vsat.toFixed(1)}`, midX + 8, midY + vsat * sy, { color: css('--muted'), size: 12, align: 'left' });
+
+    path(ctx, [[x0, midY + vsat * sy], [midX, midY + vsat * sy], [midX, midY - vsat * sy], [x0 + graphW, midY - vsat * sy]], css('--primary'), 3, [9, 7]);
+    label(ctx, 'Ideal', x0 + graphW - 45, midY - vsat * sy - 18, { color: css('--primary'), size: 13, weight: 800 });
+
+    ctx.save(); ctx.strokeStyle = css('--output'); ctx.lineWidth = 4; ctx.beginPath();
+    for (let px = 0; px <= graphW; px += 2) {
+      const uv = (px - graphW / 2) / sx;
+      const out = clamp(MODEL.ua741.aol * uv * 1e-6, -vsat, vsat);
+      const x = x0 + px, y = midY - out * sy;
+      px === 0 ? ctx.moveTo(x, y) : ctx.lineTo(x, y);
+    }
+    ctx.stroke(); ctx.restore();
+    label(ctx, 'μA741', x0 + graphW - 55, midY - vsat * sy + 20, { color: css('--output'), size: 13, weight: 800 });
+
+    const vdUv = calc.p.vd * Math.sin(simPhase * 0.75);
+    const selectedOut = calc.p.model === 'ideal'
+      ? (Math.abs(vdUv) < 1e-12 ? 0 : Math.sign(vdUv) * vsat)
+      : clamp(calc.model.aol * vdUv * 1e-6, -vsat, vsat);
+    const px = midX + vdUv * sx;
+    const py = midY - selectedOut * sy;
+    ctx.save(); ctx.fillStyle = css('--accent'); ctx.shadowColor = css('--accent'); ctx.shadowBlur = 18; ctx.beginPath(); ctx.arc(px, py, 8, 0, Math.PI * 2); ctx.fill(); ctx.restore();
+    label(ctx, `${vdUv.toFixed(1)} μV → ${selectedOut.toFixed(2)} V`, midX, 28, { color: css('--ink'), size: 14, weight: 850 });
+    restore();
+  }
+
+  function waveformData(calc, samples = 700) {
+    const p = calc.p;
+    const cycles = 2.5;
+    const input1 = new Float64Array(samples);
+    const input2 = new Float64Array(samples);
+    const rawOut = new Float64Array(samples);
+    const actualOut = new Float64Array(samples);
+
+    if (calc.isCharacteristics) {
+      const f = 1000;
+      const dt = cycles / f / (samples - 1);
+      let prev = 0;
+      for (let i = 0; i < samples; i++) {
+        const theta = 2 * Math.PI * cycles * i / (samples - 1) + simPhase;
+        const vd = calc.vdPeak * Math.sin(theta);
+        input1[i] = vd * 1e6;
+        const demand = p.model === 'ideal' ? (Math.abs(vd) < 1e-15 ? 0 : Math.sign(vd) * p.vsat) : calc.model.aol * vd;
+        rawOut[i] = demand;
+        let v = clamp(demand, -p.vsat, p.vsat);
+        if (Number.isFinite(calc.model.slew)) {
+          const maxDelta = calc.model.slew * dt;
+          v = clamp(v, prev - maxDelta, prev + maxDelta);
+        }
+        actualOut[i] = v; prev = v;
+      }
+      return { input1, input2, rawOut, actualOut, cycles, inputUnit: 'μV' };
+    }
+
+    const dt = cycles / calc.f / (samples - 1);
+    let prev = calc.demandPeak * Math.sin(simPhase + calc.phase);
+    prev = clamp(prev, -p.vsat, p.vsat);
+    for (let i = 0; i < samples; i++) {
+      const theta = 2 * Math.PI * cycles * i / (samples - 1) + simPhase;
+      input1[i] = p.vin * Math.sin(theta);
+      input2[i] = p.vin2 * Math.sin(theta);
+      const demand = calc.demandPeak * Math.sin(theta + calc.phase);
+      rawOut[i] = demand;
+      let v = clamp(demand, -p.vsat, p.vsat);
+      if (Number.isFinite(calc.model.slew)) {
+        const maxDelta = calc.model.slew * dt;
+        v = clamp(v, prev - maxDelta, prev + maxDelta);
+      }
+      actualOut[i] = v;
+      prev = v;
+    }
+    return { input1, input2, rawOut, actualOut, cycles, inputUnit: 'V' };
+  }
+
+  function drawWaveforms(calc) {
+    const { ctx, width: W, height: H } = prepareCanvas($('waveCanvas'));
+    ctx.fillStyle = '#07101f'; ctx.fillRect(0, 0, W, H);
+    const data = waveformData(calc);
+    const left = 52, right = 15, plotW = Math.max(10, W - left - right);
+    const topMid = H * 0.27, bottomMid = H * 0.74;
+    const laneH = H * 0.34;
+
+    ctx.save();
+    ctx.strokeStyle = 'rgba(255,255,255,0.10)'; ctx.lineWidth = 1;
+    for (let i = 0; i <= 10; i++) {
+      const x = left + plotW * i / 10;
+      ctx.beginPath(); ctx.moveTo(x, 8); ctx.lineTo(x, H - 8); ctx.stroke();
+    }
+    [topMid, bottomMid].forEach((y) => { ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(W - right, y); ctx.stroke(); });
+    ctx.restore();
+
+    const inputMax = calc.isCharacteristics
+      ? Math.max(calc.p.vd, 1)
+      : Math.max(calc.p.vin, ['adder', 'subtractor'].includes(calc.p.mode) ? calc.p.vin2 : 0, 0.1);
+    const outputVisualMax = Math.max(calc.p.vsat, calc.demandPeak || calc.actualPeak || 1, 1);
+    const inScale = laneH / 2 / inputMax;
+    const outScale = laneH / 2 / outputVisualMax;
+
+    function trace(values, mid, scale, color, widthLine = 2) {
+      ctx.save(); ctx.strokeStyle = color; ctx.lineWidth = widthLine; ctx.lineJoin = 'round'; ctx.lineCap = 'round'; ctx.beginPath();
+      for (let i = 0; i < values.length; i++) {
+        const x = left + plotW * i / (values.length - 1);
+        const y = mid - values[i] * scale;
+        i ? ctx.lineTo(x, y) : ctx.moveTo(x, y);
+      }
+      ctx.stroke(); ctx.restore();
+    }
+
+    trace(data.input1, topMid, inScale, css('--input'), 2);
+    if (!calc.isCharacteristics && ['adder', 'subtractor'].includes(calc.p.mode)) trace(data.input2, topMid, inScale, css('--input-2'), 1.7);
+    trace(data.actualOut, bottomMid, outScale, css('--output'), 2.5);
+
+    if (!calc.isCharacteristics && calc.saturation) {
+      const y1 = bottomMid - calc.p.vsat * outScale, y2 = bottomMid + calc.p.vsat * outScale;
+      ctx.save(); ctx.strokeStyle = css('--warning'); ctx.lineWidth = 1.2; ctx.setLineDash([6, 5]);
+      [y1, y2].forEach((y) => { ctx.beginPath(); ctx.moveTo(left, y); ctx.lineTo(W - right, y); ctx.stroke(); });
+      ctx.restore();
+    }
+
+    ctx.save(); ctx.fillStyle = 'rgba(255,255,255,0.72)'; ctx.font = '700 11px Inter, Segoe UI, sans-serif'; ctx.textAlign = 'left';
+    ctx.fillText(calc.isCharacteristics ? `Vd input (${data.inputUnit})` : 'Input channel (V)', 8, 16);
+    ctx.fillText('Output channel (V)', 8, H * 0.52);
+    ctx.fillStyle = 'rgba(255,255,255,0.52)'; ctx.font = '10px Inter, Segoe UI, sans-serif';
+    ctx.fillText(`±${inputMax.toFixed(calc.isCharacteristics ? 1 : 2)}`, 8, topMid - laneH / 2 + 10);
+    ctx.fillText(`±${outputVisualMax.toFixed(1)}`, 8, bottomMid - laneH / 2 + 10);
+    ctx.restore();
+  }
+
+  function updateAll() {
+    updateControlVisibility();
+    updateLabels();
+    latestCalc = calculate(getParams());
+    updateResults(latestCalc);
+    drawCircuit(latestCalc);
+    drawWaveforms(latestCalc);
+  }
+
+  function renderNow() {
+    if (!document.getElementById('page-simulation').classList.contains('active')) return;
+    updateAll();
+  }
+
+  function loop(timestamp) {
+    if (!running) return;
+    const dt = lastTimestamp ? Math.min((timestamp - lastTimestamp) / 1000, 0.05) : 0;
+    lastTimestamp = timestamp;
+    simPhase += dt * 1.65;
+    renderNow();
+    animationId = requestAnimationFrame(loop);
+  }
+
+  function setValues(values) {
+    Object.entries(values).forEach(([key, value]) => {
+      if (controls[key]) controls[key].value = value;
+    });
+    updateAll();
+  }
+
+  function applyPreset(name) {
+    const presets = {
+      linear: { mode: 'inverting', model: 'ideal', vin: 0.5, vin2: 0.5, rf: 100, rin: 20, freq: 1, tau: 1, vsat: 13 },
+      clipping: { mode: 'inverting', model: 'ideal', vin: 2, vin2: 0.5, rf: 200, rin: 10, freq: 1, tau: 1, vsat: 10 },
+      slew: { mode: 'noninverting', model: 'ua741', vin: 2, vin2: 0.5, rf: 90, rin: 10, freq: 100, tau: 1, vsat: 13 },
+      integrator: { mode: 'integrator', model: 'ideal', vin: 1, vin2: 0.5, rf: 100, rin: 10, freq: 0.5, tau: 0.2, vsat: 13 }
+    };
+    setValues(presets[name]);
+  }
+
+  function resetSimulation() {
+    setValues({ mode: 'inverting', model: 'ideal', vd: 25, vin: 1, vin2: 0.5, rf: 100, rin: 10, freq: 1, tau: 1, vsat: 13 });
+  }
+
+  function csvEscape(value) {
+    const str = String(value ?? '');
+    return /[",\n]/.test(str) ? `"${str.replace(/"/g, '""')}"` : str;
+  }
+
+  function exportData() {
+    const calc = latestCalc || calculate(getParams());
+    const p = calc.p;
+    const rows = [
+      ['Field', 'Value'],
+      ['Circuit mode', MODE_INFO[p.mode].title],
+      ['Op-amp model', calc.model.label],
+      ['Input V1 peak', p.mode === 'characteristics' ? `${p.vd} μV differential` : `${p.vin} V`],
+      ['Input V2 peak', ['adder', 'subtractor'].includes(p.mode) ? `${p.vin2} V` : 'Not used'],
+      ['Rf', p.mode === 'characteristics' ? 'Not used' : `${p.rf} kΩ`],
+      ['Rin', p.mode === 'characteristics' ? 'Not used' : `${p.rin} kΩ`],
+      ['Frequency', p.mode === 'characteristics' ? 'Open-loop test waveform' : `${p.freq} kHz`],
+      ['RC time constant', ['differentiator', 'integrator'].includes(p.mode) ? `${p.tau} ms` : 'Not used'],
+      ['Output limit', `±${p.vsat} V`],
+      ['Linear output demand', Number.isFinite(calc.demandPeak) ? `${calc.demandPeak} V peak` : 'Unbounded'],
+      ['Displayed output', `${calc.actualPeak} V peak`],
+      ['Operating condition', calc.status]
+    ];
+    const csv = rows.map((row) => row.map(csvEscape).join(',')).join('\n');
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = `op_amp_${p.mode}_simulation.csv`;
+    document.body.appendChild(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+  }
+
+  const quizQuestions = [
+    {
+      q: 'What input impedance is assumed for an ideal op-amp?',
+      options: ['Zero', 'Infinite', '75 Ω', 'Equal to Rf'], answer: 1,
+      explanation: 'Infinite input impedance means the ideal op-amp draws no current through either input terminal.'
+    },
+    {
+      q: 'An inverting amplifier has Rf = 100 kΩ and Rin = 10 kΩ. What is its ideal voltage gain?',
+      options: ['+10', '−10', '+11', '−11'], answer: 1,
+      explanation: 'Av = −Rf/Rin = −100/10 = −10. The minus sign represents a 180° phase reversal.'
+    },
+    {
+      q: 'Which closed-loop circuit keeps the output in phase with a single input?',
+      options: ['Inverting amplifier', 'Non-inverting amplifier', 'Differentiator', 'Inverting summing amplifier'], answer: 1,
+      explanation: 'The non-inverting amplifier applies the source to V+ and has a positive closed-loop gain.'
+    },
+    {
+      q: 'Which component belongs in the feedback path of an ideal op-amp integrator?',
+      options: ['Capacitor', 'Inductor', 'Diode', 'Transformer'], answer: 0,
+      explanation: 'An integrator uses an input resistor and a feedback capacitor, giving Vout = −(1/RC)∫Vin dt.'
+    },
+    {
+      q: 'For Vin = sin(ωt), the ideal inverting differentiator output is proportional to:',
+      options: ['+sin(ωt)', '−sin(ωt)', '+cos(ωt)', '−cos(ωt)'], answer: 3,
+      explanation: 'Differentiating sin gives ωcos, and the inverting circuit adds a minus sign: Vout = −ωRC cos(ωt).'
+    },
+    {
+      q: 'What practical limitation directly restricts the maximum slope dVout/dt?',
+      options: ['CMRR', 'Input offset voltage', 'Slew rate', 'Input impedance'], answer: 2,
+      explanation: 'Slew rate is the maximum rate at which the output voltage can change, commonly expressed in V/μs.'
+    },
+    {
+      q: 'For a matched difference amplifier, which expression is correct?',
+      options: ['Vout = (Rf/Rin)(V2 − V1)', 'Vout = −(V1 + V2)', 'Vout = V1V2', 'Vout = Rf/Rin only'], answer: 0,
+      explanation: 'With matched ratios, the circuit amplifies the differential component V2 − V1.'
+    },
+    {
+      q: 'What happens when the calculated output exceeds the available output swing?',
+      options: ['The gain becomes infinite', 'The output clips at a rail', 'Input current becomes exactly 1 A', 'The phase always becomes 90°'], answer: 1,
+      explanation: 'The output cannot exceed its available swing, so the peaks flatten at the positive or negative rail.'
+    }
+  ];
+
+  let quizAnswers = new Array(quizQuestions.length).fill(null);
+
+  function renderQuiz() {
+    const container = $('quizContainer');
+    container.textContent = '';
+    quizQuestions.forEach((item, index) => {
+      const card = document.createElement('article'); card.className = 'card question-card';
+      const number = document.createElement('div'); number.className = 'question-number'; number.textContent = `Question ${index + 1}`;
+      const title = document.createElement('h3'); title.textContent = item.q;
+      const list = document.createElement('div'); list.className = 'option-list';
+      item.options.forEach((option, optionIndex) => {
+        const button = document.createElement('button'); button.type = 'button'; button.className = 'option-btn';
+        const key = document.createElement('span'); key.className = 'option-key'; key.textContent = String.fromCharCode(65 + optionIndex);
+        const text = document.createElement('span'); text.textContent = option;
+        button.append(key, text);
+        button.addEventListener('click', () => answerQuiz(index, optionIndex));
+        list.appendChild(button);
+      });
+      const feedback = document.createElement('div'); feedback.className = 'feedback'; feedback.id = `feedback-${index}`;
+      card.append(number, title, list, feedback); container.appendChild(card);
+    });
+    updateQuizUI();
+  }
+
+  function answerQuiz(questionIndex, optionIndex) {
+    if (quizAnswers[questionIndex] !== null) return;
+    quizAnswers[questionIndex] = optionIndex;
+    const card = $('quizContainer').children[questionIndex];
+    const buttons = card.querySelectorAll('.option-btn');
+    buttons.forEach((btn, idx) => {
+      btn.disabled = true;
+      if (idx === quizQuestions[questionIndex].answer) btn.classList.add('correct');
+      if (idx === optionIndex && idx !== quizQuestions[questionIndex].answer) btn.classList.add('wrong');
+    });
+    const feedback = card.querySelector('.feedback');
+    const correct = optionIndex === quizQuestions[questionIndex].answer;
+    feedback.innerHTML = `<strong>${correct ? 'Correct.' : 'Not quite.'}</strong> ${quizQuestions[questionIndex].explanation}`;
+    feedback.classList.add('show');
+    updateQuizUI();
+  }
+
+  function updateQuizUI() {
+    const answered = quizAnswers.filter((v) => v !== null).length;
+    const score = quizAnswers.reduce((sum, value, index) => sum + (value === quizQuestions[index].answer ? 1 : 0), 0);
+    $('answeredCount').textContent = answered;
+    $('quizScore').textContent = score;
+    $('quizProgress').style.width = `${answered / quizQuestions.length * 100}%`;
+    const summary = $('quizSummary');
+    if (answered === quizQuestions.length) {
+      const percent = Math.round(score / quizQuestions.length * 100);
+      const message = percent >= 88 ? 'Excellent command of the core ideas.' : percent >= 63 ? 'Good progress. Review the explanations for missed items.' : 'Revisit the concepts page, then try the quiz again.';
+      summary.innerHTML = `<h3>${score}/${quizQuestions.length} · ${percent}%</h3><p>${message}</p>`;
+      summary.classList.add('show');
+    } else summary.classList.remove('show');
+  }
+
+  function resetQuiz() { quizAnswers = new Array(quizQuestions.length).fill(null); renderQuiz(); }
+
+  const coachKB = [
+    { keys: ['virtual ground', 'virtual'], answer: 'Virtual ground means the feedback holds the inverting input near the same voltage as a grounded non-inverting input, even though the inverting node is not physically connected to ground. It remains valid only while the op-amp is operating linearly with negative feedback.' },
+    { keys: ['clipping', 'saturation', 'rail'], answer: 'Clipping occurs when the linear output demand exceeds the available output swing. The output then flattens near +Vsat or −Vsat. Reduce input amplitude, reduce closed-loop gain, or increase the available output swing.' },
+    { keys: ['slew rate', 'slew'], answer: 'Slew rate is the maximum output slope. For a sine wave, the required peak slope is 2πfVpk. A μA741 with 0.5 V/μs cannot reproduce a large, high-frequency output once this required slope becomes too high.' },
+    { keys: ['integrator', 'differentiator'], answer: 'A differentiator uses an input capacitor and feedback resistor, so gain rises with frequency and a sine becomes −cosine. An integrator uses an input resistor and feedback capacitor, so gain falls with frequency and a sine becomes +cosine.' },
+    { keys: ['inverting gain', 'negative gain', 'why negative'], answer: 'The inverting gain is −Rf/Rin. The magnitude comes from the resistor ratio, while the negative sign means the output polarity reverses relative to the input.' },
+    { keys: ['bandwidth', 'gbp', 'gain bandwidth'], answer: 'For a single-pole compensated op-amp, closed-loop bandwidth is approximately gain-bandwidth product divided by noise gain. Higher closed-loop gain therefore gives lower bandwidth.' },
+    { keys: ['adder', 'summing'], answer: 'A summing amplifier adds input currents at the inverting node. With equal input resistors, Vout = −(Rf/R)(V1 + V2 + …).' },
+    { keys: ['subtractor', 'difference'], answer: 'A difference amplifier uses matched resistor ratios so Vout = (Rf/Rin)(V2 − V1). Mismatch reduces subtraction accuracy and common-mode rejection.' },
+    { keys: ['ideal', 'rules'], answer: 'The two ideal rules used with negative feedback are: no current enters either input, and the feedback drives V+ approximately equal to V−.' }
+  ];
+
+  function addCoachMessage(text, user = false) {
+    const msg = document.createElement('div'); msg.className = `message${user ? ' user' : ''}`; msg.textContent = text;
+    $('coachMessages').appendChild(msg); $('coachMessages').scrollTop = $('coachMessages').scrollHeight;
+  }
+
+  function openCoach() {
+    $('coachBackdrop').classList.add('open');
+    if (!$('coachMessages').children.length) addCoachMessage('Ask about feedback, gain, clipping, slew rate, bandwidth, integrators or differentiators. I use the concepts built into this file.');
+    setTimeout(() => $('coachInput').focus(), 50);
+  }
+
+  function closeCoach() { $('coachBackdrop').classList.remove('open'); $('coachButton').focus(); }
+
+  function coachReply(query) {
+    const lower = query.toLowerCase();
+    const match = coachKB.find((entry) => entry.keys.some((key) => lower.includes(key)));
+    return match ? match.answer : 'I do not have a prepared explanation for that phrase. Try asking about virtual ground, gain, clipping, slew rate, bandwidth, adder, subtractor, integrator or differentiator.';
+  }
+
+  function sendCoach(query) {
+    const trimmed = query.trim(); if (!trimmed) return;
+    addCoachMessage(trimmed, true);
+    setTimeout(() => addCoachMessage(coachReply(trimmed)), 180);
+  }
+
+  document.querySelectorAll('.tab-btn').forEach((btn) => btn.addEventListener('click', () => switchPage(btn.dataset.page)));
+  $('themeButton').addEventListener('click', toggleTheme);
+  $('playButton').addEventListener('click', () => setRunning(!running));
+  Object.values(controls).forEach((control) => {
+    control.addEventListener('input', updateAll);
+    control.addEventListener('change', updateAll);
+  });
+  document.querySelectorAll('[data-preset]').forEach((btn) => btn.addEventListener('click', () => applyPreset(btn.dataset.preset)));
+  $('resetButton').addEventListener('click', resetSimulation);
+  $('exportButton').addEventListener('click', exportData);
+  $('coachButton').addEventListener('click', openCoach);
+  $('coachClose').addEventListener('click', closeCoach);
+  $('coachBackdrop').addEventListener('click', (event) => { if (event.target === $('coachBackdrop')) closeCoach(); });
+  $('coachForm').addEventListener('submit', (event) => { event.preventDefault(); sendCoach($('coachInput').value); $('coachInput').value = ''; });
+  document.querySelectorAll('[data-prompt]').forEach((btn) => btn.addEventListener('click', () => sendCoach(btn.dataset.prompt)));
+  $('resetQuizButton').addEventListener('click', resetQuiz);
+  window.addEventListener('resize', () => requestAnimationFrame(renderNow));
+  document.addEventListener('keydown', (event) => { if (event.key === 'Escape' && $('coachBackdrop').classList.contains('open')) closeCoach(); });
+
+  initTheme();
+  renderQuiz();
+  updateAll();
+  setRunning(running);
+})();
+</script>
+</body>
+</html>

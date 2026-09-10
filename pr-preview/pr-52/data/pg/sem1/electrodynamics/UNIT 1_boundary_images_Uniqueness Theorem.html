@@ -1,0 +1,652 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Boundary Conditions, Uniqueness Theorem &amp; Method of Images — Interactive Module</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+:root{
+  --navy:#123a7a; --navy-dark:#0b2c5e; --cyan:#29b6e8; --orange:#e8720c; --magenta:#c2185b; --gray-mid:#8a97a6;
+  --bg:#eef2f7; --card:#ffffff; --border:#dde3ea; --ink:#1c2733; --ink-soft:#5b6b7c;
+}
+*{box-sizing:border-box;}
+html,body{margin:0;padding:0;background:var(--bg);color:var(--ink);font-family:"Times New Roman", Georgia, serif;font-size:12pt;line-height:1.55;}
+h1,h2,h3,h4{font-family:"Times New Roman", Georgia, serif;color:var(--navy);font-weight:700;margin:0 0 .5em 0;}
+h1{font-size:22pt;} h2{font-size:16pt;border-bottom:2px solid var(--border);padding-bottom:.25em;margin-top:1.4em;}
+h3{font-size:14pt;color:var(--navy-dark);} h4{font-size:10.5pt;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);}
+p{margin:.5em 0;} a{color:var(--magenta);}
+.eyebrow{font-family:Georgia,serif;font-size:9.5pt;letter-spacing:.14em;text-transform:uppercase;color:var(--orange);font-weight:700;}
+header.topbar{position:sticky;top:0;z-index:50;background:#fff;color:var(--navy);padding:.7em 1.2em;display:flex;align-items:center;gap:1.2em;flex-wrap:wrap;border-bottom:3px solid var(--cyan);box-shadow:0 1px 4px rgba(18,58,122,.08);}
+header.topbar .brand{font-weight:700;font-size:14pt;color:var(--navy);}
+header.topbar .brand span{color:var(--ink-soft);font-style:italic;font-weight:400;font-size:11pt;}
+nav.tabs{display:flex;gap:.4em;flex-wrap:wrap;}
+nav.tabs button{background:#eef1f4;border:1px solid var(--border);color:var(--navy);font-family:Georgia,serif;font-size:10.5pt;padding:.55em 1.1em;cursor:pointer;border-radius:4px;font-weight:600;letter-spacing:.03em;}
+nav.tabs button:hover{background:#e2e9f2;}
+nav.tabs button.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+main{max-width:1200px;margin:0 auto;padding:1.6em 1.6em 5em;}
+.page{display:none;} .page.active{display:block;}
+.panel{background:var(--card);border:1px solid var(--border);border-radius:6px;padding:1.2em 1.4em;margin:1em 0;box-shadow:0 1px 3px rgba(18,58,122,.06);}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1em;} @media(max-width:760px){.grid2{grid-template-columns:1fr;}}
+.legend{display:flex;gap:1.1em;flex-wrap:wrap;font-size:10pt;margin:.6em 0;}
+.legend .dot{display:inline-block;width:10px;height:10px;border-radius:50%;margin-right:.35em;vertical-align:middle;}
+table{border-collapse:collapse;width:100%;font-size:10.3pt;margin:.8em 0;}
+th,td{border:1px solid var(--border);padding:.5em .6em;text-align:left;vertical-align:top;}
+th{background:var(--navy);color:#fff;} tr:nth-child(even) td{background:#f4f7fb;}
+blockquote.eq{background:#f4f7fb;border-left:4px solid var(--magenta);padding:.6em 1em;margin:.8em 0;font-size:12.5pt;overflow-x:auto;}
+.pill-note{background:#eaf6fc;border:1px dashed var(--cyan);padding:.6em .9em;border-radius:4px;font-size:10.2pt;margin:.8em 0;}
+
+/* ===== 3-column simulator layout (Inputs | Visualization | Numerical Data) ===== */
+.sim-shell{display:grid;grid-template-columns:0.85fr 2fr 0.9fr;gap:1em;align-items:stretch;}
+@media(max-width:980px){.sim-shell{grid-template-columns:1fr;}}
+.simcol{background:var(--card);border:1px solid var(--border);border-radius:8px;border-top:4px solid var(--cyan);padding:0;overflow:hidden;display:flex;flex-direction:column;}
+.simcol.numcol{border-top-color:var(--orange);}
+.simcol .col-head{padding:.75em 1em;font-weight:700;font-size:11pt;color:var(--navy);letter-spacing:.03em;border-bottom:1px solid var(--border);}
+.simcol.numcol .col-head{color:var(--orange);}
+.simcol .col-body{padding:.9em 1em;flex:1;display:flex;flex-direction:column;gap:.7em;}
+.sim-canvas-wrap{background:#fff;border-radius:0;padding:0;}
+canvas{width:100%;display:block;background:#ffffff;border-radius:3px;}
+.controls{display:flex;flex-direction:column;gap:.75em;}
+.control-block{background:transparent;border:none;border-radius:0;padding:0;}
+.control-row{display:flex;flex-direction:column;gap:.25em;margin:.5em 0;}
+.control-row label{font-size:10pt;color:var(--ink-soft);display:flex;justify-content:space-between;font-weight:600;}
+input[type=range]{accent-color:var(--navy);width:100%;}
+select{font-family:Georgia,serif;padding:.45em;width:100%;border:1px solid var(--border);border-radius:4px;background:#fff;color:var(--ink);}
+.btnrow{display:flex;gap:.5em;flex-wrap:wrap;margin-top:.4em;}
+button.ctl{background:var(--navy);color:#fff;border:1px solid var(--navy-dark);padding:.5em .9em;border-radius:4px;font-family:Georgia,serif;font-size:9.5pt;cursor:pointer;font-weight:600;}
+button.ctl:hover{background:var(--navy-dark);}
+button.ctl.secondary{background:transparent;color:var(--navy);border-color:var(--border);}
+.readout{font-family:"Courier New",monospace;font-size:10pt;background:#f4f7fb;color:var(--ink);padding:.7em .8em;border-radius:3px;line-height:1.7;white-space:pre-wrap;border:1px solid var(--border);}
+.obs-panel{border-top:1px dashed var(--border);margin-top:.6em;padding-top:.6em;font-size:10.5pt;}
+
+/* ===== numerical data as adjacent table rows ===== */
+.num-table{width:100%;border-collapse:collapse;font-size:10.3pt;}
+.num-table tr{border-bottom:1px dashed var(--border);}
+.num-table td{padding:.5em .2em;border:none;}
+.num-table td.lbl{color:var(--navy);font-weight:700;}
+.num-table td.val{color:var(--magenta);font-weight:700;text-align:right;font-family:"Courier New",monospace;}
+.analysis-hd{font-size:9.5pt;text-transform:uppercase;letter-spacing:.06em;color:var(--ink-soft);border-top:1px dashed var(--border);margin-top:.6em;padding-top:.6em;}
+.mini-chart-wrap{background:#fbfcfe;border:1px solid var(--border);border-radius:4px;padding:.4em;}
+
+.appcard{border:1px solid var(--border);background:var(--card);border-radius:8px;padding:1.1em 1.3em;margin:1em 0;box-shadow:0 1px 3px rgba(18,58,122,.06);}
+.appcard h3{margin-top:0;}
+.applbl{font-weight:700;color:var(--ink-soft);}
+.vizsub{display:flex;gap:.4em;flex-wrap:wrap;margin-bottom:1em;}
+.vizsub button{background:#eef1f4;border:1px solid var(--border);padding:.6em 1.2em;font-family:Georgia,serif;font-size:10pt;border-radius:16px;cursor:pointer;font-weight:600;color:var(--navy);}
+.vizsub button.active{background:var(--navy);color:#fff;border-color:var(--navy);}
+.apppage{display:none;} .apppage.active{display:block;}
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">Boundary Conditions &amp; Method of Images<span>&nbsp;· Uniqueness Theorem, Image Charges — M.Sc. Electrodynamics</span></div>
+  <nav class="tabs" id="mainNav">
+    <button data-page="concepts" class="active">I · Concepts</button>
+    <button data-page="sim">II · Simulator</button>
+    <button data-page="apps">III · Applications</button>
+  </nav>
+</header>
+
+<main>
+
+<!-- ======================= CONCEPTS ======================= -->
+<section class="page active" id="page-concepts">
+  <p class="eyebrow">Layer 1 — Conceptual Understanding</p>
+  <h1>Boundary Conditions, Uniqueness, and the Method of Images</h1>
+  <p>Three ideas, one chain of logic: electrostatic fields obey <b>boundary conditions</b> at every interface; the <b>uniqueness theorem</b> guarantees that any potential satisfying Poisson's equation and the correct boundary conditions <em>is the only possible answer</em>, however it was obtained; and the <b>method of images</b> exploits exactly that guarantee, replacing a hard boundary-value problem with an equivalent free-space problem containing fictitious charges.</p>
+
+  <div class="legend">
+    <span><span class="dot" style="background:var(--navy)"></span>real charge / potential V</span>
+    <span><span class="dot" style="background:var(--orange)"></span>conducting boundary</span>
+    <span><span class="dot" style="background:var(--magenta)"></span>image charge (fictitious)</span>
+  </div>
+
+  <div class="panel">
+    <h3>Learning Outcomes</h3>
+    <ul>
+      <li>State the boundary conditions on <b>E</b> and <b>D</b> at a general interface, and specialise them to a conductor surface.</li>
+      <li>Prove the uniqueness theorem for Poisson's equation using an energy argument.</li>
+      <li>Explain why the method of images is a legitimate shortcut rather than an approximation.</li>
+      <li>Derive the classic point-charge/grounded-plane image problem in full: potential, induced surface charge, force, and energy.</li>
+      <li>Apply the same logic to a grounded sphere and a grounded cylinder, and connect the results to shielding and cable engineering.</li>
+    </ul>
+  </div>
+
+  <h2>Boundary Conditions</h2>
+  <div class="panel">
+    <h4>Physical Interpretation</h4>
+    <p>At an interface between two media, Maxwell's equations in integral form force two conditions on the fields, obtained by shrinking a Gaussian pillbox and an Amperian loop straddling the surface down to zero height:</p>
+    <blockquote class="eq"><span id="m1"></span></blockquote>
+    <p>The tangential component of <b>E</b> is always continuous; the normal component of <b>D</b> jumps by exactly the free surface charge density <span id="m2"></span>.</p>
+    <h4>Conductor Surface — the Special Case</h4>
+    <p>Inside a perfect conductor in electrostatic equilibrium <span id="m3"></span>, so the general conditions collapse to:</p>
+    <blockquote class="eq"><span id="m4"></span></blockquote>
+    <p>The field just outside a conductor is purely normal, and its magnitude is fixed entirely by the local surface charge density — this single fact is what makes the method of images work: any charge distribution that reproduces <span id="m5"></span> everywhere on a conductor's surface reproduces the correct field outside it.</p>
+  </div>
+
+  <h2>The Uniqueness Theorem</h2>
+  <div class="panel">
+    <h4>Statement</h4>
+    <p>Let a volume <span id="m6"></span> be bounded by a surface <span id="m7"></span>, with charge density <span id="m8"></span> specified everywhere inside <span id="m9"></span>. If <em>either</em> the potential <span id="m10"></span> (Dirichlet) <em>or</em> the normal field <span id="m11"></span> (Neumann) is specified everywhere on <span id="m12"></span>, then the solution for <span id="m13"></span> inside <span id="m14"></span> is <b>unique</b>.</p>
+    <h4>Proof Sketch (Energy Argument)</h4>
+    <p>Suppose two potentials <span id="m15"></span> and <span id="m16"></span> both satisfy Poisson's equation with the same <span id="m17"></span> and the same boundary data. Let <span id="m18"></span>. Then <span id="m19"></span> everywhere in <span id="m20"></span>, and <span id="m21"></span> (or <span id="m22"></span>) on <span id="m23"></span>. Green's first identity gives:</p>
+    <blockquote class="eq"><span id="m24"></span></blockquote>
+    <p>The surface integral vanishes under either boundary condition, and <span id="m25"></span>, so <span id="m26"></span> everywhere. Since a non-negative integrand integrating to zero must itself be zero, <span id="m27"></span> throughout <span id="m28"></span> — meaning <span id="m29"></span> is constant, hence <span id="m30"></span> is unique (up to an irrelevant additive constant in the Neumann case).</p>
+    <h4>Important Observations</h4>
+    <ul>
+      <li>The theorem says nothing about <em>how</em> a solution is found — guessing, symmetry, or fictitious charges are all fair game, as long as the guess satisfies Poisson's equation and the boundary data.</li>
+      <li>This is precisely the license the method of images relies on.</li>
+    </ul>
+  </div>
+
+  <h2>Method of Images</h2>
+  <div class="panel">
+    <h4>The Idea</h4>
+    <p>Given a real charge distribution near a grounded (or fixed-potential) conducting boundary, replace the conductor entirely with one or more fictitious <b>image charges</b> placed <em>outside</em> the region of interest, chosen so that the combined potential of real + image charges automatically satisfies the boundary condition on the original conductor's surface.</p>
+    <h4>Why It's Legal, Not Approximate</h4>
+    <p>In the region of interest, the image charges contribute nothing to <span id="m31"></span> (they sit outside that region), so Poisson's equation with the real <span id="m32"></span> is still satisfied there. The combined potential also matches the required boundary values by construction. By the uniqueness theorem, a solution satisfying both is <em>the</em> solution — not an approximation to it.</p>
+    <h4>Recipe</h4>
+    <ul>
+      <li>Identify the conductor's boundary and its required potential (usually <span id="m33"></span> for "grounded").</li>
+      <li>Guess an image-charge configuration outside the region of interest that makes the boundary an equipotential (or reproduces the required normal field).</li>
+      <li>Verify the boundary condition is satisfied everywhere on the surface — if it is, uniqueness guarantees the job is done.</li>
+      <li>Compute induced surface charge from <span id="m34"></span>, using the <em>total</em> field (real + image) evaluated just outside the real conductor.</li>
+    </ul>
+  </div>
+
+  <h2>The Classic Image Problem — Point Charge Above a Grounded Plane</h2>
+  <div class="panel">
+    <h4>Setup</h4>
+    <p>A point charge <span id="m35"></span> sits at height <span id="m36"></span> above an infinite grounded conducting plane at <span id="m37"></span>. Place a single image charge <span id="m38"></span> at the mirror point <span id="m39"></span>.</p>
+    <h4>Potential (upper half-space only, <span id="m40"></span>)</h4>
+    <blockquote class="eq"><span id="m41"></span></blockquote>
+    <p>This satisfies <span id="m42"></span> at <span id="m43"></span> for every <span id="m44"></span>, exactly the grounded boundary condition, and it satisfies Poisson's equation for the real charge <span id="m45"></span> in <span id="m46"></span> since the image sits outside that region.</p>
+    <h4>Induced Surface Charge, Force, and Energy</h4>
+    <blockquote class="eq"><span id="m47"></span></blockquote>
+    <p>The induced surface charge integrates to exactly <span id="m48"></span>; the plane pulls the real charge toward it with the same force it would feel from the image charge alone, and the electrostatic energy of the configuration is <b>half</b> the naive real–image interaction energy, because only the upper half-space contains real field energy.</p>
+  </div>
+
+  <div class="pill-note">The same recipe — find an image configuration outside the region of interest that reproduces the boundary condition — applies to a grounded sphere (single off-centre image charge) and a grounded cylinder with a parallel line charge (single image line charge). Both are explorable in the Simulator, and the plane and cylinder cases are worked through as full engineering applications in Layer 3.</div>
+</section>
+
+<!-- ======================= SIMULATOR ======================= -->
+<section class="page" id="page-sim">
+  <p class="eyebrow">Layer 2 — Interactive Visualization</p>
+  <h1>Single Unified Image-Charge Simulator</h1>
+  <p>One simulator, three classic boundary-value geometries — choose the geometry below; the image charge's position and magnitude, the induced surface charge profile, the attractive force, and the interaction energy all update live from the exact analytic solution.</p>
+
+  <div class="sim-shell">
+    <div class="simcol">
+      <div class="col-head">SIMULATION INPUTS</div>
+      <div class="col-body">
+        <div class="control-block">
+          <h4>Geometry</h4>
+          <div class="control-row"><label>Boundary-value problem</label>
+            <select id="geoType">
+              <option value="plane">Point Charge — Grounded Plane</option>
+              <option value="sphere">Point Charge — Grounded Sphere</option>
+              <option value="cylinder">Line Charge — Grounded Cylinder</option>
+            </select>
+          </div>
+        </div>
+        <div class="control-block">
+          <h4>Parameters</h4>
+          <div class="control-row" id="rowQ"><label id="lblQ">Charge q (nC) <span id="qval">10.0</span></label><input type="range" id="qSlider" min="0.5" max="50" step="0.1" value="10"></div>
+          <div class="control-row" id="rowD"><label id="lblD">Distance d (cm) <span id="dval">5.0</span></label><input type="range" id="dSlider" min="1" max="20" step="0.1" value="5"></div>
+          <div class="control-row" id="rowA"><label>Boundary radius a (cm) <span id="aval">2.0</span></label><input type="range" id="aSlider" min="0.5" max="10" step="0.1" value="2"></div>
+        </div>
+        <div class="btnrow">
+          <button class="ctl secondary" id="simPng">⤓ PNG</button>
+        </div>
+      </div>
+    </div>
+    <div class="simcol">
+      <div class="col-head" style="text-align:center;">IMAGE-CHARGE GEOMETRY &amp; INDUCED CHARGE</div>
+      <div class="col-body" style="padding:.5em;">
+        <div class="sim-canvas-wrap"><canvas id="cvSim" height="560"></canvas></div>
+      </div>
+    </div>
+    <div class="simcol numcol">
+      <div class="col-head">NUMERICAL DATA</div>
+      <div class="col-body">
+        <table class="num-table" id="simReadout"></table>
+      </div>
+    </div>
+  </div>
+
+  <div class="obs-panel">
+    <h4>Observation Panel</h4>
+    <p>The dashed marker is the fictitious image charge — it never actually exists in the physical region above the boundary. Its position and magnitude are fixed entirely by the geometry (mirror point for the plane; <span id="m49"></span> for the sphere and cylinder). The lower strip plots the induced surface charge density, always peaking directly beneath/opposite the real charge and falling off with distance along the boundary.</p>
+    <h4>Interpretation Panel</h4>
+    <p>Drag the distance slider toward the boundary and watch the force and the peak induced charge density both grow sharply — this is the same divergence that makes sharp conductor edges and close-spaced capacitor plates field-concentration hot spots in real hardware.</p>
+  </div>
+</section>
+
+<!-- ======================= APPLICATIONS ======================= -->
+<section class="page" id="page-apps">
+  <p class="eyebrow">Layer 3 — Applications</p>
+  <h1>Two Real-Time Engineering Cases</h1>
+  <p>Choose a case below — each has its own interactive, fully computed visualization built from the same image-charge engine as the Simulator page.</p>
+
+  <div class="vizsub" id="appsubnav">
+    <button data-app="plane" class="active">Case 1 · Grounded Plane — Shielding &amp; Capacitor Edges</button>
+    <button data-app="cyl">Case 2 · Grounded Cylinder — Cable / Transmission Lines</button>
+  </div>
+
+  <!-- CASE 1: GROUNDED PLANE -->
+  <div class="apppage active" id="apppage-plane">
+    <div class="appcard">
+      <h3 style="color:var(--navy)">Case 1 · Charge Near a Grounded Conducting Plane — Electrostatic Shielding &amp; Capacitor Edge Effects</h3>
+      <div class="sim-shell">
+        <div class="simcol">
+          <div class="col-head">SIMULATION INPUTS</div>
+          <div class="col-body">
+            <div class="control-block">
+              <h4>Configuration</h4>
+              <div class="control-row"><label>Charge q (nC) <span id="planeQval">10.0</span></label><input type="range" id="planeQSlider" min="0.5" max="50" step="0.1" value="10"></div>
+              <div class="control-row"><label>Height above plane d (cm) <span id="planeDval">5.0</span></label><input type="range" id="planeDSlider" min="0.5" max="20" step="0.1" value="5"></div>
+              <div class="control-row"><label>Wire/conductor radius r<sub>w</sub> (mm) <span id="planeRwval">1.0</span></label><input type="range" id="planeRwSlider" min="0.1" max="5" step="0.1" value="1"></div>
+            </div>
+          </div>
+        </div>
+        <div class="simcol">
+          <div class="col-head" style="text-align:center;">CHARGE ABOVE GROUNDED PLANE</div>
+          <div class="col-body" style="padding:.5em;">
+            <div class="sim-canvas-wrap"><canvas id="cvPlaneApp" height="480"></canvas></div>
+          </div>
+        </div>
+        <div class="simcol numcol">
+          <div class="col-head">NUMERICAL DATA</div>
+          <div class="col-body">
+            <table class="num-table" id="planeReadout"></table>
+          </div>
+        </div>
+      </div>
+      <p><span class="applbl">Physical Principle:</span> A charged conductor (a component lead, a probe tip, a charged particle) near a large grounded metal enclosure induces a surface charge on that enclosure that exactly cancels the field on the far side — the basis of electrostatic shielding. The same geometry, viewed as two parallel plates, is exactly the fringing-field problem at a capacitor's edge.</p>
+      <p><span class="applbl">Mathematical Connection:</span> <span id="m50"></span> gives the induced charge density directly beneath the charge; integrating it over the whole plane always returns exactly <span id="m51"></span>, regardless of height — the shield captures all the field lines that would otherwise escape.</p>
+      <p><span class="applbl">Engineering Relevance:</span> This is the model behind grounded shield cans over sensitive PCB traces, the capacitance-per-unit-length formula for a wire running above a ground plane <span id="m52"></span> (used directly in PCB trace impedance and overhead-line design), and the field concentration that drives dielectric breakdown at sharp capacitor-plate edges.</p>
+      <p><span class="applbl">Key Takeaway:</span> A grounded plane always intercepts <em>all</em> of a nearby charge's field lines — the image charge is simply the bookkeeping device that makes computing exactly how those field lines terminate tractable.</p>
+    </div>
+  </div>
+
+  <!-- CASE 2: GROUNDED CYLINDER -->
+  <div class="apppage" id="apppage-cyl">
+    <div class="appcard">
+      <h3 style="color:var(--magenta)">Case 2 · Line Charge Near a Conducting Cylinder — Cable &amp; Transmission-Line Problems</h3>
+      <div class="sim-shell">
+        <div class="simcol">
+          <div class="col-head">SIMULATION INPUTS</div>
+          <div class="col-body">
+            <div class="control-block">
+              <h4>Configuration</h4>
+              <div class="control-row"><label>Line charge density λ (nC/m) <span id="cylLval">10.0</span></label><input type="range" id="cylLSlider" min="0.5" max="50" step="0.1" value="10"></div>
+              <div class="control-row"><label>Distance from axis d (cm) <span id="cylDval">6.0</span></label><input type="range" id="cylDSlider" min="2.5" max="20" step="0.1" value="6"></div>
+              <div class="control-row"><label>Cylinder radius a (cm) <span id="cylAval">2.0</span></label><input type="range" id="cylASlider" min="0.5" max="8" step="0.1" value="2"></div>
+            </div>
+          </div>
+        </div>
+        <div class="simcol">
+          <div class="col-head" style="text-align:center;">LINE CHARGE NEAR GROUNDED CYLINDER</div>
+          <div class="col-body" style="padding:.5em;">
+            <div class="sim-canvas-wrap"><canvas id="cvCylApp" height="480"></canvas></div>
+          </div>
+        </div>
+        <div class="simcol numcol">
+          <div class="col-head">NUMERICAL DATA</div>
+          <div class="col-body">
+            <table class="num-table" id="cylReadout"></table>
+          </div>
+        </div>
+      </div>
+      <p><span class="applbl">Physical Principle:</span> A current-carrying or charged conductor running parallel to (and off-axis from) a grounded cylindrical shield — a wire inside a conduit, a cable near a pipeline, a phase conductor near a grounded tower member — induces a surface charge on the cylinder found with a single image line charge <span id="m53"></span> at <span id="m54"></span> from the axis.</p>
+      <p><span class="applbl">Mathematical Connection:</span> The induced surface charge density <span id="m55"></span> and the attractive force per unit length <span id="m56"></span> both come from exactly the same image construction used for the plane — the plane is simply the <span id="m57"></span> limit of the cylinder.</p>
+      <p><span class="applbl">Engineering Relevance:</span> This geometry underlies capacitance-per-unit-length calculations for eccentric (off-axis) coaxial cables and shielded conductors, corona-onset field prediction for cables running close to grounded conduit walls, and crosstalk estimation between a signal wire and a grounded cable shield.</p>
+      <p><span class="applbl">Key Takeaway:</span> Moving from a flat shield to a curved one changes only the image charge's position (from a simple mirror point to <span id="m54b"></span>) — the underlying uniqueness argument, and the fact that a single image charge suffices, is unchanged.</p>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<script>
+/* ============ KaTeX ============ */
+function K(id, tex, display){
+  const el=document.getElementById(id); if(!el) return;
+  try{ katex.render(tex, el, {throwOnError:false, displayMode:!!display}); }catch(e){ el.textContent=tex; }
+}
+K('m1','E_1^{\\parallel}=E_2^{\\parallel}\\ ,\\qquad D_2^{\\perp}-D_1^{\\perp}=\\sigma_f',true);
+K('m2','\\sigma_f');
+K('m3','\\mathbf E=0');
+K('m4','E^{\\parallel}=0\\ \\ \\text{(surface)}\\ ,\\qquad E^{\\perp}=\\dfrac{\\sigma}{\\varepsilon_0}\\ \\ \\text{(just outside)}',true);
+K('m5','E^{\\perp}=\\sigma/\\varepsilon_0');
+K('m6','\\mathcal V');K('m7','S');K('m8','\\rho');K('m9','\\mathcal V');
+K('m10','V');K('m11','\\partial V/\\partial n');K('m12','S');K('m13','V');K('m14','\\mathcal V');
+K('m15','V_1');K('m16','V_2');K('m17','\\rho');K('m18','W=V_1-V_2');K('m19','\\nabla^2W=0');
+K('m20','\\mathcal V');K('m21','W=0');K('m22','\\partial W/\\partial n=0');K('m23','S');
+K('m24','\\oint_S W\\,(\\nabla W)\\cdot d\\mathbf a=\\int_{\\mathcal V}\\left[W\\nabla^2W+|\\nabla W|^2\\right]d\\tau\\ \\ \\Longrightarrow\\ \\ \\int_{\\mathcal V}|\\nabla W|^2\\,d\\tau=0',true);
+K('m25','\\nabla^2W=0');K('m26','\\int_{\\mathcal V}|\\nabla W|^2d\\tau=0');K('m27','\\nabla W=0');K('m28','\\mathcal V');
+K('m29','W');K('m30','V');
+K('m31','\\rho');K('m32','\\rho');K('m33','V=0');K('m34','\\sigma=-\\varepsilon_0\\,\\partial V/\\partial n');
+K('m35','q');K('m36','d');K('m37','z=0');K('m38','-q');K('m39','z=-d');K('m40','z>0');
+K('m41','V(x,y,z)=\\dfrac{1}{4\\pi\\varepsilon_0}\\left[\\dfrac{q}{\\sqrt{x^2+y^2+(z-d)^2}}-\\dfrac{q}{\\sqrt{x^2+y^2+(z+d)^2}}\\right]',true);
+K('m42','V=0');K('m43','z=0');K('m44','x,y');K('m45','q');K('m46','z>0');
+K('m47','\\sigma(\\rho)=\\dfrac{-qd}{2\\pi(\\rho^2+d^2)^{3/2}}\\ ,\\quad F=\\dfrac{q^2}{16\\pi\\varepsilon_0d^2}\\ ,\\quad W=-\\dfrac{q^2}{16\\pi\\varepsilon_0d}',true);
+K('m48','-q');
+K('m49',"b=a^2/d");
+K('m50','\\sigma(0)=-q/(2\\pi d^2)');K('m51','-q');
+K('m52','C/\\ell=2\\pi\\varepsilon_0/\\ln(2d/r_w)');
+K('m53',"-\\lambda");K('m54',"b=a^2/d");K('m54b',"b=a^2/d");
+K('m55','\\sigma(\\phi)');K('m56','F/\\ell');K('m57','a\\to\\infty,\\ d-a\\ \\text{fixed}');
+
+/* ============ Tab nav ============ */
+document.getElementById('mainNav').addEventListener('click', e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  document.querySelectorAll('#mainNav button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.getElementById('page-'+b.dataset.page).classList.add('active');
+});
+document.getElementById('appsubnav').addEventListener('click', e=>{
+  const b=e.target.closest('button'); if(!b) return;
+  document.querySelectorAll('#appsubnav button').forEach(x=>x.classList.remove('active'));
+  b.classList.add('active');
+  document.querySelectorAll('.apppage').forEach(p=>p.classList.remove('active'));
+  document.getElementById('apppage-'+b.dataset.app).classList.add('active');
+});
+function pngExport(canvas,name){ const a=document.createElement('a'); a.download=name+'.png'; a.href=canvas.toDataURL('image/png'); a.click(); }
+
+/* ============ Physics engine ============ */
+const EPS0=8.854e-12, K_COUL=1/(4*Math.PI*EPS0);
+function fmt(v, unit){
+  if(!isFinite(v)) return '∞';
+  const av=Math.abs(v);
+  if(av===0) return '0 '+unit;
+  const exp=Math.floor(Math.log10(av));
+  if(exp>=6||exp<=-4) return v.toExponential(2)+' '+unit;
+  return v.toFixed(Math.max(0,3-exp))+' '+unit;
+}
+
+// Plane: q at height d, image -q at -d
+function planeSolve(q, d){
+  const sigma0 = -q*d/(2*Math.PI*Math.pow(d,3));
+  const force = q*q/(16*Math.PI*EPS0*d*d);
+  const energy = -q*q/(16*Math.PI*EPS0*d);
+  return {imgQ:-q, imgPos:-d, sigma0, force, energy, totalInduced:-q,
+    sigmaFn:(rho)=> -q*d/(2*Math.PI*Math.pow(rho*rho+d*d,1.5))};
+}
+// Sphere: q at distance d from center, radius a. image q'=-q a/d at b=a^2/d
+function sphereSolve(q, d, a){
+  const imgQ = -q*a/d, b = a*a/d;
+  const force = K_COUL*q*q*a*d/Math.pow(d*d-a*a,2);
+  const energy = -0.5*K_COUL*q*q*a/(d*d-a*a);
+  return {imgQ, imgPos:b, force, energy, totalInduced:imgQ,
+    sigmaFn:(theta)=> -q*(d*d-a*a)/(4*Math.PI*a*Math.pow(a*a+d*d-2*a*d*Math.cos(theta),1.5))};
+}
+// Cylinder: line charge lambda at distance d from axis, radius a. image -lambda at b=a^2/d
+function cylinderSolve(lambda, d, a){
+  const imgL = -lambda, b = a*a/d;
+  const forcePerLen = lambda*lambda*d/(2*Math.PI*EPS0*(d*d-a*a));
+  return {imgL, imgPos:b, forcePerLen, totalInducedPerLen:-lambda,
+    sigmaFn:(phi)=> -lambda*(d*d-a*a)/(2*Math.PI*a*(d*d+a*a-2*a*d*Math.cos(phi)))};
+}
+
+/* ============ MAIN SIMULATOR ============ */
+(function(){
+  const cv=document.getElementById('cvSim'), ctx=cv.getContext('2d');
+  const geoType=document.getElementById('geoType');
+  const qSlider=document.getElementById('qSlider'), dSlider=document.getElementById('dSlider'), aSlider=document.getElementById('aSlider');
+  const qval=document.getElementById('qval'), dval=document.getElementById('dval'), aval=document.getElementById('aval');
+  const lblQ=document.getElementById('lblQ'), lblD=document.getElementById('lblD');
+  const rowA=document.getElementById('rowA');
+  const CH=560;
+  function resize(){ cv.width=cv.clientWidth*devicePixelRatio; cv.height=CH*devicePixelRatio; cv.style.height=CH+'px'; }
+  function titleBar(text,w,sc){
+    ctx.fillStyle='#123a7a'; ctx.font='bold '+(15*sc)+'px Georgia'; ctx.fillText(text, 14*sc, 24*sc);
+    ctx.strokeStyle='rgba(18,58,122,0.15)'; ctx.lineWidth=1*sc; ctx.beginPath(); ctx.moveTo(0,34*sc); ctx.lineTo(w,34*sc); ctx.stroke();
+  }
+  function syncLabels(){
+    const g=geoType.value;
+    rowA.style.display = (g==='plane')? 'none':'flex';
+    lblQ.innerHTML = g==='cylinder'? 'Line charge λ (nC/m) <span id="qval"></span>' : 'Charge q (nC) <span id="qval"></span>';
+    lblD.innerHTML = g==='cylinder'? 'Distance from axis d (cm) <span id="dval"></span>' : (g==='sphere'? 'Distance from center d (cm) <span id="dval"></span>' : 'Height above plane d (cm) <span id="dval"></span>');
+  }
+  function draw(){
+    resize();
+    const w=cv.width,h=cv.height,sc=devicePixelRatio; ctx.clearRect(0,0,w,h);
+    const g=geoType.value;
+    const q = parseFloat(qSlider.value)*1e-9; // nC -> C (or nC/m for cylinder)
+    const d = parseFloat(dSlider.value)/100;  // cm -> m
+    const a = parseFloat(aSlider.value)/100;
+    document.getElementById('qval').textContent = qSlider.value;
+    document.getElementById('dval').textContent = dSlider.value;
+    aval.textContent = aSlider.value;
+
+    let readoutRows=[];
+    if(g==='plane'){
+      titleBar('POINT CHARGE ABOVE A GROUNDED PLANE', w, sc);
+      const R = planeSolve(q,d);
+      const originX=w*0.5, originY=h*0.5, scale=Math.min(w*0.35,h*0.36)/Math.max(d,0.02);
+      // boundary line
+      ctx.strokeStyle='#e8720c'; ctx.lineWidth=4*sc; ctx.beginPath(); ctx.moveTo(40*sc,originY); ctx.lineTo(w-40*sc,originY); ctx.stroke();
+      ctx.fillStyle='#e8720c'; ctx.font='bold '+(11.5*sc)+'px Georgia'; ctx.fillText('grounded plane (V=0)', 44*sc, originY+22*sc);
+      // real charge
+      const qy = originY - d*scale;
+      drawCharge(originX, qy, 9*sc, '#123a7a', 'q');
+      // image charge
+      const iy = originY + d*scale;
+      drawCharge(originX, iy, 8*sc, '#c2185b', "-q", true);
+      // field lines (schematic bezier arcs from q to plane)
+      drawFieldLinesToPlane(originX, qy, originY, w, sc);
+      // distance labels
+      dashLine(originX+70*sc, qy, originX+70*sc, originY, sc);
+      ctx.fillStyle='#5b6b7c'; ctx.font=(10.5*sc)+'px Georgia'; ctx.fillText('d', originX+78*sc, (qy+originY)/2);
+      dashLine(originX+70*sc, originY, originX+70*sc, iy, sc);
+      ctx.fillText('d (image)', originX+78*sc, (originY+iy)/2);
+      readoutRows = [
+        ['Image charge', fmt(R.imgQ,'C')],
+        ['Image position', '-'+fmt(d,'m')+' (mirror)'],
+        ['σ at ρ=0 (peak)', fmt(R.sigma0,'C/m²')],
+        ['Total induced charge', fmt(R.totalInduced,'C')],
+        ['Attractive force', fmt(R.force,'N')],
+        ['Interaction energy', fmt(R.energy,'J')]
+      ];
+    } else if(g==='sphere'){
+      titleBar('POINT CHARGE NEAR A GROUNDED SPHERE', w, sc);
+      const dEff = Math.max(d, a*1.05);
+      const R = sphereSolve(q,dEff,a);
+      const originX=w*0.5, originY=h*0.5;
+      const scale=Math.min(w*0.38,h*0.4)/Math.max(dEff,0.02);
+      // sphere
+      const sphereR = a*scale;
+      ctx.fillStyle='rgba(232,114,12,0.12)'; ctx.beginPath(); ctx.arc(originX,originY,sphereR,0,7); ctx.fill();
+      ctx.strokeStyle='#e8720c'; ctx.lineWidth=3*sc; ctx.beginPath(); ctx.arc(originX,originY,sphereR,0,7); ctx.stroke();
+      ctx.fillStyle='#e8720c'; ctx.font='bold '+(11.5*sc)+'px Georgia'; ctx.fillText('grounded sphere (V=0)', originX-sphereR, originY-sphereR-10*sc);
+      // real charge to the right
+      const qx = originX + dEff*scale;
+      drawCharge(qx, originY, 9*sc, '#123a7a', 'q');
+      // image charge inside sphere
+      const ix = originX + R.imgPos*scale;
+      drawCharge(ix, originY, 7*sc, '#c2185b', "q'", true);
+      drawFieldLinesRadial(qx, originY, originX, originY, sphereR, sc);
+      dashLine(qx, originY-40*sc, originX, originY-40*sc, sc);
+      ctx.fillStyle='#5b6b7c'; ctx.font=(10.5*sc)+'px Georgia'; ctx.fillText('d', (qx+originX)/2, originY-48*sc);
+      readoutRows = [
+        ["Image charge q'", fmt(R.imgQ,'C')],
+        ['Image position b=a²/d', fmt(R.imgPos,'m')+' from centre'],
+        ['Total induced charge', fmt(R.totalInduced,'C')],
+        ['Attractive force', fmt(R.force,'N')],
+        ['Interaction energy', fmt(R.energy,'J')]
+      ];
+    } else {
+      titleBar('LINE CHARGE NEAR A GROUNDED CYLINDER', w, sc);
+      const dEff = Math.max(d, a*1.05);
+      const lam = q; // reinterpret slider value as nC/m
+      const R = cylinderSolve(lam,dEff,a);
+      const originX=w*0.5, originY=h*0.5;
+      const scale=Math.min(w*0.38,h*0.4)/Math.max(dEff,0.02);
+      const cylR = a*scale;
+      ctx.fillStyle='rgba(232,114,12,0.12)'; ctx.beginPath(); ctx.arc(originX,originY,cylR,0,7); ctx.fill();
+      ctx.strokeStyle='#e8720c'; ctx.lineWidth=3*sc; ctx.beginPath(); ctx.arc(originX,originY,cylR,0,7); ctx.stroke();
+      ctx.fillStyle='#e8720c'; ctx.font='bold '+(11.5*sc)+'px Georgia'; ctx.fillText('grounded cylinder cross-section (V=0)', originX-cylR, originY-cylR-10*sc);
+      const qx = originX + dEff*scale;
+      drawCharge(qx, originY, 8*sc, '#123a7a', 'λ');
+      const ix = originX + R.imgPos*scale;
+      drawCharge(ix, originY, 6*sc, '#c2185b', "-λ", true);
+      drawFieldLinesRadial(qx, originY, originX, originY, cylR, sc);
+      dashLine(qx, originY-40*sc, originX, originY-40*sc, sc);
+      ctx.fillStyle='#5b6b7c'; ctx.font=(10.5*sc)+'px Georgia'; ctx.fillText('d', (qx+originX)/2, originY-48*sc);
+      readoutRows = [
+        ['Image line charge', fmt(R.imgL,'C/m')],
+        ['Image position b=a²/d', fmt(R.imgPos,'m')+' from axis'],
+        ['Total induced (per m)', fmt(R.totalInducedPerLen,'C/m')],
+        ['Attractive force/length', fmt(R.forcePerLen,'N/m')]
+      ];
+    }
+    document.getElementById('simReadout').innerHTML = readoutRows.map(r=>`<tr><td class="lbl">${r[0]}</td><td class="val">${r[1]}</td></tr>`).join('');
+  }
+  function drawCharge(x,y,r,color,label,dashed){
+    ctx.save();
+    if(dashed){ ctx.setLineDash([3,3]); ctx.strokeStyle=color; ctx.lineWidth=2*devicePixelRatio; ctx.globalAlpha=0.55; }
+    ctx.fillStyle=color; ctx.beginPath(); ctx.arc(x,y,r,0,7); ctx.fill();
+    if(dashed){ ctx.stroke(); }
+    ctx.restore();
+    ctx.fillStyle=color; ctx.font='bold '+(11.5*devicePixelRatio)+'px Georgia'; ctx.textAlign='center';
+    ctx.fillText(label, x, y - r - 8*devicePixelRatio); ctx.textAlign='left';
+  }
+  function dashLine(x1,y1,x2,y2,sc){
+    ctx.strokeStyle='rgba(18,58,122,0.35)'; ctx.setLineDash([3,4]); ctx.lineWidth=1.2*sc;
+    ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke(); ctx.setLineDash([]);
+  }
+  function drawFieldLinesToPlane(cx,cy,planeY,w,sc){
+    ctx.strokeStyle='rgba(18,58,122,0.4)'; ctx.lineWidth=1.4*sc;
+    for(let i=-4;i<=4;i++){
+      if(i===0) continue;
+      const tx = cx + i*30*sc;
+      ctx.beginPath(); ctx.moveTo(cx,cy);
+      ctx.quadraticCurveTo(cx+i*15*sc, (cy+planeY)/2, tx, planeY);
+      ctx.stroke();
+    }
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(cx,planeY); ctx.stroke();
+  }
+  function drawFieldLinesRadial(cx,cy,ocx,ocy,bR,sc){
+    ctx.strokeStyle='rgba(18,58,122,0.4)'; ctx.lineWidth=1.4*sc;
+    for(let i=-3;i<=3;i++){
+      const ang = Math.atan2(cy-ocy,cx-ocx) + i*0.28;
+      const tx = ocx+Math.cos(ang)*bR, ty = ocy+Math.sin(ang)*bR;
+      ctx.beginPath(); ctx.moveTo(cx,cy);
+      ctx.quadraticCurveTo((cx+tx)/2+(i*8*sc), (cy+ty)/2, tx, ty);
+      ctx.stroke();
+    }
+  }
+  geoType.addEventListener('change', ()=>{ syncLabels(); draw(); });
+  [qSlider,dSlider,aSlider].forEach(el=>el.addEventListener('input',draw));
+  document.getElementById('simPng').addEventListener('click', ()=>pngExport(cv,'image_charge_simulator'));
+  window.addEventListener('resize', draw);
+  syncLabels(); draw();
+})();
+
+/* ============ APPLICATION 1: GROUNDED PLANE ============ */
+(function(){
+  const cv=document.getElementById('cvPlaneApp'), ctx=cv.getContext('2d');
+  const qSlider=document.getElementById('planeQSlider'), dSlider=document.getElementById('planeDSlider'), rwSlider=document.getElementById('planeRwSlider');
+  const qval=document.getElementById('planeQval'), dval=document.getElementById('planeDval'), rwval=document.getElementById('planeRwval');
+  const CH=480;
+  function resize(){ cv.width=cv.clientWidth*devicePixelRatio; cv.height=CH*devicePixelRatio; cv.style.height=CH+'px'; }
+  function titleBar(text,w,sc){
+    ctx.fillStyle='#123a7a'; ctx.font='bold '+(14.5*sc)+'px Georgia'; ctx.fillText(text, 14*sc, 24*sc);
+    ctx.strokeStyle='rgba(18,58,122,0.15)'; ctx.lineWidth=1*sc; ctx.beginPath(); ctx.moveTo(0,34*sc); ctx.lineTo(w,34*sc); ctx.stroke();
+  }
+  function draw(){
+    resize();
+    const w=cv.width,h=cv.height,sc=devicePixelRatio; ctx.clearRect(0,0,w,h);
+    const q=parseFloat(qSlider.value)*1e-9, d=parseFloat(dSlider.value)/100, rw=parseFloat(rwSlider.value)/1000;
+    qval.textContent=qSlider.value; dval.textContent=dSlider.value; rwval.textContent=rwSlider.value;
+    const R = planeSolve(q,d);
+    titleBar('WIRE / PROBE ABOVE A GROUNDED SHIELD PLANE', w, sc);
+    const originX=w*0.5, originY=h*0.42, scale=Math.min(w*0.36,h*0.28)/Math.max(d,0.01);
+    ctx.strokeStyle='#e8720c'; ctx.lineWidth=5*sc; ctx.beginPath(); ctx.moveTo(30*sc,originY); ctx.lineTo(w-30*sc,originY); ctx.stroke();
+    ctx.fillStyle='#e8720c'; ctx.font='bold '+(11.5*sc)+'px Georgia'; ctx.fillText('grounded shield plane', 34*sc, originY+22*sc);
+    const qy = originY - d*scale;
+    ctx.fillStyle='#123a7a'; ctx.beginPath(); ctx.arc(originX,qy,9*sc,0,7); ctx.fill();
+    ctx.fillStyle='#123a7a'; ctx.font='bold '+(11.5*sc)+'px Georgia'; ctx.textAlign='center'; ctx.fillText('q', originX, qy-16*sc); ctx.textAlign='left';
+    const iy = originY + d*scale;
+    ctx.save(); ctx.setLineDash([3,3]); ctx.strokeStyle='#c2185b'; ctx.lineWidth=2*sc; ctx.globalAlpha=0.55;
+    ctx.fillStyle='#c2185b'; ctx.beginPath(); ctx.arc(originX,iy,8*sc,0,7); ctx.fill(); ctx.stroke(); ctx.restore();
+    ctx.fillStyle='#c2185b'; ctx.font='bold '+(11.5*sc)+'px Georgia'; ctx.textAlign='center'; ctx.fillText('-q (image)', originX, iy+22*sc); ctx.textAlign='left';
+    ctx.strokeStyle='rgba(18,58,122,0.4)'; ctx.lineWidth=1.4*sc;
+    for(let i=-4;i<=4;i++){ if(i===0) continue; const tx=originX+i*32*sc; ctx.beginPath(); ctx.moveTo(originX,qy); ctx.quadraticCurveTo(originX+i*16*sc,(qy+originY)/2,tx,originY); ctx.stroke(); }
+    ctx.beginPath(); ctx.moveTo(originX,qy); ctx.lineTo(originX,originY); ctx.stroke();
+
+    const capPerL = 2*Math.PI*EPS0/Math.log(2*d/rw);
+    document.getElementById('planeReadout').innerHTML = [
+      ['Image charge', fmt(R.imgQ,'C')],
+      ['Peak σ (ρ=0)', fmt(R.sigma0,'C/m²')],
+      ['Total induced charge', fmt(R.totalInduced,'C')],
+      ['Attractive force', fmt(R.force,'N')],
+      ['Interaction energy', fmt(R.energy,'J')],
+      ['Cap. per length C/ℓ', fmt(capPerL,'F/m')]
+    ].map(r=>`<tr><td class="lbl">${r[0]}</td><td class="val">${r[1]}</td></tr>`).join('');
+  }
+  [qSlider,dSlider,rwSlider].forEach(el=>el.addEventListener('input',draw));
+  window.addEventListener('resize', draw);
+  draw();
+})();
+
+/* ============ APPLICATION 2: GROUNDED CYLINDER ============ */
+(function(){
+  const cv=document.getElementById('cvCylApp'), ctx=cv.getContext('2d');
+  const lSlider=document.getElementById('cylLSlider'), dSlider=document.getElementById('cylDSlider'), aSlider=document.getElementById('cylASlider');
+  const lval=document.getElementById('cylLval'), dval=document.getElementById('cylDval'), aval=document.getElementById('cylAval');
+  const CH=480;
+  function resize(){ cv.width=cv.clientWidth*devicePixelRatio; cv.height=CH*devicePixelRatio; cv.style.height=CH+'px'; }
+  function titleBar(text,w,sc){
+    ctx.fillStyle='#123a7a'; ctx.font='bold '+(14.5*sc)+'px Georgia'; ctx.fillText(text, 14*sc, 24*sc);
+    ctx.strokeStyle='rgba(18,58,122,0.15)'; ctx.lineWidth=1*sc; ctx.beginPath(); ctx.moveTo(0,34*sc); ctx.lineTo(w,34*sc); ctx.stroke();
+  }
+  function draw(){
+    resize();
+    const w=cv.width,h=cv.height,sc=devicePixelRatio; ctx.clearRect(0,0,w,h);
+    let lam=parseFloat(lSlider.value)*1e-9, d=parseFloat(dSlider.value)/100, a=parseFloat(aSlider.value)/100;
+    if(d<=a*1.02) d=a*1.02;
+    lval.textContent=lSlider.value; dval.textContent=dSlider.value; aval.textContent=aSlider.value;
+    const R = cylinderSolve(lam,d,a);
+    titleBar('SIGNAL WIRE NEAR A GROUNDED CONDUIT / CABLE SHIELD (cross-section)', w, sc);
+    const originX=w*0.42, originY=h*0.46;
+    const scale=Math.min(w*0.30,h*0.30)/Math.max(d,0.01);
+    const cylR=a*scale;
+    ctx.fillStyle='rgba(232,114,12,0.12)'; ctx.beginPath(); ctx.arc(originX,originY,cylR,0,7); ctx.fill();
+    ctx.strokeStyle='#e8720c'; ctx.lineWidth=3*sc; ctx.beginPath(); ctx.arc(originX,originY,cylR,0,7); ctx.stroke();
+    ctx.fillStyle='#e8720c'; ctx.font='bold '+(11.5*sc)+'px Georgia'; ctx.fillText('grounded conduit (V=0)', originX-cylR, originY-cylR-12*sc);
+    const qx = originX + d*scale;
+    ctx.fillStyle='#123a7a'; ctx.beginPath(); ctx.arc(qx,originY,8*sc,0,7); ctx.fill();
+    ctx.fillStyle='#123a7a'; ctx.font='bold '+(11.5*sc)+'px Georgia'; ctx.textAlign='center'; ctx.fillText('λ (signal wire)', qx, originY-18*sc); ctx.textAlign='left';
+    const ix = originX + R.imgPos*scale;
+    ctx.save(); ctx.setLineDash([3,3]); ctx.strokeStyle='#c2185b'; ctx.lineWidth=2*sc; ctx.globalAlpha=0.55;
+    ctx.fillStyle='#c2185b'; ctx.beginPath(); ctx.arc(ix,originY,6*sc,0,7); ctx.fill(); ctx.stroke(); ctx.restore();
+    ctx.fillStyle='#c2185b'; ctx.font='bold '+(11.5*sc)+'px Georgia'; ctx.textAlign='center'; ctx.fillText('-λ (image)', ix, originY+20*sc); ctx.textAlign='left';
+    ctx.strokeStyle='rgba(18,58,122,0.4)'; ctx.lineWidth=1.4*sc;
+    for(let i=-3;i<=3;i++){
+      const ang=i*0.28;
+      const tx=originX+Math.cos(ang)*cylR, ty=originY+Math.sin(ang)*cylR;
+      ctx.beginPath(); ctx.moveTo(qx,originY); ctx.quadraticCurveTo((qx+tx)/2,(originY+ty)/2+i*10*sc,tx,ty); ctx.stroke();
+    }
+
+    const sigma0=R.sigmaFn(0.0001);
+
+    document.getElementById('cylReadout').innerHTML = [
+      ['Image line charge', fmt(R.imgL,'C/m')],
+      ['Image position b=a²/d', fmt(R.imgPos,'m')+' from axis'],
+      ['Peak σ (φ=0)', fmt(sigma0,'C/m²')],
+      ['Total induced (per m)', fmt(R.totalInducedPerLen,'C/m')],
+      ['Attractive force/length', fmt(R.forcePerLen,'N/m')]
+    ].map(r=>`<tr><td class="lbl">${r[0]}</td><td class="val">${r[1]}</td></tr>`).join('');
+  }
+  [lSlider,dSlider,aSlider].forEach(el=>el.addEventListener('input',draw));
+  window.addEventListener('resize', draw);
+  draw();
+})();
+</script>
+</body>
+</html>

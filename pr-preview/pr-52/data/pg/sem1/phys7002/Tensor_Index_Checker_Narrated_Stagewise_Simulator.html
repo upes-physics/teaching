@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>B.Tech Mathematics - Tensor Index Checker</title>
+<script src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js"></script>
+<style>
+:root{--navy:#123a7a;--cyan:#29b6e8;--orange:#e8720c;--pink:#c2185b;--green:#0a8f4a;--red:#b51d4b;--bg:#eef2f7;--card:#fff;--border:#d9e1ea;--ink:#1c2733;--muted:#5d6b7b}
+*{box-sizing:border-box}html,body{margin:0;background:var(--bg);color:var(--ink);font-family:"Times New Roman",Georgia,serif;font-size:12pt;line-height:1.55}
+h1,h2,h3,h4{color:var(--navy);margin:0 0 .55em}h1{font-size:23pt}h2{font-size:17pt;border-bottom:2px solid var(--border);padding-bottom:.25em;margin-top:1.35em}h3{font-size:14pt}p{margin:.55em 0}
+header{position:sticky;top:0;z-index:1000;background:#fff;border-bottom:3px solid var(--cyan);box-shadow:0 1px 5px #123a7a14;padding:.65em 1.2em;display:flex;justify-content:space-between;align-items:center;gap:1em;flex-wrap:wrap}.brand{font-weight:bold;color:var(--navy);font-size:14pt}.brand span{font-size:10.5pt;color:var(--muted);font-style:italic;font-weight:normal}
+nav,.appnav{display:flex;gap:.35em;flex-wrap:wrap}nav button,.appnav button{border:1px solid var(--border);background:#eef1f4;color:var(--navy);padding:.5em .85em;border-radius:4px;font-family:Georgia,serif;font-weight:bold;cursor:pointer;font-size:9.5pt}nav button.active,.appnav button.active{background:var(--navy);color:#fff;border-color:var(--navy)}
+main{max-width:1200px;margin:auto;padding:1.4em 1.5em 4em}.page,.apppage{display:none}.page.active,.apppage.active{display:block}.eyebrow{font-size:9pt;letter-spacing:.15em;text-transform:uppercase;color:var(--orange);font-weight:bold}
+.panel,.card{background:var(--card);border:1px solid var(--border);border-radius:8px;padding:1.1em 1.3em;margin:1em 0;box-shadow:0 1px 4px #123a7a0d}.grid2{display:grid;grid-template-columns:1fr 1fr;gap:1em}.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:1em}@media(max-width:900px){.grid2,.grid3{grid-template-columns:1fr}}
+.opcard{border-top:4px solid var(--cyan)}.opcard:nth-child(2){border-top-color:var(--orange)}.opcard:nth-child(3){border-top-color:var(--pink)}.op{font-size:22pt;color:var(--navy);font-weight:bold}.badge{display:inline-block;padding:.2em .55em;border-radius:12px;background:#eef1f4;border:1px solid var(--border);font-size:8pt;font-weight:bold;color:var(--navy)}
+.eq{background:#f4f7fb;border-left:4px solid var(--pink);padding:.65em .9em;overflow:auto;margin:.7em 0}.callout{background:#eaf6fc;border-left:4px solid var(--cyan);padding:.75em .9em;border-radius:4px}.success-note{background:#eaf7ef;border-left:4px solid var(--green);padding:.8em .9em;border-radius:4px}.warning{background:#fff2f4;border-left:4px solid var(--pink);padding:.8em .9em;border-radius:4px}
+table{width:100%;border-collapse:collapse;margin:.8em 0;font-size:10.2pt}th,td{border:1px solid var(--border);padding:.5em;text-align:left;vertical-align:top}th{background:var(--navy);color:#fff}tr:nth-child(even) td{background:#f7f9fc}
+.simgrid{display:grid;grid-template-columns:.82fr 2fr .9fr;gap:1em}.simcol{background:#fff;border:1px solid var(--border);border-radius:8px;overflow:hidden}.simcol:nth-child(1){border-top:4px solid var(--cyan)}.simcol:nth-child(2){border-top:4px solid var(--navy)}.simcol:nth-child(3){border-top:4px solid var(--orange)}
+.colhead{font-weight:bold;color:var(--navy);padding:.75em 1em;border-bottom:1px solid var(--border)}.colbody{padding:1em}label{font-size:9.5pt;color:var(--muted);font-weight:bold;display:block;margin:.65em 0 .25em}
+select,input[type=range],input[type=text],textarea{width:100%;padding:.45em;border:1px solid var(--border);border-radius:4px;background:#fff;color:var(--ink);font-family:Georgia,serif}input[type=range]{padding:0;accent-color:var(--navy)}textarea{min-height:90px}
+button.action{width:100%;padding:.58em;margin-top:.5em;border:1px solid var(--navy);border-radius:4px;background:var(--navy);color:#fff;font-weight:bold;cursor:pointer;font-family:Georgia,serif}button.action.secondary{background:#fff;color:var(--navy);border-color:var(--border)}
+.metric{background:#f4f7fb;border:1px solid var(--border);border-radius:5px;padding:.65em;margin:.55em 0}.metric small{display:block;color:var(--muted);font-size:8.5pt}.metric strong{font-family:"Courier New",monospace;font-size:12.5pt;color:var(--pink)}
+.status{padding:.6em;border-radius:4px;text-align:center;font-weight:bold;margin-top:.6em}.pass{background:#e3f6e9;color:#0a6b3a;border:1px solid #8ad3a5}.fail{background:#fbe9ee;color:#a3144b;border:1px solid #e2a1b7}
+.step{padding:.55em .7em;border-left:3px solid var(--cyan);background:#f7f9fc;margin:.4em 0}.formula-box{background:#f4f7fb;border:1px solid var(--border);border-radius:5px;padding:.65em;overflow:auto}.prediction{background:#fff9ef;border-left:4px solid var(--orange);padding:.7em .9em}.ai{background:#f7f5ff;border-left:4px solid var(--pink);padding:.9em}.note{font-size:10pt;color:var(--muted)}
+.tokenbox{display:flex;flex-wrap:wrap;gap:.45em;margin:.8em 0}.token{border:1px solid var(--border);background:#f7f9fc;border-radius:6px;padding:.45em .6em;font-family:"Courier New",monospace}.free{border-color:var(--green);background:#eaf7ef}.dummy{border-color:var(--cyan);background:#eaf6fc}.bad{border-color:var(--red);background:#fff2f4;color:var(--red);font-weight:bold}
+.scorebar{position:sticky;top:70px;z-index:20;background:var(--navy);color:#fff;padding:.65em 1em;border-radius:5px;display:flex;justify-content:space-between;align-items:center}.scorebar button{background:var(--orange);border:0;color:#fff;padding:.45em .8em;border-radius:4px;cursor:pointer}.q{border-bottom:1px dashed var(--border);padding:1em 0}.option{display:block;text-align:left;padding:.55em .7em;background:#f7f9fc;border:1px solid var(--border);border-radius:5px;margin:.4em 0;cursor:pointer}.feedback{display:none;padding:.55em;border-radius:5px;margin-top:.5em}.feedback.show{display:block}.right{background:#e3f6e9;color:#0a6b3a}.wrong{background:#fbe9ee;color:#a3144b}
+footer{background:#0b2440;color:#dce8fa;text-align:center;padding:1.3em;font-size:9.5pt}@media(max-width:980px){.simgrid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<header><div class="brand">B.Tech Tensor Calculus <span>- Tensor Index Checker</span></div><nav id="nav"><button class="active" data-page="concept">I - Concepts</button><button data-page="sim">II - Simulator</button><button data-page="apps">III - Applications</button><button data-page="assess">IV - Assessment</button><button data-page="notes">V - Notes</button></nav></header>
+<main>
+<section class="page active" id="concept">
+ <div class="eyebrow">Layer 1 - Conceptual Understanding</div><h1>Tensor Index Manipulation</h1>
+ <p>Tensor notation uses upper and lower indices to represent components, contractions, and coordinate transformation behavior. This checker focuses on index consistency.</p>
+ <div class="panel"><h3>Learning Outcomes</h3><ul><li>Distinguish free and dummy indices.</li><li>Check whether free indices match on both sides of an equation.</li><li>Detect invalid repeated indices.</li><li>Understand contraction using one upper and one lower repeated index.</li><li>Recognize raising and lowering operations with the metric tensor.</li></ul></div>
+ <div class="grid3"><div class="card opcard"><span class="badge">VISIBLE RESULT</span><div class="op">free</div><h3>Free Indices</h3><p>Free indices appear once in a term and must match on both sides.</p></div><div class="card opcard"><span class="badge">SUMMED</span><div class="op">dummy</div><h3>Dummy Indices</h3><p>A dummy index appears exactly twice, once up and once down, and is summed over.</p></div><div class="card opcard"><span class="badge">METRIC</span><div class="op">g</div><h3>Raise/Lower</h3><p>The metric tensor changes index position, such as \(v_i=g_{ij}v^j\).</p></div></div>
+ <h2>1. Einstein Summation Convention</h2><div class="eq">\[ A^i{}_jB^j{}_k=C^i{}_k \]</div><p>The repeated index \(j\) is dummy because it appears once up and once down. The free indices are \(i\) and \(k\), so the result must also carry \(i,k\).</p>
+ <h2>2. Validity Rules</h2><table><tr><th>Rule</th><th>Meaning</th></tr><tr><td>Free-index matching</td><td>Each side of an equation must have the same free indices in the same variance position.</td></tr><tr><td>Dummy-index pair</td><td>A contracted index should appear exactly twice in a term, once upper and once lower.</td></tr><tr><td>No triple repetition</td><td>An index repeated three or more times in one term is usually invalid.</td></tr><tr><td>Metric use</td><td>\(g_{ij}v^j=v_i\) lowers an index; \(g^{ij}v_j=v^i\) raises an index.</td></tr></table>
+</section>
+
+<section class="page" id="sim">
+ <div class="eyebrow">Layer 2 - Interactive Verification, Stagewise Visualization & Narration</div><h1>Narrated Tensor Index Checker</h1>
+ <div class="simgrid">
+  <div class="simcol"><div class="colhead">SIMULATION INPUTS</div><div class="colbody">
+   <label for="preset">Preset expression</label><select id="preset"><option value="A^i_j B^j_k = C^i_k">A^i_j B^j_k = C^i_k</option><option value="A^i_j B^j_k = C^j_k">A^i_j B^j_k = C^j_k</option><option value="T^i_i_j = v_j">T^i_i_j = v_j</option><option value="T^i_i_i = s">T^i_i_i = s</option><option value="g_ij v^j = v_i">g_ij v^j = v_i</option><option value="g^ij v_j = v^i">g^ij v_j = v^i</option><option value="R^i_jkl v^j = w^i_kl">R^i_jkl v^j = w^i_kl</option></select>
+   <label for="expr">Editable expression</label><textarea id="expr"></textarea>
+   <label for="stage">Stage</label><input id="stage" type="range" min="0" max="4" step="1" value="0">
+   <button class="action" id="prevStage">Previous Stage</button><button class="action" id="nextStage">Next Stage</button><button class="action" id="playStages">Play Guided Explanation</button>
+   <label for="narrationMode">Narration</label><select id="narrationMode"><option value="text">Text only</option><option value="voice">Text + browser voice</option></select>
+   <button class="action secondary" id="speak">Narrate Current Stage</button><button class="action secondary" id="stopSpeak">Stop Narration</button><button class="action secondary" id="resetSim">Reset Simulator</button><button class="action secondary" id="downloadReport">Download Report</button><button class="action secondary" id="downloadHTML">Download HTML</button>
+  </div></div>
+  <div class="simcol"><div class="colhead">INDEX VISUALIZATION</div><div class="colbody"><div id="exprRender" class="eq"></div><h3>Left side index tokens</h3><div id="leftTokens" class="tokenbox"></div><h3>Right side index tokens</h3><div id="rightTokens" class="tokenbox"></div><div id="stageTitle" style="font-weight:bold;color:var(--navy);font-size:13pt"></div><div id="stageDescription" class="note" style="margin-top:.25em"></div></div></div>
+  <div class="simcol"><div class="colhead">MATHEMATICAL ENGINE</div><div class="colbody"><div class="metric"><small>Left free indices</small><strong id="leftFree">-</strong></div><div class="metric"><small>Right free indices</small><strong id="rightFree">-</strong></div><div class="metric"><small>Dummy indices</small><strong id="dummyRead">-</strong></div><div class="metric"><small>Repeated-index errors</small><strong id="repeatRead">-</strong></div><div class="metric"><small>Free-index match</small><strong id="matchRead">-</strong></div><div class="metric"><small>Metric action</small><strong id="metricRead">-</strong></div><div id="status" class="status">AWAITING CHECK</div></div></div>
+ </div>
+ <div class="grid2"><div class="panel"><h3>Narrator</h3><div id="narratorBox" class="callout" aria-live="polite">Move the stage slider or press Play Guided Explanation.</div><div class="formula-box" id="stageFormula" style="margin-top:.8em"></div></div><div class="panel"><h3>AI-Assisted Tensor Feedback</h3><div id="aiPanel" class="ai"></div><div class="prediction" style="margin-top:.8em"><b>Try this:</b> change \(C^i_k\) to \(C^j_k\). The checker should detect that the free index \(i\) is lost and \(j\) appears incorrectly.</div></div></div>
+ <div class="panel"><h3>Stage List</h3><div id="steps"></div></div>
+</section>
+
+<section class="page" id="apps">
+ <div class="eyebrow">Layer 3 - Exploration & Applications</div><h1>Applications</h1><div class="appnav"><button class="active" data-app="geometry">Geometry</button><button data-app="relativity">Relativity</button><button data-app="mechanics">Mechanics</button><button data-app="ml">Computation</button></div>
+ <div class="apppage active" id="geometry"><div class="card"><h3>Differential Geometry</h3><p>Tensor indices track how geometric quantities transform under coordinate changes.</p></div></div><div class="apppage" id="relativity"><div class="card"><h3>Relativity</h3><p>Raising, lowering, contraction, and curvature expressions are central in relativity notation.</p></div></div><div class="apppage" id="mechanics"><div class="card"><h3>Continuum Mechanics</h3><p>Stress, strain, and elasticity tensors use index notation to represent multi-directional behavior.</p></div></div><div class="apppage" id="ml"><div class="card"><h3>Computational Tensor Algebra</h3><p>Index notation helps verify array contractions used in scientific computing and machine learning.</p></div></div>
+</section>
+
+<section class="page" id="assess">
+ <div class="eyebrow">Layer 4 - Practice, Problem Solving & Assessment</div><h1>Assessment</h1><div class="scorebar"><span>Score: <span id="score">0</span> / 8</span><button id="resetQuiz">Reset Quiz</button></div><div class="panel"><h3>Conceptual MCQs</h3><div id="quiz"></div></div><div class="panel"><h3>Short Assessment Activity</h3><p>Check whether \(A^i{}_jB^j{}_k=C^i{}_k\) is index-consistent. Identify free and dummy indices.</p><textarea placeholder="Write your answer here..."></textarea></div>
+</section>
+
+<section class="page" id="notes">
+ <div class="eyebrow">Instructor & Student Support</div><h1>Teaching Notes</h1><div class="grid2"><div class="panel"><h3>Suggested Sequence</h3><ol><li>Begin with free indices as the visible output labels.</li><li>Introduce dummy index contraction.</li><li>Show free-index mismatch errors.</li><li>Show repeated-index errors.</li><li>Demonstrate metric raising and lowering.</li></ol></div><div class="panel"><h3>Common Errors</h3><ul><li>Using a dummy index on one side as a free index on the other.</li><li>Repeating an index three times in one term.</li><li>Contracting two upper or two lower indices without a metric.</li><li>Changing variance position of free indices without justification.</li></ul></div></div>
+ <table><tr><th>Stage</th><th>Student action</th><th>Instructor prompt</th></tr><tr><td>1</td><td>Read upper and lower indices.</td><td>Ask what each index position means.</td></tr><tr><td>2</td><td>Identify free indices.</td><td>Ask which labels survive in the result.</td></tr><tr><td>3</td><td>Identify dummy contractions.</td><td>Ask why one up and one down form a sum.</td></tr><tr><td>4</td><td>Check equation consistency.</td><td>Ask whether both sides have the same free indices.</td></tr><tr><td>5</td><td>Interpret metric action.</td><td>Ask whether the metric raises or lowers an index.</td></tr></table>
+</section>
+</main>
+<footer>Tensor Index Checker - standalone offline teaching file</footer>
+<script>
+const $=id=>document.getElementById(id);let timer=null,currentNarration='';
+const quizData=[
+ ['A free index appears',['once in a term','twice in a term','three times always','only after equals sign'],0,'A free index appears once and remains visible in the result.'],
+ ['A dummy index should appear',['twice, once up and once down','once only','three times','only as lower'],0,'A valid contraction uses one upper and one lower occurrence.'],
+ ['In \(A^i_jB^j_k\), the dummy index is',['j','i','k','A'],0,'The index j appears once down and once up.'],
+ ['In \(A^i_jB^j_k\), free indices are',['i and k','j only','A and B','none'],0,'i and k appear once and are not summed.'],
+ ['\(g_{ij}v^j\) produces',['\(v_i\)','\(v^i\)','a scalar always','zero always'],0,'The metric with lower indices lowers the vector index.'],
+ ['A repeated index three times is usually',['invalid','always free','always scalar','a determinant'],0,'Triple repetition is not a valid Einstein contraction.'],
+ ['Both sides of a tensor equation must have',['same free indices with same variance','same dummy names','no indices','only lower indices'],0,'Free indices and their positions must agree.'],
+ ['Dummy names may be changed because',['they are summed labels','they are free labels','they are constants','they are matrix entries'],0,'Dummy indices are placeholder summation labels.']
+];
+function clean(s){return s.replace(/\s+/g,' ').trim()}
+function esc(s){return s.replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]))}
+function parseSide(side){
+ const tokens=[];let i=0;
+ while(i<side.length){
+  const ch=side[i];
+  if(ch==='^'||ch==='_'){
+   const pos=ch==='^'?'up':'down';i++;
+   if(side[i]==='{'){let j=side.indexOf('}',i);let body=side.slice(i+1,j<0?side.length:j);for(const c of body.replace(/[^a-zA-Z]/g,''))tokens.push({idx:c,pos});i=(j<0?side.length:j+1)}
+   else{while(i<side.length&&/[a-zA-Z]/.test(side[i])){tokens.push({idx:side[i],pos});i++}}
+  }else i++;
+ }
+ return tokens;
+}
+function classify(tokens){
+ const map={};tokens.forEach(t=>{map[t.idx]=map[t.idx]||{up:0,down:0};map[t.idx][t.pos]++});
+ const free=[],dummy=[],bad=[];
+ Object.keys(map).sort().forEach(k=>{const m=map[k],total=m.up+m.down;if(total===1)free.push((m.up?'^':'_')+k);else if(total===2&&m.up===1&&m.down===1)dummy.push(k);else bad.push(k+'('+m.up+' up, '+m.down+' down)')});
+ return{map,free,dummy,bad};
+}
+function analyze(){
+ const expression=clean($('expr').value||$('preset').value),parts=expression.split('=').map(clean),left=parseSide(parts[0]||''),right=parseSide(parts[1]||''),L=classify(left),R=classify(right);
+ const lf=L.free.join(', ')||'none',rf=R.free.join(', ')||'none',match=lf===rf,repeat=[...L.bad,...R.bad],dummies=[...L.dummy.map(x=>'L:'+x),...R.dummy.map(x=>'R:'+x)];
+ let metric='none';if(/g_ij\s*v\^j\s*=\s*v_i/.test(expression))metric='lowers v^j to v_i';else if(/g\^ij\s*v_j\s*=\s*v\^i/.test(expression))metric='raises v_j to v^i';else if(/g_/.test(expression)||/g\^/.test(expression))metric='metric appears; check variance carefully';
+ return{expression,left,right,L,R,lf,rf,match,repeat,dummies,metric,ok:match&&repeat.length===0};
+}
+function renderTokens(id,tokens,C){
+ if(!tokens.length){$(id).innerHTML='<span class="token">no indices</span>';return}
+ $(id).innerHTML=tokens.map(t=>{const label=(t.pos==='up'?'^':'_')+t.idx;let cls='token';if(C.bad.some(b=>b.startsWith(t.idx+'(')))cls+=' bad';else if(C.dummy.includes(t.idx))cls+=' dummy';else cls+=' free';return `<span class="${cls}">${label}</span>`}).join('');
+}
+function stages(a){return[
+ {title:'Stage 1 - Read the Expression',formula:'\\[\\text{Upper index: contravariant, lower index: covariant}\\]',desc:'The checker scans upper and lower index positions.',narr:`Stage one. The expression is ${a.expression}. We first read every upper and lower index.`},
+ {title:'Stage 2 - Identify Free Indices',formula:'\\[\\text{free index appears once in each term}\\]',desc:'Free indices label the tensor type of the result.',narr:`Stage two. The left free indices are ${a.lf}. The right free indices are ${a.rf}.`},
+ {title:'Stage 3 - Identify Dummy Indices',formula:'\\[\\text{dummy index: one upper occurrence and one lower occurrence}\\]',desc:'Dummy indices are summed over and do not appear in the final free-index list.',narr:`Stage three. The detected dummy indices are ${a.dummies.join(', ')||'none'}.`},
+ {title:'Stage 4 - Check Consistency',formula:'\\[\\text{LHS free indices}=\\text{RHS free indices}\\]',desc:'A tensor equation is consistent only when free indices match on both sides.',narr:`Stage four. Free-index matching ${a.match?'passes':'fails'}. Repeated-index errors: ${a.repeat.join(', ')||'none'}.`},
+ {title:'Stage 5 - Interpret the Result',formula:'\\[g_{ij}v^j=v_i,\\qquad g^{ij}v_j=v^i\\]',desc:'Metric tensors can lower or raise indices by contraction.',narr:`Stage five. The final index check ${a.ok?'passes':'fails'}. Metric action: ${a.metric}.`}
+]}
+function update(){
+ const a=analyze(),stage=+$('stage').value,s=stages(a);
+ $('exprRender').innerHTML='\\['+esc(a.expression).replace(/\^([a-zA-Z]+)/g,'^{$1}').replace(/_([a-zA-Z]+)/g,'_{$1')+'\\]';
+ $('exprRender').textContent=a.expression;
+ renderTokens('leftTokens',a.left,a.L);renderTokens('rightTokens',a.right,a.R);
+ $('leftFree').textContent=a.lf;$('rightFree').textContent=a.rf;$('dummyRead').textContent=a.dummies.join(', ')||'none';$('repeatRead').textContent=a.repeat.join(', ')||'none';$('matchRead').textContent=a.match?'pass':'fail';$('metricRead').textContent=a.metric;$('status').className='status '+(a.ok?'pass':'fail');$('status').textContent=a.ok?'INDEX STRUCTURE CONSISTENT':'INDEX ERROR DETECTED';
+ $('stageTitle').textContent=s[stage].title;$('stageDescription').textContent=s[stage].desc;$('narratorBox').textContent=s[stage].narr;currentNarration=s[stage].narr;$('stageFormula').innerHTML=s[stage].formula;if(window.MathJax)MathJax.typesetPromise([$('stageFormula')]);$('steps').innerHTML=s.map((x,i)=>`<div class="step" style="${i===stage?'border-left-color:var(--orange);background:#fff9ef':''}"><b>${i+1}. ${x.title.replace(/^Stage [0-9]+ - /,'')}</b><br><span class="note">${x.desc}</span></div>`).join('');
+ $('aiPanel').innerHTML=`<b>AI-style diagnosis:</b> Left free indices: <b>${a.lf}</b>; right free indices: <b>${a.rf}</b>. Dummy indices: <b>${a.dummies.join(', ')||'none'}</b>. Repetition problems: <b>${a.repeat.join(', ')||'none'}</b>.<br><br>${a.ok?'The expression is index-consistent.':'The expression has an index inconsistency. Check whether free indices match and whether any index is repeated incorrectly.'}`;
+}
+function speakCurrent(){stopNarration();if($('narrationMode').value!=='voice'||!('speechSynthesis'in window))return;const u=new SpeechSynthesisUtterance(currentNarration);u.rate=.95;window.speechSynthesis.speak(u)}function stopNarration(){if('speechSynthesis'in window)window.speechSynthesis.cancel()}function stopGuided(){if(timer){clearInterval(timer);timer=null;$('playStages').textContent='Play Guided Explanation'}}
+function downloadHTML(){const html='<!DOCTYPE html>\\n'+document.documentElement.outerHTML;const blob=new Blob([html],{type:'text/html'});const a=document.createElement('a');a.download='Tensor_Index_Checker_Narrated_Stagewise_Simulator.html';a.href=URL.createObjectURL(blob);a.click();setTimeout(()=>URL.revokeObjectURL(a.href),1000)}
+function downloadReport(){const a=analyze(),txt=`Tensor index report\\nExpression: ${a.expression}\\nLeft free: ${a.lf}\\nRight free: ${a.rf}\\nDummy: ${a.dummies.join(', ')||'none'}\\nRepeated-index errors: ${a.repeat.join(', ')||'none'}\\nMetric action: ${a.metric}\\nConclusion: ${a.ok?'consistent':'index error'}`;const blob=new Blob([txt],{type:'text/plain'});const link=document.createElement('a');link.download='tensor_index_report.txt';link.href=URL.createObjectURL(blob);link.click();setTimeout(()=>URL.revokeObjectURL(link.href),1000)}
+function renderQuiz(){$('quiz').innerHTML=quizData.map((q,i)=>`<div class="q"><b>Q${i+1}. ${q[0]}</b>${q[1].map((o,j)=>`<label class="option"><input type="radio" name="q${i}" value="${j}"> ${String.fromCharCode(65+j)}. ${o}</label>`).join('')}<div class="feedback" id="fb${i}"></div></div>`).join('');if(window.MathJax)MathJax.typesetPromise([$('quiz')])}
+let score=0,answered={};document.querySelectorAll('#nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('#nav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));$(b.dataset.page).classList.add('active');setTimeout(update,60)});document.querySelectorAll('.appnav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.appnav button').forEach(x=>x.classList.remove('active'));b.classList.add('active');document.querySelectorAll('.apppage').forEach(p=>p.classList.remove('active'));$(b.dataset.app).classList.add('active')});
+$('preset').oninput=()=>{$('expr').value=$('preset').value;update()};$('expr').oninput=update;$('stage').oninput=update;$('prevStage').onclick=()=>{stopGuided();$('stage').value=Math.max(0,+$('stage').value-1);update()};$('nextStage').onclick=()=>{stopGuided();$('stage').value=Math.min(4,+$('stage').value+1);update()};$('playStages').onclick=()=>{if(timer){stopGuided();return}$('playStages').textContent='Stop Guided Explanation';$('stage').value=0;update();speakCurrent();timer=setInterval(()=>{let v=+$('stage').value;if(v>=4){stopGuided();return}$('stage').value=v+1;update();speakCurrent()},4200)};$('speak').onclick=speakCurrent;$('stopSpeak').onclick=()=>{stopGuided();stopNarration()};$('resetSim').onclick=()=>{$('preset').value='A^i_j B^j_k = C^i_k';$('expr').value=$('preset').value;$('stage').value=0;update()};$('downloadHTML').onclick=downloadHTML;$('downloadReport').onclick=downloadReport;
+$('quiz').addEventListener('change',e=>{if(e.target.type!=='radio')return;const i=+e.target.name.slice(1),j=+e.target.value;if(answered[i])return;answered[i]=true;const fb=$('fb'+i),ok=j===quizData[i][2];if(ok)score++;fb.className='feedback show '+(ok?'right':'wrong');fb.textContent=(ok?'Correct. ':'Incorrect. ')+quizData[i][3];$('score').textContent=score});$('resetQuiz').onclick=()=>{score=0;answered={};$('score').textContent='0';renderQuiz()};
+$('expr').value=$('preset').value;renderQuiz();update();
+</script>
+</body>
+</html>

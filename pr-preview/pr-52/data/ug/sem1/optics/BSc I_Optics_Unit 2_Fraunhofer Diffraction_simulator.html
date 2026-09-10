@@ -1,0 +1,760 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fraunhofer Diffraction Simulator & Interactive Optics Guide</title>
+    <!-- KaTeX for math rendering -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js" onload="renderMathInElement(document.body, { delimiters: [{left: '$$', right: '$$', display: true}, {left: '$', right: '$', display: false}, {left: '\\(', right: '\\)', display: false}, {left: '\\[', right: '\\]', display: true}] });"></script>
+
+    <style>
+        :root {
+            --bg: #0f172a;
+            --card: #1e293b;
+            --text: #f1f5f9;
+            --accent: #38bdf8;
+            --cyan: #22d3ee;
+            --yellow: #fbbf24;
+            --green: #34d399;
+            --red: #ef4444;
+            --border: #334155;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+        }
+
+        .container {
+            max-width: 1100px;
+            width: 100%;
+            background: var(--card);
+            padding: 25px;
+            border-radius: 15px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            box-sizing: border-box;
+        }
+
+        /* 1. Metadata Card */
+        .metadata-card {
+            background: rgba(34, 211, 238, 0.08);
+            border: 1px solid rgba(34, 211, 238, 0.3);
+            border-left: 5px solid var(--cyan);
+            padding: 15px 20px;
+            border-radius: 8px;
+            margin-bottom: 25px;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 12px;
+        }
+
+        .metadata-item span {
+            font-size: 0.8rem;
+            color: #94a3b8;
+            display: block;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .metadata-item strong {
+            font-size: 1rem;
+            color: var(--text);
+        }
+
+        /* Header */
+        .header { text-align: center; margin-bottom: 25px; }
+        .header h1 { color: var(--accent); margin: 0 0 5px 0; font-weight: 300; font-size: 2.2rem; }
+        .header p { color: #94a3b8; margin: 0; }
+
+        .section-title {
+            color: var(--cyan);
+            font-size: 1.25rem;
+            font-weight: 600;
+            border-bottom: 1px solid var(--border);
+            padding-bottom: 8px;
+            margin: 30px 0 15px 0;
+        }
+
+        /* 2. Experimental Setup Visualizer */
+        .setup-viz {
+            background: #ffffff;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            padding: 20px;
+            color: #000;
+            margin-bottom: 25px;
+        }
+
+        /* 3. Theory Section */
+        .theory-block {
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            border-radius: 10px;
+            line-height: 1.6;
+            color: #cbd5e1;
+            font-size: 0.95rem;
+            margin-bottom: 25px;
+        }
+
+        .theory-block ul { margin-top: 8px; padding-left: 20px; }
+        .theory-block li { margin-bottom: 6px; }
+
+        /* 4. Formulas Section */
+        .formulas-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+            gap: 15px;
+            margin-bottom: 25px;
+        }
+
+        .formula-card {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            padding: 15px;
+            border-radius: 8px;
+            text-align: center;
+        }
+
+        .formula-card h4 {
+            margin: 0 0 8px 0;
+            color: var(--yellow);
+            font-weight: 500;
+            font-size: 0.9rem;
+        }
+
+        /* 5. Main Simulator Section */
+        .preset-row {
+            display: flex;
+            gap: 8px;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
+            align-items: center;
+        }
+
+        .preset-btn {
+            font-size: 0.85rem;
+            padding: 5px 12px;
+            border: 1px solid var(--border);
+            border-radius: 20px;
+            background: rgba(0,0,0,0.3);
+            color: var(--text);
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .preset-btn:hover { background: rgba(56, 189, 248, 0.2); }
+        .preset-btn.active { background: var(--accent); color: #000; font-weight: 600; border-color: var(--accent); }
+
+        .sim-grid {
+            display: grid;
+            grid-template-columns: 340px 1fr;
+            gap: 20px;
+            align-items: start;
+            margin-bottom: 20px;
+        }
+
+        .ctrl-panel {
+            background: rgba(0,0,0,0.2);
+            padding: 20px;
+            border-radius: 10px;
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+        }
+
+        .ctrl-row { display: flex; flex-direction: column; gap: 4px; }
+        .ctrl-label { display: flex; justify-content: space-between; font-size: 0.85rem; color: #94a3b8; }
+        .ctrl-label span:last-child { color: var(--cyan); font-weight: bold; }
+        
+        input[type=range] { accent-color: var(--accent); cursor: pointer; }
+
+        .btn-group { display: flex; gap: 10px; margin-top: 5px; }
+        .btn-group button {
+            flex: 1;
+            padding: 8px;
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            color: var(--text);
+            border-radius: 6px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        .btn-group button:hover { background: var(--accent); color: #000; }
+
+        .right-col { display: flex; flex-direction: column; gap: 15px; }
+
+        /* Visualization Box */
+        .viz-card {
+            background: #0b0f19;
+            border: 1px solid var(--border);
+            border-radius: 10px;
+            padding: 15px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            position: relative;
+        }
+
+        .canvas-label {
+            align-self: flex-start;
+            font-size: 0.8rem;
+            color: #94a3b8;
+            margin-bottom: 6px;
+            font-weight: 500;
+        }
+
+        canvas {
+            background: #030712;
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            max-width: 100%;
+            height: auto;
+        }
+
+        #pattern { margin-bottom: 12px; }
+
+        /* AI Feedback Panel */
+        .ai-panel {
+            width: 100%;
+            margin-top: 15px;
+            padding: 12px 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+            background: rgba(15, 23, 42, 0.8);
+            box-sizing: border-box;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 15px;
+        }
+
+        .status-badge {
+            padding: 5px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            white-space: nowrap;
+        }
+
+        .status-badge.single-slit { background: rgba(56, 189, 248, 0.2); color: var(--accent); border: 1px solid var(--accent); }
+        .status-badge.double-slit { background: rgba(52, 211, 153, 0.2); color: var(--green); border: 1px solid var(--green); }
+        .status-badge.grating { background: rgba(251, 191, 36, 0.2); color: var(--yellow); border: 1px solid var(--yellow); }
+
+        .ai-text {
+            font-size: 0.85rem;
+            color: #cbd5e1;
+            flex-grow: 1;
+        }
+
+        .metrics {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 10px;
+        }
+
+        .metric {
+            background: rgba(0,0,0,0.3);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 10px;
+        }
+
+        .metric-label { font-size: 0.75rem; color: #94a3b8; margin-bottom: 4px; }
+        .metric-val { font-size: 1.05rem; font-weight: bold; color: var(--yellow); }
+
+        .table-wrap { overflow-x: auto; background: rgba(0,0,0,0.2); border-radius: 8px; border: 1px solid var(--border); }
+        table { width: 100%; font-size: 0.85rem; border-collapse: collapse; }
+        th { text-align: right; padding: 8px; color: var(--cyan); border-bottom: 1px solid var(--border); }
+        th:first-child { text-align: left; }
+        td { text-align: right; padding: 6px 8px; border-bottom: 1px solid rgba(51, 65, 85, 0.4); color: #cbd5e1; }
+        td:first-child { text-align: left; }
+
+        .formula-bar {
+            text-align: center;
+            font-size: 0.9rem;
+            color: var(--yellow);
+            background: rgba(0,0,0,0.3);
+            padding: 12px;
+            border-radius: 8px;
+            border: 1px solid var(--border);
+        }
+
+        @media(max-width: 850px) {
+            .sim-grid { grid-template-columns: 1fr; }
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <!-- 1. Metadata Segment -->
+    <div class="metadata-card">
+        <div class="metadata-item">
+            <span>Course Name</span>
+            <strong>Optics for B.Sc. 1st Semester</strong>
+        </div>
+        <div class="metadata-item">
+            <span>Target Level</span>
+            <strong>B.Sc. 1st Semester</strong>
+        </div>
+    </div>
+
+    <div class="header">
+        <h1>Fraunhofer Diffraction Simulator</h1>
+        <p>Single Slit, N-Slit Diffraction Grating, Envelope Modulation & Missing Orders</p>
+    </div>
+
+    <!-- 2. Experimental Setup & Ray Diagram -->
+    <div class="section-title">1. Experimental Setup & Ray Diagram</div>
+    <div class="setup-viz">
+        <div style="font-weight: bold; margin-bottom: 10px; font-size: 0.9rem; color: #333;">Schematic Optics Setup for Fraunhofer N-Slit Diffraction</div>
+        <svg id="schematic" width="560" height="190" viewBox="0 0 560 190">
+            <defs>
+                <marker id="arrow-blue" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                    <path d="M0,0 L0,6 L6,3 z" fill="#0284c7" />
+                </marker>
+                <marker id="arrow-green" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+                    <path d="M0,0 L0,6 L6,3 z" fill="#16a34a" />
+                </marker>
+            </defs>
+
+            <!-- Light Source S -->
+            <circle cx="25" cy="95" r="12" fill="#fbbf24" stroke="#d97706" stroke-width="2" />
+            <text x="10" y="125" font-size="10" font-weight="bold" fill="#1e293b">Source (S)</text>
+
+            <!-- Diverging Rays to Lens L1 -->
+            <line x1="37" y1="95" x2="100" y2="45" stroke="#fbbf24" stroke-width="1.5" />
+            <line x1="37" y1="95" x2="100" y2="95" stroke="#fbbf24" stroke-width="1.5" />
+            <line x1="37" y1="95" x2="100" y2="145" stroke="#fbbf24" stroke-width="1.5" />
+
+            <!-- Collimating Lens L1 -->
+            <ellipse cx="100" cy="95" rx="8" ry="60" fill="rgba(2, 132, 199, 0.2)" stroke="#0284c7" stroke-width="2" />
+            <text x="88" y="25" font-size="10" font-weight="bold" fill="#0284c7">Lens L₁</text>
+
+            <!-- Plane Wavefronts to Aperture -->
+            <line x1="108" y1="50" x2="200" y2="50" stroke="#0284c7" stroke-width="1.5" marker-end="url(#arrow-blue)" />
+            <line x1="108" y1="95" x2="200" y2="95" stroke="#0284c7" stroke-width="1.5" marker-end="url(#arrow-blue)" />
+            <line x1="108" y1="140" x2="200" y2="140" stroke="#0284c7" stroke-width="1.5" marker-end="url(#arrow-blue)" />
+
+            <!-- Slit Mask (Aperture Plane) -->
+            <rect x="200" y="20" width="8" height="40" fill="#334155" />
+            <rect x="200" y="70" width="8" height="15" fill="#334155" />
+            <rect x="200" y="95" width="8" height="15" fill="#334155" />
+            <rect x="200" y="120" width="8" height="50" fill="#334155" />
+            <text x="175" y="180" font-size="10" font-weight="bold" fill="#334155">Slit Mask (a, d)</text>
+
+            <!-- Diffracted Waves to Lens L2 -->
+            <line x1="208" y1="65" x2="330" y2="45" stroke="#16a34a" stroke-width="1.5" />
+            <line x1="208" y1="88" x2="330" y2="88" stroke="#16a34a" stroke-width="1.5" />
+            <line x1="208" y1="112" x2="330" y2="135" stroke="#16a34a" stroke-width="1.5" stroke-dasharray="3,2" />
+
+            <!-- Focusing Lens L2 -->
+            <ellipse cx="330" cy="95" rx="8" ry="65" fill="rgba(2, 132, 199, 0.2)" stroke="#0284c7" stroke-width="2" />
+            <text x="318" y="20" font-size="10" font-weight="bold" fill="#0284c7">Lens L₂</text>
+
+            <!-- Rays Converging to Screen -->
+            <line x1="338" y1="45" x2="470" y2="95" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow-green)" />
+            <line x1="338" y1="88" x2="470" y2="95" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow-green)" />
+            <line x1="338" y1="135" x2="470" y2="95" stroke="#16a34a" stroke-width="1.5" marker-end="url(#arrow-green)" />
+
+            <!-- Screen -->
+            <line x1="470" y1="20" x2="470" y2="170" stroke="#000000" stroke-width="4" />
+            <text x="480" y="98" font-size="10" font-weight="bold" fill="#1e293b">Focal Screen (F₂)</text>
+        </svg>
+    </div>
+
+    <!-- 3. Theory Section -->
+    <div class="section-title">2. Background, Concept & Theory</div>
+    <div class="theory-block">
+        <p>
+            <strong>Fraunhofer Diffraction</strong> occurs when both the light source and the viewing screen are effectively at infinite distances from the diffracting aperture (or when lenses are placed to produce parallel incident and diffracted beams).
+        </p>
+        <p>Key Physical Concepts:</p>
+        <ul>
+            <li><strong>Single Slit Diffraction Factor:</strong> Secondary wavelets originating across a single slit of width \(a\) interfere to form a single-slit diffraction pattern modulated by \(\alpha = \frac{\pi a \sin\theta}{\lambda}\):
+                <div style="text-align: center; margin: 6px 0; color: var(--yellow);">
+                    \(I_{\text{single}}(\theta) = \left( \frac{\sin\alpha}{\alpha} \right)^2\)
+                </div>
+            </li>
+            <li><strong>Multiple Slit Interference Factor:</strong> For \(N\) parallel slits spaced a distance \(d\) center-to-center, phase differences between adjacent slits introduce an interference factor governed by \(\beta = \frac{\pi d \sin\theta}{\lambda}\):
+                <div style="text-align: center; margin: 6px 0; color: var(--yellow);">
+                    \(I_{\text{multi}}(\theta) = \left( \frac{\sin(N\beta)}{\sin\beta} \right)^2\)
+                </div>
+            </li>
+            <li><strong>Combined Total Intensity:</strong> The total observed field pattern is the product of the single-slit diffraction envelope and the multi-slit interference factor:
+                <div style="text-align: center; margin: 6px 0; color: var(--yellow);">
+                    \(I(\theta) = I_0 \cdot \left( \frac{\sin\alpha}{\alpha} \right)^2 \cdot \left( \frac{\sin(N\beta)}{N\sin\beta} \right)^2\)
+                </div>
+            </li>
+            <li><strong>Missing Orders (Absent Spectra):</strong> When a principal interference maximum (\(d\sin\theta = m\lambda\)) coincides with a single-slit diffraction minimum (\(a\sin\theta = n\lambda\)), that order becomes invisible because the diffraction envelope goes to zero. The condition for missing orders is:
+                <div style="text-align: center; margin: 6px 0; color: var(--cyan);">
+                    \(\frac{d}{a} = \frac{m}{n}\) &nbsp;\(\implies m = n \cdot \left(\frac{d}{a}\right)\)
+                </div>
+            </li>
+        </ul>
+    </div>
+
+    <!-- 4. Necessary Formulas -->
+    <div class="section-title">3. Governing Formulas & Equations</div>
+    <div class="formulas-grid">
+        <div class="formula-card">
+            <h4>Fraunhofer Intensity Equation</h4>
+            <div>$$I(\theta) = I_0 \left(\frac{\sin\alpha}{\alpha}\right)^2 \left(\frac{\sin N\beta}{N\sin\beta}\right)^2$$</div>
+            <span style="font-size: 0.75rem; color: #94a3b8;">\(\alpha = \frac{\pi a \sin\theta}{\lambda}\), \(\beta = \frac{\pi d \sin\theta}{\lambda}\)</span>
+        </div>
+        <div class="formula-card">
+            <h4>Principal Maxima Condition</h4>
+            <div>$$d \sin\theta = m \lambda \quad (m = 0, \pm 1, \pm 2, \dots)$$</div>
+            <span style="font-size: 0.75rem; color: #94a3b8;">Bright sharp interference peaks for $N$ slits</span>
+        </div>
+        <div class="formula-card">
+            <h4>Diffraction Minima Envelope</h4>
+            <div>$$a \sin\theta = n \lambda \quad (n = \pm 1, \pm 2, \dots)$$</div>
+            <span style="font-size: 0.75rem; color: #94a3b8;">Enclosing single-slit envelope zeros</span>
+        </div>
+        <div class="formula-card">
+            <h4>Missing Orders Condition</h4>
+            <div>$$m = n \left(\frac{d}{a}\right)$$</div>
+            <span style="font-size: 0.75rem; color: #94a3b8;">Order $m$ disappears when ratio $\frac{d}{a}$ is an integer</span>
+        </div>
+    </div>
+
+    <!-- 5. Main Simulator Section -->
+    <div class="section-title">4. Interactive Fraunhofer Diffraction Simulator</div>
+
+    <div class="preset-row" id="presets">
+        <span style="font-size:0.85rem; color: #94a3b8;">Presets:</span>
+        <button class="preset-btn active" onclick="loadPreset(1, 2.0, 6.0)">Single Slit (N = 1)</button>
+        <button class="preset-btn" onclick="loadPreset(2, 2.0, 8.0)">Young's Double Slit (N = 2)</button>
+        <button class="preset-btn" onclick="loadPreset(5, 1.5, 6.0)">Multiple Slits (N = 5)</button>
+        <button class="preset-btn" onclick="loadPreset(10, 1.0, 4.0)">Diffraction Grating (N = 10)</button>
+        <button class="preset-btn" onclick="loadPreset(2, 2.0, 4.0)">Missing Order (d = 2a)</button>
+        <button class="preset-btn" onclick="loadPreset(2, 2.0, 6.0)">Missing Order (d = 3a)</button>
+    </div>
+
+    <div class="sim-grid">
+        <div class="ctrl-panel">
+            <div class="ctrl-row">
+                <div class="ctrl-label"><span>Wavelength (\(\lambda\))</span><span id="lam-val">550 nm</span></div>
+                <input type="range" id="lam" min="380" max="750" value="550" step="1" oninput="onControlChange()">
+            </div>
+
+            <div class="ctrl-row">
+                <div class="ctrl-label"><span>Slit Width (\(a\))</span><span id="a-val">2.0 μm</span></div>
+                <input type="range" id="a" min="0.5" max="10.0" value="2.0" step="0.1" oninput="onControlChange()">
+            </div>
+
+            <div class="ctrl-row">
+                <div class="ctrl-label"><span>Number of Slits (\(N\))</span><span id="N-val">2</span></div>
+                <input type="range" id="N" min="1" max="10" value="2" step="1" oninput="onControlChange()">
+            </div>
+
+            <div class="ctrl-row">
+                <div class="ctrl-label"><span>Slit Separation (\(d\))</span><span id="d-val">6.0 μm</span></div>
+                <input type="range" id="d" min="1.0" max="25.0" value="6.0" step="0.1" oninput="onControlChange()">
+            </div>
+
+            <div class="ctrl-row">
+                <div class="ctrl-label"><span>Angular Zoom Scale</span><span id="scale-val">1.0x</span></div>
+                <input type="range" id="scale" min="0.5" max="3.0" value="1.0" step="0.1" oninput="onControlChange()">
+            </div>
+
+            <div class="btn-group">
+                <button onclick="resetSim()">Reset Defaults</button>
+            </div>
+        </div>
+
+        <div class="right-col">
+            <div class="viz-card">
+                <div class="canvas-label">1. Simulated 2D Optical Screen Pattern:</div>
+                <canvas id="pattern" width="680" height="110"></canvas>
+
+                <div class="canvas-label">2. Intensity Profile Graph (Dashed Line = Envelope, Solid = Total Intensity):</div>
+                <canvas id="plot" width="680" height="230"></canvas>
+
+                <div class="ai-panel">
+                    <div id="aiStatusBadge" class="status-badge double-slit">Double Slit</div>
+                    <div id="aiTextFeedback" class="ai-text">Adjust sliders to observe multi-slit interference modulated by diffraction envelope.</div>
+                </div>
+            </div>
+
+            <div class="metrics">
+                <div class="metric"><div class="metric-label">Central Max Angular Width</div><div class="metric-val" id="m-width">31.5°</div></div>
+                <div class="metric"><div class="metric-label">Ratio (d / a)</div><div class="metric-val" id="m-ratio">3.00</div></div>
+                <div class="metric"><div class="metric-label">1st Missing Order (m)</div><div class="metric-val" id="m-missing">m = 3</div></div>
+                <div class="metric"><div class="metric-label">Principal Maxima Spacing</div><div class="metric-val" id="m-spacing">5.26°</div></div>
+            </div>
+
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                        <tr>
+                            <th>Peak / Order</th>
+                            <th>Condition</th>
+                            <th>Angle (\(\theta\))</th>
+                            <th>Diffraction Factor</th>
+                            <th>Total Intensity (\(I/I_0\))</th>
+                            <th>Observation</th>
+                        </tr>
+                    </thead>
+                    <tbody id="tableBody"></tbody>
+                </table>
+            </div>
+
+            <div class="formula-bar" id="formulaBox"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+/* --- Wavelength to RGB Conversion --- */
+function wavelengthToRGB(wavelength) {
+    let R, G, B, alpha;
+    if (wavelength >= 380 && wavelength < 440) { R = -(wavelength - 440) / (440 - 380); G = 0.0; B = 1.0; }
+    else if (wavelength >= 440 && wavelength < 490) { R = 0.0; G = (wavelength - 440) / (490 - 440); B = 1.0; }
+    else if (wavelength >= 490 && wavelength < 510) { R = 0.0; G = 1.0; B = -(wavelength - 510) / (510 - 490); }
+    else if (wavelength >= 510 && wavelength < 580) { R = (wavelength - 510) / (580 - 510); G = 1.0; B = 0.0; }
+    else if (wavelength >= 580 && wavelength < 645) { R = 1.0; G = -(wavelength - 645) / (645 - 580); B = 0.0; }
+    else if (wavelength >= 645 && wavelength <= 780) { R = 1.0; G = 0.0; B = 0.0; }
+    else { R = 0.0; G = 0.0; B = 0.0; }
+
+    if (wavelength >= 380 && wavelength < 420) { alpha = 0.3 + 0.7 * (wavelength - 380) / (420 - 380); }
+    else if (wavelength >= 420 && wavelength < 701) { alpha = 1.0; }
+    else if (wavelength >= 701 && wavelength <= 780) { alpha = 0.3 + 0.7 * (780 - wavelength) / (780 - 700); }
+    else { alpha = 0.0; }
+
+    const gamma = 0.80;
+    R = Math.round(Math.pow(R * alpha, gamma) * 255);
+    G = Math.round(Math.pow(G * alpha, gamma) * 255);
+    B = Math.round(Math.pow(B * alpha, gamma) * 255);
+
+    return { r: R, g: G, b: B };
+}
+
+/* --- Control Handler & UI Sync --- */
+function onControlChange() {
+    var lam_nm = parseFloat(document.getElementById('lam').value);
+    var a_um = parseFloat(document.getElementById('a').value);
+    var N_val = parseInt(document.getElementById('N').value);
+    var d_um = parseFloat(document.getElementById('d').value);
+    var scale_val = parseFloat(document.getElementById('scale').value);
+
+    // Parametric Logic Guard: Slit separation 'd' cannot be less than slit width 'a' physically!
+    if (d_um < a_um && N_val > 1) {
+        d_um = a_um;
+        document.getElementById('d').value = a_um.toFixed(1);
+    }
+
+    document.getElementById('lam-val').textContent = lam_nm + ' nm';
+    document.getElementById('a-val').textContent = a_um.toFixed(1) + ' μm';
+    document.getElementById('N-val').textContent = N_val;
+    document.getElementById('d-val').textContent = d_um.toFixed(1) + ' μm';
+    document.getElementById('scale-val').textContent = scale_val.toFixed(1) + 'x';
+
+    drawAndCalculate();
+}
+
+function loadPreset(N, a, d) {
+    document.getElementById('N').value = N;
+    document.getElementById('a').value = a;
+    document.getElementById('d').value = d;
+
+    document.querySelectorAll('.preset-btn').forEach(b => b.classList.remove('active'));
+    if (event && event.target) event.target.classList.add('active');
+
+    onControlChange();
+}
+
+function resetSim() {
+    document.getElementById('lam').value = 550;
+    document.getElementById('a').value = 2.0;
+    document.getElementById('N').value = 1;
+    document.getElementById('d').value = 6.0;
+    document.getElementById('scale').value = 1.0;
+    loadPreset(1, 2.0, 6.0);
+}
+
+/* --- Draw & Analytical Engine --- */
+function drawAndCalculate() {
+    const plotCanvas = document.getElementById('plot');
+    const plotCtx = plotCanvas.getContext('2d');
+    const patternCanvas = document.getElementById('pattern');
+    const patternCtx = patternCanvas.getContext('2d');
+
+    const W = plotCanvas.width;
+    const H_plot = plotCanvas.height;
+    const H_pat = patternCanvas.height;
+
+    plotCtx.clearRect(0, 0, W, H_plot);
+    patternCtx.clearRect(0, 0, W, H_pat);
+
+    const lam_nm = parseFloat(document.getElementById('lam').value);
+    const lam = lam_nm * 1e-9;
+    const a = parseFloat(document.getElementById('a').value) * 1e-6;
+    const N = parseInt(document.getElementById('N').value);
+    const d = parseFloat(document.getElementById('d').value) * 1e-6;
+    const zoom = parseFloat(document.getElementById('scale').value);
+
+    const color = wavelengthToRGB(lam_nm);
+    const maxTheta = 0.28 / zoom; // Angular field of view in radians
+
+    let envelopePath = new Path2D();
+    let totalPath = new Path2D();
+
+    /* Draw Grid Lines on Plot */
+    plotCtx.strokeStyle = '#334155';
+    plotCtx.lineWidth = 0.8;
+    for (let f = 0.25; f <= 1.0; f += 0.25) {
+        let y = H_plot - (f * (H_plot - 30)) - 15;
+        plotCtx.beginPath(); plotCtx.moveTo(0, y); plotCtx.lineTo(W, y); plotCtx.stroke();
+    }
+
+    for (let x = 0; x < W; x++) {
+        let theta = ((x / W) - 0.5) * 2 * maxTheta;
+
+        let alpha = (Math.PI * a * Math.sin(theta)) / lam;
+        let beta = (Math.PI * d * Math.sin(theta)) / lam;
+
+        let I_single = (alpha === 0) ? 1.0 : Math.pow(Math.sin(alpha) / alpha, 2);
+        
+        let I_multi = 1.0;
+        if (N > 1) {
+            let sinBeta = Math.sin(beta);
+            if (Math.abs(sinBeta) < 1e-6) {
+                I_multi = 1.0; // Principal maximum peak limit
+            } else {
+                I_multi = Math.pow(Math.sin(N * beta) / (N * sinBeta), 2);
+            }
+        }
+
+        let I_total = I_single * I_multi;
+
+        // 1. Visual 2D Screen Pattern
+        patternCtx.fillStyle = `rgba(${color.r}, ${color.g}, ${color.b}, ${Math.min(1.0, I_total)})`;
+        patternCtx.fillRect(x, 0, 1, H_pat);
+
+        // 2. 1D Intensity Plot Coordinates
+        let y_env = H_plot - (I_single * (H_plot - 35)) - 15;
+        let y_total = H_plot - (I_total * (H_plot - 35)) - 15;
+
+        if (x === 0) {
+            envelopePath.moveTo(x, y_env);
+            totalPath.moveTo(x, y_total);
+        } else {
+            envelopePath.lineTo(x, y_env);
+            totalPath.lineTo(x, y_total);
+        }
+    }
+
+    // Draw Single Slit Envelope (Dashed cyan)
+    plotCtx.setLineDash([5, 5]);
+    plotCtx.lineWidth = 1.8;
+    plotCtx.strokeStyle = 'rgba(56, 189, 248, 0.6)';
+    plotCtx.stroke(envelopePath);
+
+    // Draw Total Intensity (Solid Monochromatic Color)
+    plotCtx.setLineDash([]);
+    plotCtx.lineWidth = 2.2;
+    plotCtx.strokeStyle = `rgb(${color.r}, ${color.g}, ${color.b})`;
+    plotCtx.stroke(totalPath);
+
+    /* --- Physics Metrics Calculations --- */
+    var ratio_da = (d / a);
+    var sinTheta1 = lam / a;
+    var theta1_deg = (sinTheta1 <= 1.0) ? (Math.asin(sinTheta1) * 180 / Math.PI) : 90;
+    var centralAngularWidth = (2 * theta1_deg);
+
+    var missingOrderText = "None";
+    if (N > 1) {
+        if (Math.abs(ratio_da - Math.round(ratio_da)) < 0.05) {
+            var m_miss = Math.round(ratio_da);
+            missingOrderText = "m = " + m_miss + ", " + (m_miss * 2) + ", ...";
+        } else {
+            missingOrderText = "Non-integer ratio";
+        }
+    }
+
+    var principalSpacingText = "N/A";
+    if (N > 1) {
+        var sinThetaP = lam / d;
+        if (sinThetaP <= 1.0) {
+            principalSpacingText = (Math.asin(sinThetaP) * 180 / Math.PI).toFixed(2) + "°";
+        }
+    }
+
+    document.getElementById('m-width').textContent = centralAngularWidth.toFixed(1) + '°';
+    document.getElementById('m-ratio').textContent = ratio_da.toFixed(2);
+    document.getElementById('m-missing').textContent = missingOrderText;
+    document.getElementById('m-spacing').textContent = principalSpacingText;
+
+    // AI Status Badge & Explanations
+    var badge = document.getElementById('aiStatusBadge');
+    var feedback = document.getElementById('aiTextFeedback');
+
+    if (N === 1) {
+        badge.textContent = "Single Slit Diffraction";
+        badge.className = "status-badge single-slit";
+        feedback.innerHTML = `Single slit width \\(a = ${(a*1e6).toFixed(1)}\\mu\\text{m}\\). Central maximum angular spread is <strong>${centralAngularWidth.toFixed(1)}°</strong>.`;
+    } else if (N === 2) {
+        badge.textContent = "Double Slit Pattern";
+        badge.className = "status-badge double-slit";
+        feedback.innerHTML = `Double slit (\\(N=2\\)) interference fringes spaced by <strong>${principalSpacingText}</strong> enclosed inside single-slit envelope.`;
+    } else {
+        badge.textContent = `Grating (N = ${N})`;
+        badge.className = "status-badge grating";
+        feedback.innerHTML = `Multiple slit diffraction grating (\\(N=${N}\\)). Creates extremely sharp, narrow principal maxima peaks.`;
+    }
+
+    // Populate Analytical Data Table
+    var tableHTML = '';
+    // Central Max
+    tableHTML += `<tr><td>m = 0 (Central Peak)</td><td>Principal Maxima</td><td>0.00°</td><td>1.000</td><td>1.000</td><td>Brightest Central Fringe</td></tr>`;
+
+    // First Diffraction Min
+    if (sinTheta1 <= 1.0) {
+        tableHTML += `<tr><td>n = 1 (1st Min)</td><td>a sinθ = λ</td><td>±${theta1_deg.toFixed(2)}°</td><td>0.000</td><td>0.000</td><td>Diffraction Envelope Zero</td></tr>`;
+    }
+
+    // First Principal Max (if N > 1)
+    if (N > 1) {
+        var sinP1 = lam / d;
+        if (sinP1 <= 1.0) {
+            var thetaP1 = Math.asin(sinP1) * 180 / Math.PI;
+            var alphaP1 = (Math.PI * a * sinP1) / lam;
+            var I_p1 = Math.pow(Math.sin(alphaP1) / alphaP1, 2);
+            var isMissing = Math.abs(I_p1) < 0.01;
+            tableHTML += `<tr><td>m = 1 (1st Interference)</td><td>d sinθ = λ</td><td>±${thetaP1.toFixed(2)}°</td><td>${I_p1.toFixed(3)}</td><td>${I_p1.toFixed(3)}</td><td>${isMissing ? '<span style="color:var(--red); font-weight:bold;">MISSING ORDER</span>' : 'Principal Maxima'}</td></tr>`;
+        }
+    }
+
+    document.getElementById('tableBody').innerHTML = tableHTML;
+
+    // Formula Bar Dynamic Rendering
+    var formulaText = `Diffraction Angle Equation: \\(a \\sin\\theta_1 = \\lambda \\implies \\theta_1 = \\arcsin\\left(\\frac{${lam_nm}\\text{ nm}}{${(a*1e6).toFixed(1)}\\mu\\text{m}}\\right) = ${theta1_deg.toFixed(2)}^\\circ\\)`;
+    document.getElementById('formulaBox').innerHTML = formulaText;
+
+    if (window.renderMathInElement) {
+        renderMathInElement(document.getElementById('formulaBox'), { delimiters: [{left: '\\(', right: '\\)', display: false}] });
+        renderMathInElement(feedback, { delimiters: [{left: '\\(', right: '\\)', display: false}] });
+    }
+}
+
+/* --- Initial Startup --- */
+onControlChange();
+</script>
+
+</body>
+</html>

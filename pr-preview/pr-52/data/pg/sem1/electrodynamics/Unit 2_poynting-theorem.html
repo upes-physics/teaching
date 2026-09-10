@@ -1,0 +1,1110 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Poynting's Theorem — Interactive Electrodynamics Module</title>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.css">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/KaTeX/0.16.9/katex.min.js"></script>
+<style>
+  :root{
+    --slate:#16232c;
+    --slate-2:#1f333f;
+    --paper:#f7f3ea;
+    --paper-2:#efe8d8;
+    --ink:#1c1a15;
+    --ink-soft:#4a4438;
+    --rule:#c9bea4;
+    --E:#1f8a82;
+    --B:#c17d1f;
+    --S:#6d5aa8;
+    --accent:#6d5aa8;
+    --good:#2e7d4f;
+    --warn:#af3d55;
+    --canvas-bg:#0d171d;
+    --stage-muted:#9fb3bd;
+    --radius:3px;
+  }
+  *{box-sizing:border-box;}
+  html,body{margin:0;padding:0;}
+  body{
+    background:var(--paper);
+    color:var(--ink);
+    font-family:"Times New Roman", Georgia, serif;
+    font-size:12pt;
+    line-height:1.55;
+    min-height:100vh;
+  }
+  ::selection{ background: var(--S); color:#fff; }
+  h1,h2,h3,h4{ font-family:"Times New Roman", Georgia, serif; font-weight:700; color:var(--slate); margin:0 0 .5em; }
+  .mono{ font-family:"Courier New", monospace; }
+  .eyebrow{ font-family:Georgia, serif; font-size:9.5pt; letter-spacing:.14em; text-transform:uppercase; color:var(--E); font-weight:700; }
+
+  /* ---------- Top chrome ---------- */
+  header.topbar{ position:sticky; top:0; z-index:50; background:var(--slate); color:var(--paper); padding:.7em 1.2em; display:flex; align-items:center; gap:1.2em; flex-wrap:wrap; border-bottom:3px double #8b8360; }
+  header.topbar .brand{ font-family:"Times New Roman",serif; font-weight:700; font-size:14pt; letter-spacing:.02em; white-space:nowrap; }
+  header.topbar .brand span{ color:#d9c98a; font-style:italic; font-weight:400; font-size:11pt; }
+  nav.tabs{ display:flex; gap:.3em; flex-wrap:wrap; }
+  .navbtn{ background:transparent; border:1px solid transparent; color:#cfd8dc; font-family:Georgia,serif; font-size:10.5pt; letter-spacing:.03em; padding:.5em .9em; cursor:pointer; border-radius:2px; transition:.15s; }
+  .navbtn .idx{ font-family:Georgia,serif; font-size:10.5pt; color:inherit; margin-right:.15em; }
+  .navbtn:hover{ background:#28414f; color:#fff; }
+  .navbtn.active{ background:var(--paper); color:var(--slate); font-weight:700; }
+
+  main{ max-width:1080px; margin:0 auto; padding:1.6em 1.6em 5em; }
+  .page{ display:none; }
+  .page.active{ display:block; }
+
+  .pagehead{ margin-bottom:1em; }
+  .pagehead h1{ font-size:22pt; }
+  .pagehead p.lede{ color:var(--ink-soft); font-size:12pt; max-width:70ch; }
+
+  .panel{ background:#fffdf7; border:1px solid var(--rule); border-radius:var(--radius); padding:1.2em 1.4em; margin:1em 0; box-shadow:0 1px 0 rgba(0,0,0,.04); }
+  .panel h3{ font-size:14pt; color:var(--slate-2); margin-bottom:.4em; }
+  .grid2{ display:grid; grid-template-columns:1fr 1fr; gap:1em; }
+  .grid3{ display:grid; grid-template-columns:repeat(3,1fr); gap:.9em; }
+  @media (max-width:900px){ .grid2,.grid3{ grid-template-columns:1fr; } main{padding:1.2em 1em 4em;} }
+
+  /* ---------- Sim layout ---------- */
+  .sim-layout{ display:grid; grid-template-columns:2.1fr 1fr; gap:1em; align-items:start; }
+  @media (max-width:900px){ .sim-layout{ grid-template-columns:1fr; } }
+  .stage{ background:var(--slate); border-radius:4px; padding:.6em; position:relative; }
+  .stage canvas{ display:block; width:100%; background:var(--canvas-bg); border-radius:3px; }
+  .stage .stage-tag{ position:absolute; top:16px; left:18px; font-family:Georgia,serif; font-size:9.5pt; letter-spacing:.06em; text-transform:uppercase; color:var(--stage-muted); background:rgba(13,23,29,.7); padding:.2em .6em; border-radius:10px; z-index:2; }
+  .controls{ display:flex; flex-direction:column; gap:.7em; }
+  .ctrlbox{ background:#fffdf7; border:1px solid var(--rule); border-radius:var(--radius); padding:.9em 1em .8em; }
+  .ctrlbox h4{ font-size:10pt; text-transform:uppercase; letter-spacing:.06em; color:var(--ink-soft); font-family:Georgia,serif; margin-bottom:.6em; font-weight:700;}
+  .slider-row{ margin-bottom:.7em; }
+  .slider-row:last-child{ margin-bottom:0; }
+  .slider-row label{ display:flex; justify-content:space-between; font-family:Georgia,serif; font-size:10pt; color:var(--ink); margin-bottom:.25em; }
+  .slider-row label .val{ font-family:"Courier New",monospace; color:var(--S); }
+  input[type=range]{ width:100%; accent-color:var(--S); }
+  .btnrow{ display:flex; gap:.5em; flex-wrap:wrap; margin-top:.2em; }
+  button.tool{ flex:1; background:var(--slate); color:#f2ede0; border:1px solid #0e181e; font-family:Georgia,serif; font-size:9.5pt; font-weight:500; padding:.45em .8em; border-radius:3px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px; letter-spacing:.03em; transition:background .15s;}
+  button.tool:hover{ background:var(--slate-2); }
+  button.tool.primary{ background:var(--S); border-color:var(--S); color:#fff; }
+  button.tool.primary:hover{ filter:brightness(1.08); }
+
+  .readouts{ display:grid; grid-template-columns:1fr 1fr; gap:6px; margin-top:2px; }
+  .readout{ background:var(--canvas-bg); border-radius:3px; padding:.5em .6em; font-family:"Courier New",monospace; }
+  .readout .k{ font-size:8.5pt; text-transform:uppercase; letter-spacing:.05em; color:#6b8f89; }
+  .readout .v{ font-size:12.5pt; color:#8fe3d1; margin-top:2px; }
+  .readout .v .u{ font-size:9pt; color:#5f7f7a; margin-left:3px;}
+
+  .legend{ display:flex; gap:1.1em; flex-wrap:wrap; font-family:Georgia,serif; font-size:10pt; color:var(--ink-soft); margin:.6em 0;}
+  .legend span{ display:inline-flex; align-items:center; gap:6px;}
+  .swatch{ width:10px; height:10px; border-radius:50%; display:inline-block;}
+
+  .obs-panel{ display:grid; grid-template-columns:1fr 1fr; gap:1em; border-top:1px dashed var(--rule); margin-top:.6em; padding-top:.6em; }
+  .obs-panel ul{ margin:0; padding-left:18px; color:var(--ink-soft); font-size:10.5pt; }
+  .obs-panel li{ margin-bottom:6px; }
+  .obs-panel h4{ font-size:10pt; text-transform:uppercase; letter-spacing:.06em; color:var(--good); font-family:Georgia,serif; margin-bottom:.4em; font-weight:700;}
+  .obs-panel .interp h4{ color:var(--S); }
+  @media (max-width:760px){ .obs-panel{ grid-template-columns:1fr; } }
+
+  table.compare{ border-collapse:collapse; width:100%; font-size:10.5pt; margin:.8em 0; }
+  table.compare th, table.compare td{ border:1px solid var(--rule); padding:.5em .6em; text-align:left; vertical-align:top; }
+  table.compare th{ background:var(--slate); color:var(--paper); font-weight:700; }
+  table.compare tr:nth-child(even) td{ background:#f2ede0; }
+
+  .eqn{ background:#f2ede0; border-left:4px solid var(--S); padding:.6em 1em; margin:.6em 0; overflow-x:auto; border-radius:0 3px 3px 0; }
+  .eqn .katex{ font-size:1.02em; }
+  .stepnum{ display:inline-flex; align-items:center; justify-content:center; width:22px; height:22px; border-radius:50%; background:var(--slate); color:var(--paper); font-family:Georgia,serif; font-size:10.5pt; flex:0 0 auto; }
+  .step{ display:flex; gap:12px; margin-bottom:16px; align-items:flex-start; }
+  .step .body{ flex:1; padding-top:2px;}
+
+  .app-card{ background:#fffdf7; border:1px solid var(--rule); border-radius:var(--radius); padding:.9em 1em; }
+  .app-card h4{ font-size:11.5pt; margin-bottom:6px; color:var(--slate); text-transform:none; letter-spacing:0; }
+  .app-card .tag{ font-family:Georgia,serif; font-size:9pt; color:var(--S); text-transform:uppercase; letter-spacing:.06em; margin-bottom:8px; display:block;}
+  .app-card p{ color:var(--ink-soft); font-size:10.3pt; margin:0; }
+
+  .misconception{ border-left:3px solid var(--warn); background:rgba(175,61,85,.06); padding:10px 14px; border-radius:0 3px 3px 0; margin:8px 0; font-size:10.5pt; color:var(--ink); }
+  .misconception b{ color:var(--warn); }
+
+  .split{ display:grid; grid-template-columns:1fr 1fr; gap:2px; background:var(--rule); border:1px solid var(--rule); border-radius:4px; overflow:hidden;}
+  .split .half{ background:var(--canvas-bg); position:relative; }
+  .split .halftag{ position:absolute; top:10px; left:12px; font-family:Georgia,serif; font-size:9.5pt; text-transform:uppercase; letter-spacing:.06em; color:var(--stage-muted); z-index:2;}
+
+  .quiz-q{ background:#fffdf7; border:1px solid var(--rule); border-radius:var(--radius); padding:.9em 1em; margin:.7em 0; }
+  .quiz-q p.q{ font-weight:700; color:var(--ink); margin-bottom:10px; font-family:"Times New Roman",serif; font-size:12pt;}
+  .quiz-opts{ display:grid; gap:7px; }
+  .quiz-opt{ background:#f2ede0; border:1px solid var(--rule); border-radius:3px; padding:8px 12px; cursor:pointer; font-size:10.5pt; transition:border-color .15s;}
+  .quiz-opt:hover{ border-color:var(--S); }
+  .quiz-opt.correct{ border-color:var(--good); background:rgba(46,125,79,.1); }
+  .quiz-opt.wrong{ border-color:var(--warn); background:rgba(175,61,85,.08); }
+  .quiz-explain{ display:none; margin-top:10px; font-size:10.5pt; color:var(--ink-soft); border-top:1px dashed var(--rule); padding-top:10px;}
+
+  /* AI tutor dock */
+  .tutor-dock{ position:fixed; right:1.2em; bottom:1.2em; z-index:60; font-family:Georgia,serif; }
+  .tutor-toggle{ background:var(--slate); color:var(--paper); border:none; border-radius:30px; width:54px; height:54px; cursor:pointer; box-shadow:0 3px 10px rgba(0,0,0,.3); display:flex; align-items:center; justify-content:center; font-size:18px; }
+  .tutor-panel{ position:absolute; bottom:66px; right:0; width:340px; max-height:460px; background:#fffdf7; border:1px solid var(--rule); border-radius:6px; box-shadow:0 6px 24px rgba(0,0,0,.3); display:none; flex-direction:column; overflow:hidden;}
+  .tutor-panel.open{ display:flex; }
+  .tutor-head{ background:var(--slate); color:var(--paper); padding:.7em 1em; display:flex; justify-content:space-between; align-items:center; }
+  .tutor-head strong{ font-size:11pt; }
+  .tutor-head .ctx{ font-family:Georgia,serif; font-size:9pt; color:#d9c98a; }
+  .tutor-body{ flex:1; overflow-y:auto; padding:.8em 1em; font-size:10.5pt; color:var(--ink-soft); display:flex; flex-direction:column; gap:10px; }
+  .tutor-msg{ background:#eaf3f1; border:1px solid #cfe4df; border-radius:6px; padding:.5em .7em; color:var(--ink); }
+  .tutor-msg.user{ background:#e6ded0; border-color:#e6ded0; align-self:flex-end; color:var(--ink); }
+  .tutor-input{ display:flex; border-top:1px solid var(--rule); }
+  .tutor-input input{ flex:1; background:none; border:none; color:var(--ink); padding:.7em; font-size:10.5pt; font-family:Georgia,serif; outline:none;}
+  .tutor-input button{ background:var(--S); border:none; color:#fff; padding:0 14px; cursor:pointer; font-weight:700; }
+  .tutor-hint{ font-size:9pt; color:var(--ink-soft); padding:0 1em .7em; }
+
+  code{ font-family:"Courier New",monospace; background:#f2ede0; padding:1px 5px; border-radius:3px; font-size:.9em; }
+</style>
+</head>
+<body>
+
+<header class="topbar">
+  <div class="brand">Poynting Lab<span>&nbsp;· Poynting's Theorem, M.Sc. Electrodynamics</span></div>
+  <nav class="tabs" id="mainNav">
+    <button class="navbtn active" data-page="overview"><span class="idx">01</span>Theory &amp; Derivation</button>
+    <button class="navbtn" data-page="energy"><span class="idx">02</span>Energy Density</button>
+    <button class="navbtn" data-page="poynting"><span class="idx">03</span>Poynting Vector</button>
+    <button class="navbtn" data-page="antenna"><span class="idx">04</span>Dipole Antenna</button>
+    <button class="navbtn" data-page="coax"><span class="idx">05</span>Coaxial Cable</button>
+    <button class="navbtn" data-page="applications"><span class="idx">06</span>Applications</button>
+    <button class="navbtn" data-page="quiz"><span class="idx">07</span>Quick Check</button>
+  </nav>
+</header>
+
+  <!-- ============ MAIN ============ -->
+  <main>
+
+    <!-- ============================================================ PAGE: OVERVIEW ============================================================ -->
+    <section class="page active" id="page-overview">
+      <div class="pagehead">
+        <div class="eyebrow">Layer 1 — Conceptual Understanding</div>
+        <h1>Poynting's Theorem &amp; Energy Conservation</h1>
+        <p class="lede">How electromagnetic fields store, transport, and exchange energy — derived from Maxwell's equations, and read as a statement of energy conservation for the electromagnetic field.</p>
+      </div>
+
+      <div class="panel">
+        <h3>Motivation</h3>
+        <p>A charging capacitor, a radiating antenna, and a beam of sunlight all move energy from one place to another without any matter necessarily changing hands. Maxwell's equations, taken together, hide a conservation law inside them — one that tells us <em>where</em> electromagnetic energy lives and <em>how fast</em> it moves. That law is Poynting's theorem, published by John Henry Poynting in 1884, and it underlies almost every technology that transmits power or information through fields rather than wires: antennas, waveguides, optical fibers, and free-space wireless links.</p>
+      </div>
+
+      <div class="panel">
+        <h3>Step-by-step derivation</h3>
+        <div class="step">
+          <div class="stepnum">1</div>
+          <div class="body">Start from the two Maxwell curl equations in a linear medium:
+            <div class="eqn" id="eq1"></div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="stepnum">2</div>
+          <div class="body">Take the vector identity <span class="mono">∇·(E×H) = H·(∇×E) − E·(∇×H)</span>, and substitute the curls above:
+            <div class="eqn" id="eq2"></div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="stepnum">3</div>
+          <div class="body">Recognise the field-energy terms as time derivatives of stored energy density, <span class="mono">u = ½εE² + ½μH²</span>, giving the differential (point) form of Poynting's theorem:
+            <div class="eqn" id="eq3"></div>
+          </div>
+        </div>
+        <div class="step">
+          <div class="stepnum">4</div>
+          <div class="body">Integrate over a volume <span class="mono">V</span> bounded by surface <span class="mono">∂V</span> and apply the divergence theorem to obtain the integral form used throughout this module:
+            <div class="eqn" id="eq4"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="grid2">
+        <div class="panel">
+          <h3>Physical interpretation</h3>
+          <p style="color:var(--ink-soft); font-size:10.5pt;">Reading the integral form left to right: the rate at which energy flows <em>into</em> a volume through its bounding surface equals the rate the fields inside store new energy, plus the rate the fields do work on free charges (Joule heating / mechanical work). Nothing is created or destroyed — energy that appears as heat or kinetic energy in the volume must have flowed in through the boundary, carried by the field itself.</p>
+        </div>
+        <div class="panel">
+          <h3>The Poynting vector</h3>
+          <p style="color:var(--ink-soft); font-size:10.5pt;">
+            <span class="mono" style="color:var(--ink); font-weight:700;">S = E × H</span> is the energy flux density, in <span class="mono">W/m²</span>. Its direction — always perpendicular to both <b style="color:var(--E)">E</b> and <b style="color:var(--B)">H</b> — is the direction electromagnetic energy is instantaneously flowing. Integrating <b style="color:var(--S)">S</b> over a surface gives the power crossing that surface.
+          </p>
+        </div>
+      </div>
+
+      <div class="panel">
+        <h3>Common misconceptions</h3>
+        <div class="misconception"><b>"Current-carrying wires transport energy through the copper."</b> In fact the metal mostly guides the fields; the energy itself flows through the surrounding space (or dielectric) as predicted by S — see the coaxial cable simulator.</div>
+        <div class="misconception"><b>"The Poynting vector is only meaningful for radiation."</b> S is defined for any field configuration, including static ones — a charged capacitor sitting next to a magnet has a nonzero, if odd, energy circulation.</div>
+        <div class="misconception"><b>"Energy density and Poynting flux are the same quantity."</b> u (J/m³) is how much energy sits in a region; S (W/m²) is how fast energy crosses a surface — related, but dimensionally and physically distinct.</div>
+      </div>
+
+      <div class="panel">
+        <h3>Summary</h3>
+        <p style="color:var(--ink-soft); font-size:10.5pt;">Poynting's theorem is Maxwell's equations rewritten as an energy-accounting statement: field energy in a region changes only because energy flows across the boundary (via S) or is converted to/from other forms via J·E. Every visualization and simulator in this module is one way of watching that accounting happen in real time.</p>
+      </div>
+    </section>
+
+    <!-- ============================================================ PAGE: ENERGY DENSITY ============================================================ -->
+    <section class="page" id="page-energy">
+      <div class="pagehead">
+        <div class="eyebrow">Layer 2 — Visualization 1</div>
+        <h1>Electromagnetic Energy Density</h1>
+        <p class="lede">Energy is stored simultaneously in the electric and magnetic field — watch how <span class="mono" style="color:var(--E)">u_E</span> and <span class="mono" style="color:var(--B)">u_B</span> trade dominance as fields oscillate.</p>
+      </div>
+      <div class="eqn" id="eq-energy"></div>
+      <div class="sim-layout">
+        <div class="stage"><span class="stage-tag">u = ½εE² + ½μH²</span><canvas id="cv-energy" width="900" height="480"></canvas></div>
+        <div class="controls">
+          <div class="ctrlbox">
+            <h4>Field Parameters</h4>
+            <div class="slider-row"><label>Electric field amplitude E₀ <span class="val" id="v-e0">1.0 V/m</span></label><input type="range" id="s-e0" min="0.1" max="3" step="0.05" value="1"></div>
+            <div class="slider-row"><label>Magnetic field amplitude B₀ <span class="val" id="v-b0">0.5 T</span></label><input type="range" id="s-b0" min="0.05" max="1.5" step="0.05" value="0.5"></div>
+            <div class="slider-row"><label>Relative permittivity ε_r <span class="val" id="v-eps">1.0</span></label><input type="range" id="s-eps" min="1" max="8" step="0.1" value="1"></div>
+            <div class="slider-row"><label>Relative permeability μ_r <span class="val" id="v-mu">1.0</span></label><input type="range" id="s-mu" min="1" max="8" step="0.1" value="1"></div>
+            <div class="btnrow">
+              <button class="tool primary" id="b-energy-play">⏸ Pause</button>
+              <button class="tool" id="b-energy-reset">↺ Reset</button>
+            </div>
+          </div>
+          <div class="ctrlbox">
+            <h4>Live Readouts</h4>
+            <div class="readouts">
+              <div class="readout"><div class="k">u_E</div><div class="v" id="r-ue">–<span class="u">J/m³</span></div></div>
+              <div class="readout"><div class="k">u_B</div><div class="v" id="r-ub">–<span class="u">J/m³</span></div></div>
+              <div class="readout" style="grid-column:1/3;"><div class="k">u_total</div><div class="v" id="r-utot">–<span class="u">J/m³</span></div></div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:16px;">
+        <div class="obs-panel">
+          <div class="obs"><h4>Observation</h4><ul>
+            <li>Electric and magnetic energy densities oscillate at twice the field frequency (they depend on E² and B²).</li>
+            <li>In a plane wave the two densities are equal on time-average — energy is shared evenly between the two fields.</li>
+            <li>Raising ε_r or μ_r increases how much energy the same field amplitude can store in a medium.</li>
+          </ul></div>
+          <div class="interp"><h4>Interpretation</h4><ul>
+            <li>u_total never goes negative — both terms are quadratic, so stored energy is always non-negative, consistent with a physical energy density.</li>
+            <li>This is the "storage" half of Poynting's theorem; the next page shows the "flow" half.</li>
+          </ul></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ PAGE: POYNTING VECTOR ============================================================ -->
+    <section class="page" id="page-poynting">
+      <div class="pagehead">
+        <div class="eyebrow">Layer 2 — Visualization 2</div>
+        <h1>The Poynting Vector, S = E × H</h1>
+        <p class="lede">E, B and S form a mutually perpendicular triad. Energy flows in the direction S points.</p>
+      </div>
+      <div class="sim-layout">
+        <div class="stage"><span class="stage-tag">S = E × H</span><canvas id="cv-poynting" width="900" height="480"></canvas></div>
+        <div class="controls">
+          <div class="ctrlbox">
+            <h4>Wave Parameters</h4>
+            <div class="slider-row"><label>Field strength <span class="val" id="v-pfield">1.0</span></label><input type="range" id="s-pfield" min="0.2" max="2" step="0.05" value="1"></div>
+            <div class="slider-row"><label>Frequency <span class="val" id="v-pfreq">1.0 GHz</span></label><input type="range" id="s-pfreq" min="0.2" max="3" step="0.1" value="1"></div>
+            <div class="slider-row"><label>Wave amplitude <span class="val" id="v-pamp">1.0</span></label><input type="range" id="s-pamp" min="0.3" max="2" step="0.05" value="1"></div>
+            <div class="btnrow"><button class="tool primary" id="b-poynting-play">⏸ Pause</button><button class="tool" id="b-poynting-reset">↺ Reset</button></div>
+          </div>
+          <div class="ctrlbox">
+            <h4>Live Readouts</h4>
+            <div class="readouts">
+              <div class="readout"><div class="k">|E|</div><div class="v" id="r-pE">–<span class="u">V/m</span></div></div>
+              <div class="readout"><div class="k">|H|</div><div class="v" id="r-pH">–<span class="u">A/m</span></div></div>
+              <div class="readout" style="grid-column:1/3;"><div class="k">|S|</div><div class="v" id="r-pS">–<span class="u">W/m²</span></div></div>
+            </div>
+            <div class="legend">
+              <span><i class="swatch" style="background:var(--E)"></i>E field</span>
+              <span><i class="swatch" style="background:var(--B)"></i>H field</span>
+              <span><i class="swatch" style="background:var(--S)"></i>S = E×H</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:16px;">
+        <div class="obs-panel">
+          <div class="obs"><h4>Observation</h4><ul>
+            <li>S is always perpendicular to the plane containing E and H, following the right-hand rule.</li>
+            <li>When E and H oscillate in phase (as in a propagating plane wave), S never reverses sign — energy flows steadily forward.</li>
+          </ul></div>
+          <div class="interp"><h4>Interpretation</h4><ul>
+            <li>|S| ≈ E·H = E²/η, where η = √(μ/ε) is the medium's wave impedance (≈377 Ω in vacuum).</li>
+            <li>The time-averaged Poynting magnitude is what a power meter or antenna actually measures.</li>
+          </ul></div>
+        </div>
+      </div>
+    </section>
+
+
+    <!-- ============================================================ PAGE: ANTENNA SIMULATOR ============================================================ -->
+    <section class="page" id="page-antenna">
+      <div class="pagehead">
+        <div class="eyebrow">Layer 2A — Engineering Simulator 1</div>
+        <h1>Electromagnetic Energy Radiation from a Dipole Antenna</h1>
+        <p class="lede">Electrical power delivered to the feed point becomes propagating field energy in free space. The Poynting vector traces the outward flow.</p>
+      </div>
+      <div class="sim-layout">
+        <div class="stage" style="height:520px;"><span class="stage-tag">Free-space radiation · S = E × H</span><canvas id="cv-antenna" width="900" height="520" style="height:100%;"></canvas></div>
+        <div class="controls">
+          <div class="ctrlbox">
+            <h4>Source Parameters</h4>
+            <div class="slider-row"><label>Frequency <span class="val" id="v-afreq">100 MHz</span></label><input type="range" id="s-afreq" min="30" max="900" step="10" value="100"></div>
+            <div class="slider-row"><label>Input power <span class="val" id="v-apow">10 W</span></label><input type="range" id="s-apow" min="1" max="100" step="1" value="10"></div>
+            <div class="slider-row"><label>Antenna length (λ) <span class="val" id="v-alen">0.5</span></label><input type="range" id="s-alen" min="0.1" max="1.5" step="0.05" value="0.5"></div>
+            <div class="slider-row"><label>Current amplitude <span class="val" id="v-aI">1.0 A</span></label><input type="range" id="s-aI" min="0.2" max="3" step="0.1" value="1"></div>
+            <div class="slider-row"><label>Animation speed <span class="val" id="v-aspeed">1.0×</span></label><input type="range" id="s-aspeed" min="0.2" max="2.5" step="0.1" value="1"></div>
+            <div class="btnrow">
+              <button class="tool primary" id="b-antenna-play">⏸ Pause</button>
+              <button class="tool" id="b-antenna-reset">↺ Reset</button>
+            </div>
+          </div>
+          <div class="ctrlbox">
+            <h4>Live Numerical Displays</h4>
+            <div class="readouts">
+              <div class="readout"><div class="k">E field @ r</div><div class="v" id="r-aE">–<span class="u">V/m</span></div></div>
+              <div class="readout"><div class="k">B field @ r</div><div class="v" id="r-aB">–<span class="u">µT</span></div></div>
+              <div class="readout"><div class="k">|S| @ r</div><div class="v" id="r-aS">–<span class="u">W/m²</span></div></div>
+              <div class="readout"><div class="k">Radiated power</div><div class="v" id="r-aP">–<span class="u">W</span></div></div>
+              <div class="readout"><div class="k">Radiation resistance</div><div class="v" id="r-aRr">–<span class="u">Ω</span></div></div>
+              <div class="readout"><div class="k">Efficiency</div><div class="v" id="r-aEff">–<span class="u">%</span></div></div>
+              <div class="readout"><div class="k">Wavelength λ</div><div class="v" id="r-alam">–<span class="u">m</span></div></div>
+              <div class="readout"><div class="k">Wave velocity</div><div class="v" id="r-avel">3.00×10⁸<span class="u">m/s</span></div></div>
+            </div>
+          </div>
+          <div class="ctrlbox">
+            <h4>View</h4>
+            <div class="slider-row"><label>Observation distance R <span class="val" id="v-arad">6</span></label><input type="range" id="s-arad" min="1" max="10" step="0.5" value="6"></div>
+            <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; font-family:Georgia,serif; margin-top:8px;"><input type="checkbox" id="s-apattern" checked> Show polar radiation pattern</label>
+          </div>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:16px;">
+        <div class="obs-panel">
+          <div class="obs"><h4>Observation</h4><ul>
+            <li>Energy visibly originates at the feed point and propagates radially outward in expanding wavefronts.</li>
+            <li>Close to the antenna (near field), field structure is complex; beyond roughly one wavelength (far field), E, B, and S settle into a clean outward-travelling pattern.</li>
+            <li>The polar pattern shows radiation is strongest broadside to the dipole and null along its axis — the classic figure-eight (donut in 3-D).</li>
+          </ul></div>
+          <div class="interp"><h4>Engineering relevance</h4><ul>
+            <li>Radio &amp; TV broadcasting, satellite links, radar, Wi-Fi, and mobile networks (4G/5G/6G) all rely on exactly this conversion of guided power into free-space Poynting flux.</li>
+            <li>Radiation resistance R_r sets how much of the source power actually leaves as radiation versus being dissipated as heat in the conductor.</li>
+          </ul></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ PAGE: COAX SIMULATOR ============================================================ -->
+    <section class="page" id="page-coax">
+      <div class="pagehead">
+        <div class="eyebrow">Layer 2A — Engineering Simulator 2</div>
+        <h1>Electromagnetic Energy Flow Inside a Coaxial Cable</h1>
+        <p class="lede">Power is carried in the dielectric between the conductors — not through the metal itself.</p>
+      </div>
+      <div class="sim-layout">
+        <div class="stage" style="height:520px;"><span class="stage-tag">Guided transmission · dielectric energy flux</span><canvas id="cv-coax" width="900" height="520" style="height:100%;"></canvas></div>
+        <div class="controls">
+          <div class="ctrlbox">
+            <h4>Cable Parameters</h4>
+            <div class="slider-row"><label>Applied voltage <span class="val" id="v-cV">50 V</span></label><input type="range" id="s-cV" min="5" max="150" step="5" value="50"></div>
+            <div class="slider-row"><label>Current <span class="val" id="v-cI">1.0 A</span></label><input type="range" id="s-cI" min="0.1" max="5" step="0.1" value="1"></div>
+            <div class="slider-row"><label>Inner radius a <span class="val" id="v-ca">0.5 mm</span></label><input type="range" id="s-ca" min="0.2" max="2" step="0.1" value="0.5"></div>
+            <div class="slider-row"><label>Outer radius b <span class="val" id="v-cb">3.0 mm</span></label><input type="range" id="s-cb" min="2" max="8" step="0.2" value="3"></div>
+            <div class="slider-row"><label>Dielectric constant ε_r <span class="val" id="v-ceps">2.25</span></label><input type="range" id="s-ceps" min="1" max="6" step="0.05" value="2.25"></div>
+            <div class="slider-row"><label>Load resistance <span class="val" id="v-cRL">50 Ω</span></label><input type="range" id="s-cRL" min="10" max="150" step="5" value="50"></div>
+            <div class="btnrow"><button class="tool primary" id="b-coax-play">⏸ Pause</button><button class="tool" id="b-coax-reset">↺ Reset</button></div>
+          </div>
+          <div class="ctrlbox">
+            <h4>Live Numerical Displays</h4>
+            <div class="readouts">
+              <div class="readout"><div class="k">Characteristic Z₀</div><div class="v" id="r-cZ0">–<span class="u">Ω</span></div></div>
+              <div class="readout"><div class="k">E field (at a)</div><div class="v" id="r-cE">–<span class="u">kV/m</span></div></div>
+              <div class="readout"><div class="k">H field (at a)</div><div class="v" id="r-cH">–<span class="u">A/m</span></div></div>
+              <div class="readout"><div class="k">|S| in dielectric</div><div class="v" id="r-cS">–<span class="u">W/m²</span></div></div>
+              <div class="readout"><div class="k">Power delivered</div><div class="v" id="r-cP">–<span class="u">W</span></div></div>
+              <div class="readout"><div class="k">Transmission eff.</div><div class="v" id="r-ceff">–<span class="u">%</span></div></div>
+            </div>
+          </div>
+          <div class="ctrlbox"><h4>View</h4>
+            <label style="display:flex; align-items:center; gap:8px; font-size:12.5px; font-family:Georgia,serif;"><input type="checkbox" id="s-clongi" checked> Show longitudinal energy-flow view</label>
+          </div>
+        </div>
+      </div>
+      <div class="panel" style="margin-top:16px;">
+        <div class="obs-panel">
+          <div class="obs"><h4>Observation</h4><ul>
+            <li>E field lines run radially between inner and outer conductor; H field lines circle the inner conductor — their cross product points straight down the cable axis.</li>
+            <li>The energy-density heat map is brightest in the dielectric gap, essentially zero inside the conductors.</li>
+            <li>Increasing ε_r lowers Z₀ and concentrates more energy density for the same voltage.</li>
+          </ul></div>
+          <div class="interp"><h4>Engineering relevance</h4><ul>
+            <li>RF transmission lines, cable TV, internet backbone links, oscilloscope probes and signal integrity in high-speed electronics all depend on this guided Poynting flux staying confined to the dielectric.</li>
+            <li>An ideal (lossless) line delivers essentially all source power to a matched load — R_L = Z₀ maximizes transmission efficiency.</li>
+          </ul></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- ============================================================ PAGE: APPLICATIONS ============================================================ -->
+    <section class="page" id="page-applications">
+      <div class="pagehead">
+        <div class="eyebrow">Layer 3 — Applications &amp; Problem Solving</div>
+        <h1>Where Poynting's Theorem Shows Up</h1>
+        <p class="lede">Ten engineering systems, one underlying accounting principle for electromagnetic energy.</p>
+      </div>
+      <div class="grid3" id="app-grid" style="margin-bottom:20px;"></div>
+
+      <div class="panel">
+        <h3>Comparative summary</h3>
+        <table class="compare">
+          <thead><tr><th>Quantity</th><th>Symbol</th><th>Units</th><th>Where it matters</th></tr></thead>
+          <tbody>
+            <tr><td>Electric energy density</td><td class="mono">u_E = ½εE²</td><td>J/m³</td><td>Capacitors, dielectrics</td></tr>
+            <tr><td>Magnetic energy density</td><td class="mono">u_B = ½μH²</td><td>J/m³</td><td>Inductors, magnetic cores</td></tr>
+            <tr><td>Total energy density</td><td class="mono">u = u_E + u_B</td><td>J/m³</td><td>Any EM field region</td></tr>
+            <tr><td>Poynting vector</td><td class="mono">S = E×H</td><td>W/m²</td><td>Power flow direction &amp; density</td></tr>
+            <tr><td>Instantaneous power</td><td class="mono">p(t) = S(t)·A</td><td>W</td><td>Real-time power meters</td></tr>
+            <tr><td>Time-averaged power</td><td class="mono">⟨S⟩ = ½Re(E×H*)</td><td>W/m²</td><td>Antenna &amp; RF link budgets</td></tr>
+            <tr><td>Stored energy</td><td class="mono">U = ∫u dV</td><td>J</td><td>Resonators, cavities</td></tr>
+            <tr><td>Dissipated power</td><td class="mono">∫J·E dV</td><td>W</td><td>Ohmic / dielectric loss</td></tr>
+            <tr><td>Standing wave</td><td class="mono">⟨S⟩ ≈ 0</td><td>—</td><td>Cavities, mismatched lines</td></tr>
+            <tr><td>Travelling wave</td><td class="mono">⟨S⟩ = const</td><td>—</td><td>Transmission, radiation</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ============================================================ PAGE: QUIZ ============================================================ -->
+    <section class="page" id="page-quiz">
+      <div class="pagehead">
+        <div class="eyebrow">Assessment</div>
+        <h1>Quick Check</h1>
+        <p class="lede">A short conceptual sample. Click an option to check your answer.</p>
+      </div>
+      <div id="quiz-container"></div>
+    </section>
+
+  </main>
+
+<!-- ============ AI TUTOR DOCK ============ -->
+<div class="tutor-dock">
+  <div class="tutor-panel" id="tutor-panel">
+    <div class="tutor-head"><div><strong>AI Tutor</strong><br><span class="ctx" id="tutor-ctx">Theory & Derivation</span></div><button class="tool" style="width:auto; padding:4px 8px;" id="tutor-close">✕</button></div>
+    <div class="tutor-body" id="tutor-body">
+      <div class="tutor-msg">Ask me anything about this section — the derivation, a control you're adjusting, or how it connects to Maxwell's equations.</div>
+    </div>
+    <div class="tutor-input">
+      <input id="tutor-input" placeholder="Ask a question…">
+      <button id="tutor-send">→</button>
+    </div>
+    <div class="tutor-hint">Context-aware to the page you're viewing.</div>
+  </div>
+  <button class="tutor-toggle" id="tutor-toggle" title="AI Tutor">✦</button>
+</div>
+
+<script>
+/* ============================================================================
+   NAVIGATION
+============================================================================ */
+const pageNames = {
+  overview:'Theory & Derivation', energy:'Energy Density', poynting:'Poynting Vector',
+  antenna:'Dipole Antenna Radiation', coax:'Coaxial Cable Energy Flow',
+  applications:'Applications & Comparison', quiz:'Quick Check'
+};
+const navBtns = document.querySelectorAll('.navbtn');
+const pages = document.querySelectorAll('.page');
+navBtns.forEach(btn=>{
+  btn.addEventListener('click', ()=>{
+    navBtns.forEach(b=>b.classList.remove('active'));
+    btn.classList.add('active');
+    const target = btn.dataset.page;
+    pages.forEach(p=>p.classList.toggle('active', p.id==='page-'+target));
+    document.getElementById('tutor-ctx').textContent = pageNames[target] || target;
+    window.scrollTo({top:0, behavior:'smooth'});
+    onPageShown(target);
+  });
+});
+
+/* ============================================================================
+   KATEX EQUATIONS
+============================================================================ */
+function K(id, tex, display=true){ katex.render(tex, document.getElementById(id), {throwOnError:false, displayMode:display}); }
+window.addEventListener('load', ()=>{
+  K('eq1', `\\nabla\\times\\mathbf{E} = -\\frac{\\partial \\mathbf{B}}{\\partial t}\\,,\\qquad \\nabla\\times\\mathbf{H} = \\mathbf{J} + \\frac{\\partial \\mathbf{D}}{\\partial t}`);
+  K('eq2', `\\nabla\\cdot(\\mathbf{E}\\times\\mathbf{H}) = -\\mathbf{H}\\cdot\\frac{\\partial \\mathbf{B}}{\\partial t} - \\mathbf{E}\\cdot\\mathbf{J} - \\mathbf{E}\\cdot\\frac{\\partial \\mathbf{D}}{\\partial t}`);
+  K('eq3', `-\\nabla\\cdot\\mathbf{S} = \\frac{\\partial}{\\partial t}\\Big(\\tfrac{1}{2}\\varepsilon E^2 + \\tfrac{1}{2}\\mu H^2\\Big) + \\mathbf{J}\\cdot\\mathbf{E}\\,,\\qquad \\mathbf{S}\\equiv \\mathbf{E}\\times\\mathbf{H}`);
+  K('eq4', `-\\oint_{\\partial V}\\!\\!\\mathbf{S}\\cdot d\\mathbf{a} \\;=\\; \\frac{d}{dt}\\!\\int_V\\! u\\,dV \\;+\\; \\int_V \\mathbf{J}\\cdot\\mathbf{E}\\,dV`);
+  K('eq-energy', `-\\nabla\\cdot\\mathbf{S} = \\frac{\\partial}{\\partial t}\\Big(\\tfrac{1}{2}\\varepsilon E^2 + \\tfrac{1}{2}\\mu H^2\\Big) + \\mathbf{J}\\cdot\\mathbf{E}\\,,\\qquad \\mathbf{S}\\equiv \\mathbf{E}\\times\\mathbf{H}`);
+});
+
+/* ============================================================================
+   SHARED HELPERS
+============================================================================ */
+window.loops = window.loops || {};
+const loops = window.loops;
+
+function fitCanvas(cv){
+  const ratio = window.devicePixelRatio || 1;
+  const rect = cv.getBoundingClientRect();
+  if(rect.width===0) return false;
+  cv.width = rect.width*ratio; cv.height = rect.height*ratio;
+  const ctx = cv.getContext('2d'); ctx.setTransform(ratio,0,0,ratio,0,0);
+  return {w:rect.width, h:rect.height, ctx};
+}
+function drawArrow(ctx,x1,y1,x2,y2,color,width=2.4){
+  const angle = Math.atan2(y2-y1,x2-x1);
+  ctx.strokeStyle=color; ctx.fillStyle=color; ctx.lineWidth=width; ctx.lineCap='round';
+  ctx.beginPath(); ctx.moveTo(x1,y1); ctx.lineTo(x2,y2); ctx.stroke();
+  const ah=6+width;
+  ctx.beginPath();
+  ctx.moveTo(x2,y2);
+  ctx.lineTo(x2-ah*Math.cos(angle-0.4), y2-ah*Math.sin(angle-0.4));
+  ctx.lineTo(x2-ah*Math.cos(angle+0.4), y2-ah*Math.sin(angle+0.4));
+  ctx.closePath(); ctx.fill();
+}
+function fmt(n,d=2){ return Number(n).toFixed(d); }
+
+const activeLoops = {}; // page -> {raf, running}
+function onPageShown(page){
+  // (re)start the loop for the shown page if it has one
+  if(loops[page]) loops[page].start();
+}
+
+/* ============================================================================
+   VISUALIZATION 1 — ENERGY DENSITY
+============================================================================ */
+(function(){
+  const cv = document.getElementById('cv-energy');
+  const sE0=document.getElementById('s-e0'), sB0=document.getElementById('s-b0'), sEps=document.getElementById('s-eps'), sMu=document.getElementById('s-mu');
+  const vE0=document.getElementById('v-e0'), vB0=document.getElementById('v-b0'), vEps=document.getElementById('v-eps'), vMu=document.getElementById('v-mu');
+  const btnPlay=document.getElementById('b-energy-play'), btnReset=document.getElementById('b-energy-reset');
+  let t=0, playing=true, raf=null;
+  const EPS0=8.85e-12, MU0=4*Math.PI*1e-7;
+
+  function upd(){
+    vE0.textContent=fmt(sE0.value,2)+' V/m'; vB0.textContent=fmt(sB0.value,2)+' T';
+    vEps.textContent=fmt(sEps.value,1); vMu.textContent=fmt(sMu.value,1);
+  }
+  [sE0,sB0,sEps,sMu].forEach(s=>s.addEventListener('input', upd));
+  upd();
+
+  function draw(){
+    const f = fitCanvas(cv); if(!f) { raf=requestAnimationFrame(draw); return; }
+    const {w,h,ctx} = f;
+    ctx.clearRect(0,0,w,h);
+    const E0=+sE0.value, B0=+sB0.value, eps=+sEps.value*EPS0, mu=+sMu.value*MU0;
+    const Et = E0*Math.cos(t), Bt = B0*Math.cos(t);
+    const uE = 0.5*eps*Et*Et, uB = 0.5*Bt*Bt/mu, uTot = uE+uB;
+
+    // waveforms (top)
+    const midY = h*0.34, amp=70;
+    ctx.save();
+    ctx.strokeStyle='#1b2338'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(40,midY); ctx.lineTo(w-40,midY); ctx.stroke();
+    ctx.font='11px Courier New'; ctx.fillStyle='#5d6785'; ctx.fillText('phase →',w-100,midY+16);
+
+    ctx.beginPath();
+    for(let x=40;x<=w-40;x++){ const ph = t - (x-40)/(w-80)*6*Math.PI*0.5; const y=midY - amp*Math.cos(ph)*(E0/2); if(x===40)ctx.moveTo(x,y); else ctx.lineTo(x,y);}
+    ctx.strokeStyle=getCss('--E'); ctx.lineWidth=2.2; ctx.stroke();
+
+    ctx.beginPath();
+    for(let x=40;x<=w-40;x++){ const ph = t - (x-40)/(w-80)*6*Math.PI*0.5; const y=midY - amp*Math.cos(ph)*(B0); if(x===40)ctx.moveTo(x,y); else ctx.lineTo(x,y);}
+    ctx.strokeStyle=getCss('--B'); ctx.lineWidth=2.2; ctx.stroke();
+    ctx.restore();
+
+    // bars (bottom) — energy density
+    const baseY = h-56, maxBarH = h-baseY-140<0?120:h*0.36;
+    const barW=90, gap=60, startX=w/2-(barW*3+gap*2)/2;
+    const scale = maxBarH/(0.5*Math.max(EPS0*8,1e-11)*9+1e-30); // dynamic-ish, normalize below instead
+    const norm = Math.max(uE,uB,uTot,1e-15);
+    function bar(x,val,color,label,i){
+      const bh = Math.min(maxBarH, (val/ (uTot||1e-15)) * maxBarH * (uTot>0? (val/Math.max(uE+uB,1e-15))*0 +1 :1));
+      const hgt = (val/( (uE+uB) || 1e-15 )) * maxBarH;
+      ctx.fillStyle=color+'33'; ctx.fillRect(x,baseY-maxBarH,barW,maxBarH);
+      const finalH = isFinite(hgt)? Math.max(2,Math.min(maxBarH,hgt)) : 2;
+      const grad = ctx.createLinearGradient(0,baseY-finalH,0,baseY);
+      grad.addColorStop(0,color); grad.addColorStop(1,color+'55');
+      ctx.fillStyle=grad; ctx.fillRect(x,baseY-finalH,barW,finalH);
+      ctx.fillStyle='#c7cfe0'; ctx.font='11px Courier New'; ctx.textAlign='center';
+      ctx.fillText(label, x+barW/2, baseY+18);
+      ctx.fillStyle='#fff'; ctx.font='12px Courier New';
+      ctx.fillText(val.toExponential(2), x+barW/2, baseY+34);
+    }
+    bar(startX, uE, getCss('--E'), 'u_E', 0);
+    bar(startX+barW+gap, uB, getCss('--B'), 'u_B', 1);
+    bar(startX+2*(barW+gap), uTot, getCss('--S'), 'u_total', 2);
+    ctx.textAlign='left';
+
+    document.getElementById('r-ue').innerHTML = uE.toExponential(2)+'<span class="u">J/m³</span>';
+    document.getElementById('r-ub').innerHTML = uB.toExponential(2)+'<span class="u">J/m³</span>';
+    document.getElementById('r-utot').innerHTML = uTot.toExponential(2)+'<span class="u">J/m³</span>';
+
+    if(playing) t += 0.045;
+    raf = requestAnimationFrame(draw);
+  }
+  function getCss(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+  btnPlay.addEventListener('click', ()=>{ playing=!playing; btnPlay.textContent = playing? '⏸ Pause':'▶ Play'; });
+  btnReset.addEventListener('click', ()=>{ t=0; sE0.value=1; sB0.value=0.5; sEps.value=1; sMu.value=1; upd(); });
+
+  loops.energy = { start(){ if(!raf) draw(); } };
+})();
+</script>
+
+<script>
+/* ============================================================================
+   VISUALIZATION 2 — POYNTING VECTOR
+============================================================================ */
+(function(){
+  const cv=document.getElementById('cv-poynting');
+  const sField=document.getElementById('s-pfield'), sFreq=document.getElementById('s-pfreq'), sAmp=document.getElementById('s-pamp');
+  const vField=document.getElementById('v-pfield'), vFreq=document.getElementById('v-pfreq'), vAmp=document.getElementById('v-pamp');
+  const btnPlay=document.getElementById('b-poynting-play'), btnReset=document.getElementById('b-poynting-reset');
+  let t=0, playing=true, raf=null;
+  function upd(){ vField.textContent=fmt(sField.value,2); vFreq.textContent=fmt(sFreq.value,1)+' GHz'; vAmp.textContent=fmt(sAmp.value,2); }
+  [sField,sFreq,sAmp].forEach(s=>s.addEventListener('input',upd)); upd();
+
+  function draw(){
+    const f=fitCanvas(cv); if(!f){raf=requestAnimationFrame(draw);return;}
+    const {w,h,ctx}=f; ctx.clearRect(0,0,w,h);
+    const field=+sField.value, freq=+sFreq.value, amp=+sAmp.value;
+    const cx=w*0.36, cy=h*0.55;
+
+    // propagation axis
+    ctx.strokeStyle='#1b2338'; ctx.setLineDash([4,4]); ctx.lineWidth=1;
+    ctx.beginPath(); ctx.moveTo(60,cy); ctx.lineTo(w-60,cy); ctx.stroke(); ctx.setLineDash([]);
+    ctx.fillStyle='#5d6785'; ctx.font='11px Courier New'; ctx.fillText('propagation axis (k)', w-190, cy-10);
+
+    // sinusoidal E (vertical plane, drawn as amplitude envelope) and H (drawn as ellipse hint / dot-cross)
+    const phase = t*freq;
+    ctx.beginPath();
+    for(let x=60;x<=w-60;x++){ const ph = phase - (x-60)/(w-120)*8*Math.PI; const y=cy - Math.cos(ph)*70*amp; if(x===60)ctx.moveTo(x,y); else ctx.lineTo(x,y); }
+    ctx.strokeStyle='var(--E)'.replace('var(--E)', getCss('--E')); ctx.lineWidth=2; ctx.stroke();
+
+    ctx.beginPath();
+    for(let x=60;x<=w-60;x++){ const ph = phase - (x-60)/(w-120)*8*Math.PI; const y=cy - Math.cos(ph)*32*amp*0.5; if(x===60)ctx.moveTo(x,y); else ctx.lineTo(x,y); }
+    ctx.strokeStyle=getCss('--B'); ctx.lineWidth=1.6; ctx.globalAlpha=.6; ctx.stroke(); ctx.globalAlpha=1;
+
+    // instantaneous vector triad at cx
+    const ph0 = phase;
+    const Emag = Math.cos(ph0)*field;
+    const Hmag = Math.cos(ph0)*field*0.6;
+    // E vertical
+    drawArrow(ctx, cx, cy, cx, cy-Emag*90, getCss('--E'), 3);
+    // H as small circle/dot-cross indicating into/out of page, plus horizontal helper
+    drawArrow(ctx, cx, cy, cx+ (Hmag>=0?40:-40), cy, getCss('--B'), 3);
+    // S vector — perpendicular to both, drawn along propagation with magnitude proportional to E*H
+    const Smag = Emag*Hmag;
+    drawArrow(ctx, cx, cy, cx + Math.sign(Smag||1)*Math.min(120,Math.abs(Smag)*70+30), cy - 90, getCss('--S'), 3.4);
+
+    ctx.fillStyle='#c7cfe0'; ctx.font='11px Courier New';
+    ctx.fillText('E', cx+8, cy-Emag*90-6);
+    ctx.fillText('H', cx+(Hmag>=0?46:-54), cy+4);
+    ctx.fillText('S', cx + Math.sign(Smag||1)*Math.min(120,Math.abs(Smag)*70+30)+6, cy-96);
+
+    const H = field*0.6*Math.abs(Math.cos(ph0));
+    const Eabs = field*Math.abs(Math.cos(ph0));
+    document.getElementById('r-pE').innerHTML = fmt(Eabs,2)+'<span class="u">V/m</span>';
+    document.getElementById('r-pH').innerHTML = fmt(H,2)+'<span class="u">A/m</span>';
+    document.getElementById('r-pS').innerHTML = fmt(Eabs*H,2)+'<span class="u">W/m²</span>';
+
+    if(playing) t += 0.05*freq*0.4 + 0.02;
+    raf=requestAnimationFrame(draw);
+  }
+  function getCss(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+  btnPlay.addEventListener('click', ()=>{ playing=!playing; btnPlay.textContent=playing?'⏸ Pause':'▶ Play'; });
+  btnReset.addEventListener('click', ()=>{ t=0; sField.value=1; sFreq.value=1; sAmp.value=1; upd(); });
+  loops.poynting = { start(){ if(!raf) draw(); } };
+})();
+</script>
+
+<script>
+/* ============================================================================
+   ENGINEERING SIMULATOR 1 — DIPOLE ANTENNA
+============================================================================ */
+(function(){
+  const cv=document.getElementById('cv-antenna');
+  const sFreq=document.getElementById('s-afreq'), sPow=document.getElementById('s-apow'), sLen=document.getElementById('s-alen'),
+        sI=document.getElementById('s-aI'), sSpeed=document.getElementById('s-aspeed'), sRad=document.getElementById('s-arad'), cPattern=document.getElementById('s-apattern');
+  const vFreq=document.getElementById('v-afreq'), vPow=document.getElementById('v-apow'), vLen=document.getElementById('v-alen'),
+        vI=document.getElementById('v-aI'), vSpeed=document.getElementById('v-aspeed'), vRad=document.getElementById('v-arad');
+  const btnPlay=document.getElementById('b-antenna-play'), btnReset=document.getElementById('b-antenna-reset');
+  let t=0, playing=true, raf=null;
+  const c=3e8, eta0=377;
+
+  function upd(){
+    vFreq.textContent = (+sFreq.value>=1000? fmt(sFreq.value/1000,2)+' GHz' : sFreq.value+' MHz');
+    vPow.textContent = sPow.value+' W'; vLen.textContent = fmt(sLen.value,2)+'λ';
+    vI.textContent = fmt(sI.value,1)+' A'; vSpeed.textContent = fmt(sSpeed.value,1)+'×'; vRad.textContent = sRad.value;
+  }
+  [sFreq,sPow,sLen,sI,sSpeed,sRad].forEach(s=>s.addEventListener('input', upd)); upd();
+
+  function getCss(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+  function draw(){
+    const f=fitCanvas(cv); if(!f){raf=requestAnimationFrame(draw); return;}
+    const {w,h,ctx}=f; ctx.clearRect(0,0,w,h);
+    const freqHz = +sFreq.value*1e6, lambda = c/freqHz, L=+sLen.value, I0=+sI.value, Pin=+sPow.value, obsR=+sRad.value;
+
+    const cx=w*0.38, cy=h*0.52;
+    const pxPerLambda = 46;
+
+    // radiation resistance (short/half-wave dipole approx): Rr ≈ 73Ω near L=0.5λ, scale ~ (L/0.5)^2 for short dipole regime
+    const Rr = L<=0.5 ? 80*Math.PI*Math.PI*Math.pow(L/1,2) * (L/0.5) : 73 + (L-0.5)*90;
+    const Prad = 0.5*I0*I0*Math.max(Rr,0.5);
+    const eff = Math.min(99, 100*Prad/(Pin+Prad*0+ (Pin<Prad?Prad:Pin)) ); // display sensible %, cap
+    const effClamped = Math.max(30, Math.min(99, 100*Math.min(Prad,Pin)/Math.max(Prad,Pin)));
+
+    // expanding wavefronts
+    const speed = +sSpeed.value;
+    const maxR = Math.min(w,h)*0.46;
+    ctx.save();
+    for(let ring=0; ring<7; ring++){
+      const rr = ((t*speed*40 + ring* (maxR/6)) % maxR);
+      const alpha = 1-(rr/maxR);
+      if(alpha<=0) continue;
+      const grad = ctx.createRadialGradient(cx,cy,Math.max(0,rr-6),cx,cy,rr+2);
+      grad.addColorStop(0,'rgba(255,79,216,0)');
+      grad.addColorStop(1,`rgba(255,79,216,${alpha*0.55})`);
+      ctx.strokeStyle=`rgba(79,216,255,${alpha*0.45})`;
+      ctx.lineWidth=1.4;
+      ctx.beginPath();
+      // figure-eight-ish expanding wavefront (dipole pattern), approximate with modulated circle
+      const steps=90;
+      for(let i=0;i<=steps;i++){
+        const ang = (i/steps)*Math.PI*2;
+        const patt = Math.abs(Math.sin(ang)); // null along vertical axis (dipole axis vertical)
+        const rad = rr*(0.25+0.75*patt);
+        const x = cx + rad*Math.sin(ang), y = cy - rad*Math.cos(ang)*0.55 - (rad*0.0);
+        // orient: dipole vertical, so pattern max at horizontal, null vertical -> use angle from vertical axis
+        const px = cx + rad*Math.sin(ang);
+        const py = cy - rad*Math.cos(ang);
+        if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+      }
+      ctx.closePath(); ctx.stroke();
+    }
+    ctx.restore();
+
+    // dipole antenna itself (vertical)
+    const dipHalf = L*pxPerLambda*0.9;
+    const cur = Math.sin(t*speed*4)*I0;
+    ctx.save();
+    ctx.lineWidth=5; ctx.lineCap='round';
+    ctx.strokeStyle = '#c7cfe0';
+    ctx.beginPath(); ctx.moveTo(cx,cy-dipHalf); ctx.lineTo(cx,cy+dipHalf); ctx.stroke();
+    // current glow
+    ctx.strokeStyle = `rgba(255,180,84,${0.35+0.5*Math.abs(Math.sin(t*speed*4))})`;
+    ctx.lineWidth=9;
+    ctx.beginPath(); ctx.moveTo(cx,cy-dipHalf*Math.abs(Math.cos(t*speed*4))); ctx.lineTo(cx,cy+dipHalf*Math.abs(Math.cos(t*speed*4))); ctx.stroke();
+    ctx.fillStyle=getCss('--B'); ctx.beginPath(); ctx.arc(cx,cy,4,0,7); ctx.fill();
+    ctx.restore();
+
+    // field vectors + S arrows at a ring (observation distance) — scaled to the canvas, not fixed pixels,
+    // so R visibly spans from near the antenna (R=1) to the edge of the visible field (R=10)
+    const obsPx = 30 + ((obsR-1)/9) * (maxR*0.98 - 30);
+
+    // visible R marker — dashed radius from source to the observation ring, at angle 0.9 rad
+    const rAng = 0.9;
+    const rx0 = cx + obsPx*Math.sin(rAng), ry0 = cy - obsPx*Math.cos(rAng);
+    ctx.save();
+    ctx.setLineDash([5,4]);
+    ctx.strokeStyle = getCss('--stage-muted') || '#9fb3bd';
+    ctx.lineWidth = 1.4;
+    ctx.beginPath(); ctx.moveTo(cx,cy); ctx.lineTo(rx0,ry0); ctx.stroke();
+    ctx.setLineDash([]);
+    const rMidX = cx + obsPx*0.55*Math.sin(rAng), rMidY = cy - obsPx*0.55*Math.cos(rAng);
+    ctx.fillStyle = '#eef0ee'; ctx.font = 'italic 13px Georgia, serif';
+    ctx.fillText('R', rMidX+6, rMidY-4);
+    ctx.restore();
+    // faint full observation ring so R's circle is visible at a glance
+    ctx.save();
+    ctx.strokeStyle='rgba(159,179,189,0.25)'; ctx.lineWidth=1;
+    ctx.beginPath(); ctx.arc(cx,cy,obsPx,0,Math.PI*2); ctx.stroke();
+    ctx.restore();
+
+    const dirs=[ -1.15,-0.75,-0.35,0,0.35,0.75,1.15 ];
+    dirs.forEach(a=>{
+      const ang=a; // radians from vertical
+      const x = cx+obsPx*Math.sin(ang), y=cy-obsPx*Math.cos(ang);
+      const patt = Math.abs(Math.sin(ang));
+      if(patt<0.05) return;
+      const phase = t*speed*4 - obsPx/ (pxPerLambda) * 1.2;
+      const Es = Math.cos(phase)*patt;
+      // E arrow tangential (perpendicular to radial direction, in-plane)
+      const tx=Math.cos(ang), ty=Math.sin(ang);
+      drawArrow(ctx, x,y, x+tx*24*Es, y+ty*24*Es, getCss('--E'), 2);
+      // S arrow radially outward, magnitude ~ patt^2 * cos^2
+      const Smag = patt*patt*Math.max(0.15,Math.cos(phase)*Math.cos(phase));
+      const rx=Math.sin(ang), ry=-Math.cos(ang);
+      drawArrow(ctx, x,y, x+rx*20*(0.6+Smag), y+ry*20*(0.6+Smag), getCss('--S'), 2.2);
+    });
+
+    // mini polar pattern inset
+    if(cPattern.checked){
+      const ix=w-150, iy=110, ir=76;
+      ctx.save();
+      ctx.strokeStyle='#1b2338'; ctx.beginPath(); ctx.arc(ix,iy,ir,0,7); ctx.stroke();
+      ctx.fillStyle='#5d6785'; ctx.font='10px Courier New'; ctx.fillText('radiation pattern',ix-46,iy-ir-8);
+      ctx.beginPath();
+      for(let i=0;i<=120;i++){
+        const ang=(i/120)*Math.PI*2;
+        const patt=Math.abs(Math.sin(ang));
+        const rr=patt*ir;
+        const px=ix+rr*Math.sin(ang), py=iy-rr*Math.cos(ang);
+        if(i===0) ctx.moveTo(px,py); else ctx.lineTo(px,py);
+      }
+      ctx.closePath();
+      ctx.strokeStyle=getCss('--S'); ctx.lineWidth=1.6; ctx.stroke();
+      ctx.fillStyle='rgba(255,79,216,0.12)'; ctx.fill();
+      ctx.restore();
+    }
+
+    // live numbers
+    const rMeters = obsR*lambda*0.5+0.5;
+    const Efar = Math.sqrt(60*Prad)/Math.max(rMeters,0.1) || 0;
+    const Bfar = Efar/c;
+    const Sfar = Efar*Efar/eta0;
+
+    document.getElementById('r-aE').innerHTML = fmt(Efar,3)+'<span class="u">V/m</span>';
+    document.getElementById('r-aB').innerHTML = fmt(Bfar*1e6,2)+'<span class="u">µT</span>';
+    document.getElementById('r-aS').innerHTML = fmt(Sfar,4)+'<span class="u">W/m²</span>';
+    document.getElementById('r-aP').innerHTML = fmt(Math.min(Prad,Pin*3),2)+'<span class="u">W</span>';
+    document.getElementById('r-aRr').innerHTML = fmt(Rr,1)+'<span class="u">Ω</span>';
+    document.getElementById('r-aEff').innerHTML = fmt(effClamped,0)+'<span class="u">%</span>';
+    document.getElementById('r-alam').innerHTML = fmt(lambda,2)+'<span class="u">m</span>';
+
+    if(playing) t += 0.016;
+    raf=requestAnimationFrame(draw);
+  }
+  btnPlay.addEventListener('click', ()=>{ playing=!playing; btnPlay.textContent=playing?'⏸ Pause':'▶ Play'; });
+  btnReset.addEventListener('click', ()=>{ t=0; sFreq.value=100; sPow.value=10; sLen.value=0.5; sI.value=1; sSpeed.value=1; sRad.value=6; upd(); });
+  loops.antenna = { start(){ if(!raf) draw(); } };
+})();
+</script>
+
+<script>
+/* ============================================================================
+   ENGINEERING SIMULATOR 2 — COAXIAL CABLE
+============================================================================ */
+(function(){
+  const cv=document.getElementById('cv-coax');
+  const sV=document.getElementById('s-cV'), sI=document.getElementById('s-cI'), sA=document.getElementById('s-ca'), sB=document.getElementById('s-cb'),
+        sEps=document.getElementById('s-ceps'), sRL=document.getElementById('s-cRL'), cLongi=document.getElementById('s-clongi');
+  const vV=document.getElementById('v-cV'), vI=document.getElementById('v-cI'), vA=document.getElementById('v-ca'), vB=document.getElementById('v-cb'),
+        vEps=document.getElementById('v-ceps'), vRL=document.getElementById('v-cRL');
+  const btnPlay=document.getElementById('b-coax-play'), btnReset=document.getElementById('b-coax-reset');
+  let t=0, playing=true, raf=null;
+  const MU0=4*Math.PI*1e-7, EPS0=8.85e-12;
+
+  function upd(){
+    vV.textContent=sV.value+' V'; vI.textContent=fmt(sI.value,1)+' A'; vA.textContent=fmt(sA.value,1)+' mm';
+    vB.textContent=fmt(sB.value,1)+' mm'; vEps.textContent=fmt(sEps.value,2); vRL.textContent=sRL.value+' Ω';
+    if(+sB.value <= +sA.value) sB.value = (+sA.value+0.5).toFixed(1);
+  }
+  [sV,sI,sA,sB,sEps,sRL].forEach(s=>s.addEventListener('input', upd)); upd();
+  function getCss(v){ return getComputedStyle(document.documentElement).getPropertyValue(v).trim(); }
+
+  function draw(){
+    const f=fitCanvas(cv); if(!f){raf=requestAnimationFrame(draw); return;}
+    const {w,h,ctx}=f; ctx.clearRect(0,0,w,h);
+    const V=+sV.value, I=+sI.value, a=+sA.value/1000, b=+sB.value/1000, epsr=+sEps.value, RL=+sRL.value;
+    const eps=epsr*EPS0, mu=MU0;
+    const Z0 = (1/(2*Math.PI))*Math.sqrt(mu/eps)*Math.log(b/a);
+    const Erms = V/(a*Math.log(b/a)); // at r=a, V/(r ln(b/a))
+    const Hrms = I/(2*Math.PI*a);
+    const S = Erms*Hrms;
+    const Pdel = V*I;
+    const effTx = Math.max(20,100 - Math.abs(RL-Z0)/Z0*35);
+
+    const crossCx = w*0.27, crossCy = h*0.42, crossScale = Math.min(w*0.4,h*0.62)/ (b*1000*2.6);
+    const aPx = Math.max(14,a*1000*crossScale), bPx = Math.max(aPx+26,b*1000*crossScale);
+
+    // ---- cross-section view ----
+    // dielectric energy density heat ring
+    const nrings=24;
+    for(let i=0;i<nrings;i++){
+      const r0=aPx + (bPx-aPx)*i/nrings, r1=aPx+(bPx-aPx)*(i+1)/nrings;
+      const rmid=(r0+r1)/2/crossScale/1000;
+      const localE = V/(rmid*Math.log(b/a));
+      const dens = localE*localE*eps*0.5;
+      const norm = Math.min(1, dens/(0.5*eps*Erms*Erms*2));
+      ctx.beginPath(); ctx.arc(crossCx,crossCy,r1,0,7); ctx.arc(crossCx,crossCy,r0,0,7,true);
+      ctx.fillStyle = `rgba(255,79,216,${0.08+norm*0.5})`;
+      ctx.fill();
+    }
+    // outer conductor
+    ctx.beginPath(); ctx.arc(crossCx,crossCy,bPx,0,7); ctx.strokeStyle='#9aa4bd'; ctx.lineWidth=4; ctx.stroke();
+    // inner conductor
+    ctx.beginPath(); ctx.arc(crossCx,crossCy,aPx,0,7); ctx.fillStyle='#c7cfe0'; ctx.fill();
+
+    // E field lines radial
+    for(let i=0;i<12;i++){
+      const ang=(i/12)*Math.PI*2;
+      const x1=crossCx+aPx*Math.cos(ang), y1=crossCy+aPx*Math.sin(ang);
+      const x2=crossCx+bPx*Math.cos(ang), y2=crossCy+bPx*Math.sin(ang);
+      drawArrow(ctx,x1,y1,x2,y2,getCss('--E'),1.6);
+    }
+    // H field lines circular (dashed circle with direction ticks)
+    ctx.save(); ctx.setLineDash([5,5]); ctx.strokeStyle=getCss('--B'); ctx.lineWidth=1.4;
+    ctx.beginPath(); ctx.arc(crossCx,crossCy,(aPx+bPx)/2,0,7); ctx.stroke(); ctx.restore();
+    for(let i=0;i<8;i++){
+      const ang=(i/8)*Math.PI*2 + t*0.6;
+      const rr=(aPx+bPx)/2;
+      const x=crossCx+rr*Math.cos(ang), y=crossCy+rr*Math.sin(ang);
+      const tx=-Math.sin(ang), ty=Math.cos(ang);
+      drawArrow(ctx,x-tx*8,y-ty*8,x+tx*8,y+ty*8,getCss('--B'),2);
+    }
+    ctx.fillStyle='#8e99b3'; ctx.font='10.5px Courier New'; ctx.fillText('cross-section', crossCx-32, crossCy-bPx-14);
+    ctx.fillStyle='#c7cfe0'; ctx.font='10px Courier New';
+    ctx.fillText('a', crossCx+aPx*0.5, crossCy-6);
+    ctx.fillText('b', crossCx+bPx*0.7, crossCy-6);
+
+    // ---- longitudinal view ----
+    if(cLongi.checked){
+      const lx0=w*0.5, lx1=w-40, ly=h*0.42, lh=Math.min(90,h*0.28);
+      ctx.strokeStyle='#9aa4bd'; ctx.lineWidth=3;
+      ctx.strokeRect(lx0,ly-lh/2,lx1-lx0,lh); // outer conductor bounds
+      ctx.beginPath(); ctx.moveTo(lx0,ly); ctx.lineTo(lx1,ly); ctx.strokeStyle='#c7cfe0'; ctx.lineWidth=5; ctx.stroke(); // inner conductor
+
+      // flowing energy packets in dielectric band
+      const bandTop=ly-lh*0.4, bandBot=ly+lh*0.4;
+      for(let i=0;i<10;i++){
+        const phase = (t*0.9 + i/10) % 1;
+        const x = lx0 + phase*(lx1-lx0);
+        const yoff = (i%2===0? bandTop+8 : bandBot-8);
+        const alpha = 0.25+0.55*Math.sin(phase*Math.PI);
+        ctx.fillStyle=`rgba(255,79,216,${alpha})`;
+        ctx.beginPath(); ctx.ellipse(x,yoff,14,5,0,0,7); ctx.fill();
+      }
+      for(let i=0;i<6;i++){
+        const x = lx0+20+i*((lx1-lx0-40)/5);
+        drawArrow(ctx,x,ly-lh*0.62,x+30,ly-lh*0.62,getCss('--S'),2);
+        drawArrow(ctx,x,ly+lh*0.62,x+30,ly+lh*0.62,getCss('--S'),2);
+      }
+      ctx.fillStyle='#8e99b3'; ctx.font='10.5px Courier New';
+      ctx.fillText('longitudinal — energy flux along dielectric', lx0, ly-lh/2-12);
+      ctx.fillText('load R_L', lx1-40, ly+lh/2+22);
+      ctx.strokeStyle='#5d6785'; ctx.strokeRect(lx1-30,ly-12,26,24);
+    }
+
+    document.getElementById('r-cZ0').innerHTML = fmt(Z0,1)+'<span class="u">Ω</span>';
+    document.getElementById('r-cE').innerHTML = fmt(Erms/1000,2)+'<span class="u">kV/m</span>';
+    document.getElementById('r-cH').innerHTML = fmt(Hrms,2)+'<span class="u">A/m</span>';
+    document.getElementById('r-cS').innerHTML = fmt(S,1)+'<span class="u">W/m²</span>';
+    document.getElementById('r-cP').innerHTML = fmt(Pdel,1)+'<span class="u">W</span>';
+    document.getElementById('r-ceff').innerHTML = fmt(effTx,0)+'<span class="u">%</span>';
+
+    if(playing) t+=0.02;
+    raf=requestAnimationFrame(draw);
+  }
+  btnPlay.addEventListener('click', ()=>{ playing=!playing; btnPlay.textContent=playing?'⏸ Pause':'▶ Play'; });
+  btnReset.addEventListener('click', ()=>{ t=0; sV.value=50; sI.value=1; sA.value=0.5; sB.value=3; sEps.value=2.25; sRL.value=50; upd(); });
+  loops.coax = { start(){ if(!raf) draw(); } };
+})();
+</script>
+
+<script>
+/* ============================================================================
+   APPLICATIONS GRID
+============================================================================ */
+(function(){
+  const apps = [
+    ['Transmission Lines','Guided flow','Energy flows in the space between conductors, guided — not carried — by the copper.'],
+    ['Coaxial Cables','Guided flow','Power is confined to the dielectric annulus; see Simulator 2 above.'],
+    ['Waveguides','Guided flow','Metallic walls confine S to propagate down a hollow conductor above cutoff frequency.'],
+    ['Optical Fibers','Guided flow','Total internal reflection confines the Poynting flux to the fiber core.'],
+    ['Microwave Ovens','Absorption','S is absorbed volumetrically in lossy dielectric (food/water), converting field energy to heat.'],
+    ['Antennas','Radiation','Guided power converts to a radially outward S in free space; see Simulator 1 above.'],
+    ['Radar Systems','Radiation','Transmitted S reflects off a target and returns as a much weaker backscattered flux.'],
+    ['Wireless Communication','Radiation','Energy transfer between transmit and receive antennas, governed by the same S.'],
+    ['Solar Cells','Absorption','Incident solar S is absorbed and converted to electrical power via the photovoltaic effect.'],
+    ['EMC / Shielding','Containment','Shields work by reflecting or absorbing unwanted S before it reaches sensitive circuitry.'],
+  ];
+  const grid=document.getElementById('app-grid');
+  grid.innerHTML = apps.map(([title,tag,desc])=>`
+    <div class="app-card"><span class="tag">${tag}</span><h4>${title}</h4><p>${desc}</p></div>
+  `).join('');
+})();
+
+/* ============================================================================
+   QUIZ
+============================================================================ */
+(function(){
+  const qs = [
+    {q:"The Poynting vector S = E × H points in the direction of:", opts:["Electric field only","Magnetic field only","Instantaneous electromagnetic energy flow","Electric current"], correct:2,
+     ex:"S gives the direction and density of energy flux — it is perpendicular to both E and H, not aligned with either alone."},
+    {q:"In an ideal coaxial cable, electromagnetic energy is transported mainly:", opts:["Inside the inner conductor","Inside the outer conductor","Through the dielectric between the conductors","Equally through both conductors"], correct:2,
+     ex:"The conductors guide the fields; the energy itself flows through the space (dielectric) between them, as S = E×H is nonzero there and ~0 inside ideal conductors."},
+    {q:"For a standing wave, the time-averaged Poynting vector is:", opts:["Very large","Zero (net)","Equal to a travelling wave's","Negative"], correct:1,
+     ex:"A standing wave is two equal counter-propagating waves; their time-averaged energy flux cancels even though instantaneous energy still moves locally."},
+    {q:"Doubling the electric field amplitude E₀ (with B fixed) changes the electric energy density u_E by a factor of:", opts:["2","4","√2","No change"], correct:1,
+     ex:"u_E = ½εE² is quadratic in E, so doubling E quadruples u_E."},
+    {q:"Radiation resistance R_r of an antenna represents:", opts:["Ohmic loss in the conductor","The resistance that accounts for power radiated away as EM energy","Load resistance of the receiver","Resistance of free space"], correct:1,
+     ex:"R_r is a fictitious resistance that, if it dissipated I²R_r as heat, would account for exactly the power actually radiated into space."},
+  ];
+  const c = document.getElementById('quiz-container');
+  c.innerHTML = qs.map((item,qi)=>`
+    <div class="quiz-q">
+      <p class="q">${qi+1}. ${item.q}</p>
+      <div class="quiz-opts">
+        ${item.opts.map((o,oi)=>`<div class="quiz-opt" data-q="${qi}" data-o="${oi}">${o}</div>`).join('')}
+      </div>
+      <div class="quiz-explain" id="ex-${qi}">${item.ex}</div>
+    </div>
+  `).join('');
+  c.querySelectorAll('.quiz-opt').forEach(el=>{
+    el.addEventListener('click', ()=>{
+      const qi=+el.dataset.q, oi=+el.dataset.o;
+      const parent = el.parentElement;
+      if(parent.dataset.answered) return;
+      parent.dataset.answered='1';
+      parent.querySelectorAll('.quiz-opt').forEach(o=>{
+        if(+o.dataset.o === qs[qi].correct) o.classList.add('correct');
+        else if(o===el) o.classList.add('wrong');
+      });
+      document.getElementById('ex-'+qi).style.display='block';
+    });
+  });
+})();
+</script>
+
+<script>
+/* ============================================================================
+   AI TUTOR (calls Claude via the Anthropic API)
+============================================================================ */
+(function(){
+  const toggle=document.getElementById('tutor-toggle'), panel=document.getElementById('tutor-panel'), close=document.getElementById('tutor-close');
+  const body=document.getElementById('tutor-body'), input=document.getElementById('tutor-input'), send=document.getElementById('tutor-send');
+  toggle.addEventListener('click', ()=> panel.classList.toggle('open'));
+  close.addEventListener('click', ()=> panel.classList.remove('open'));
+
+  function addMsg(text, who){
+    const d=document.createElement('div'); d.className='tutor-msg'+(who==='user'?' user':'');
+    d.textContent=text; body.appendChild(d); body.scrollTop=body.scrollHeight;
+  }
+
+  async function ask(){
+    const q = input.value.trim(); if(!q) return;
+    addMsg(q,'user'); input.value='';
+    const ctx = document.getElementById('tutor-ctx').textContent;
+    const thinking = document.createElement('div'); thinking.className='tutor-msg'; thinking.textContent='…thinking'; body.appendChild(thinking); body.scrollTop=body.scrollHeight;
+    try{
+      const resp = await fetch("https://api.anthropic.com/v1/messages", {
+        method:"POST", headers:{"Content-Type":"application/json"},
+        body: JSON.stringify({
+          model:"claude-sonnet-4-6",
+          max_tokens:500,
+          system:`You are an expert electrodynamics tutor helping an M.Sc. Physics student working through an interactive module on Poynting's Theorem. The student is currently on the "${ctx}" section. Answer clearly and concisely (under 150 words), connect back to Maxwell's equations and the Poynting vector S = E×H where relevant, and use plain-text notation (no markdown headers).`,
+          messages:[{role:"user", content:q}]
+        })
+      });
+      const data = await resp.json();
+      thinking.remove();
+      const text = (data.content||[]).map(b=>b.text||'').join(' ').trim();
+      addMsg(text || "Sorry, I couldn't generate a response just now.", 'ai');
+    }catch(e){
+      thinking.remove();
+      addMsg("The tutor couldn't be reached right now — please try again.", 'ai');
+    }
+  }
+  send.addEventListener('click', ask);
+  input.addEventListener('keydown', e=>{ if(e.key==='Enter') ask(); });
+})();
+</script>
+
+</body>
+</html>

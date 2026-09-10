@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gibbs Paradox Simulator - MSc Physics</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    
+    <!-- MathJax for rendering equations cleanly -->
+    <script>
+        window.MathJax = {
+            tex: {
+                inlineMath: [['$', '$'], ['\\(', '\\)']],
+                displayMath: [['$$', '$$'], ['\\[', '\\]']]
+            },
+            svg: { fontCache: 'global' },
+            options: {
+                enableMenu: false
+            }
+        };
+    </script>
+    <script type="text/javascript" id="MathJax-script" async
+        src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-svg.js">
+    </script>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&family=Fira+Code:wght@400;500&display=swap');
+        
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #0f172a;
+            color: #f1f5f9;
+        }
+
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+
+        canvas {
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+            background: #020617;
+        }
+
+        .custom-slider {
+            -webkit-appearance: none;
+            height: 6px;
+            background: #334155;
+            border-radius: 5px;
+            outline: none;
+        }
+
+        .custom-slider::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 18px;
+            height: 18px;
+            background: #38bdf8;
+            cursor: pointer;
+            border-radius: 50%;
+        }
+
+        /* Strict inline styling for MathJax elements to prevent text wrapping linebreaks */
+        mjx-container[inline="true"] {
+            display: inline !important;
+            vertical-align: -0.12em !important;
+            margin: 0 1px !important;
+            padding: 0 !important;
+            white-space: normal !important;
+        }
+        mjx-container[inline="true"] > svg {
+            display: inline !important;
+            vertical-align: middle !important;
+            margin: 0 !important;
+            padding: 0 !important;
+        }
+        mjx-container {
+            margin: 0 !important;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+<div class="max-w-7xl mx-auto space-y-8">
+    
+    <!-- Title Section -->
+    <header class="text-center space-y-3">
+        <div class="inline-block px-4 py-1.5 rounded-full text-xs font-mono bg-blue-500/10 text-blue-400 border border-blue-500/20">
+            Statistical Mechanics & Thermodynamics — MSc Physics
+        </div>
+        <h1 class="text-3xl md:text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-teal-300 to-emerald-400">
+            Gibbs Paradox Interactive Simulator
+        </h1>
+        <p class="text-slate-400 max-w-3xl mx-auto text-sm md:text-base">
+            An advanced visualization of entropy of mixing, distinguishability, and quantum state counting ($1/N!$ factor).
+        </p>
+    </header>
+
+    <!-- Concept Section -->
+    <div class="glass-panel p-6 rounded-2xl border border-blue-500/30 text-slate-300 text-sm md:text-base space-y-3">
+        <h2 class="font-bold text-blue-400 text-lg flex items-center gap-2 border-b border-slate-700/60 pb-2">
+            <svg class="w-5 h-5 text-blue-400 inline-block shrink-0" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+            </svg>
+            Concept: Gibbs Paradox and Indistinguishability
+        </h2>
+        <p class="leading-relaxed text-slate-300">
+            The Gibbs paradox arises because classical statistical mechanics can incorrectly predict an entropy increase when two samples of the same gas are allowed to mix. For two different gases, mixing creates additional accessible configurations and gives a finite entropy of mixing, $\Delta S = 2 N k_B \ln 2$ for equal amounts. For identical gases, however, exchanging identical particles does not create a physically distinguishable new microstate; incorporating the $1/N!$ correction resolves the paradox and gives $\Delta S = 0$. Thus, the paradox highlights the fundamental role of particle indistinguishability in statistical mechanics.
+        </p>
+    </div>
+
+    <!-- Main Content Layout -->
+    <div class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+        
+        <!-- Left Side: Interactive Simulation & Controls -->
+        <div class="lg:col-span-7 space-y-6">
+            <div class="glass-panel p-6 rounded-2xl">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-semibold flex items-center gap-2">
+                        <span>Microscopic Simulation</span>
+                    </h2>
+                    <div class="flex gap-4">
+                        <span id="status-tag" class="px-3 py-1 rounded-full text-xs font-mono bg-blue-500/20 text-blue-400 border border-blue-500/30">PARTITION CLOSED</span>
+                    </div>
+                </div>
+
+                <div class="relative w-full aspect-video">
+                    <canvas id="simCanvas" class="w-full h-full"></canvas>
+                </div>
+
+                <div class="mt-6 flex flex-wrap gap-4 items-center justify-center">
+                    <button id="togglePartition" class="px-6 py-2 bg-blue-600 hover:bg-blue-500 transition-colors rounded-lg font-semibold shadow-lg">
+                        Remove Partition
+                    </button>
+                    <button id="resetSim" class="px-6 py-2 bg-slate-700 hover:bg-slate-600 transition-colors rounded-lg font-semibold border border-slate-600">
+                        Reset System
+                    </button>
+                </div>
+            </div>
+
+            <!-- Parameters Grid -->
+            <div class="glass-panel p-6 rounded-2xl grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-2">Species Type</label>
+                    <select id="speciesType" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 outline-none focus:ring-2 focus:ring-blue-500 text-sm">
+                        <option value="different">Different Species (A & B)</option>
+                        <option value="identical">Identical Species (A & A)</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-2">Particle Count ($N$ total)</label>
+                    <input type="range" id="particleCount" min="20" max="400" value="100" class="w-full custom-slider">
+                    <div class="flex justify-between text-xs mt-1 text-slate-500 font-mono">
+                        <span>20</span>
+                        <span id="particleDisplay" class="text-blue-400 font-bold">100</span>
+                        <span>400</span>
+                    </div>
+                </div>
+                <div>
+                    <label class="block text-sm font-medium text-slate-400 mb-2">Temperature / Speed ($T$)</label>
+                    <input type="range" id="tempRange" min="1" max="10" step="0.5" value="3" class="w-full custom-slider">
+                </div>
+                <div class="flex flex-col justify-center">
+                    <label class="flex items-center cursor-pointer">
+                        <div class="relative">
+                            <input type="checkbox" id="showCorrected" class="sr-only" checked>
+                            <div class="block bg-slate-700 w-10 h-6 rounded-full"></div>
+                            <div class="dot absolute left-1 top-1 bg-white w-4 h-4 rounded-full transition"></div>
+                        </div>
+                        <div class="ml-3 text-sm font-medium text-slate-300">Apply Gibbs $1/N!$ Correction</div>
+                    </label>
+                </div>
+            </div>
+
+            <!-- Physical Constants & Units Card -->
+            <div class="glass-panel p-6 rounded-2xl">
+                <h3 class="text-lg font-semibold text-emerald-400 mb-3 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 7h6m0 10v-3m-3 3h.01M9 17h.01M9 14h.01M12 14h.01M15 11h.01M12 11h.01M9 11h.01M7 21h10a2 2 0 002-2V5a2 2 0 00-2-2H7a2 2 0 00-2 2v14a2 2 0 002 2z"></path></svg>
+                    Physical Constants & SI Units
+                </h3>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-xs text-left text-slate-300">
+                        <thead class="text-xs uppercase bg-slate-800/60 text-slate-400 border-b border-slate-700">
+                            <tr>
+                                <th class="py-2 px-3">Symbol</th>
+                                <th class="py-2 px-3">Physical Quantity</th>
+                                <th class="py-2 px-3">Standard Value / Expression</th>
+                                <th class="py-2 px-3">SI Unit</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-800">
+                            <tr>
+                                <td class="py-2 px-3 font-mono text-blue-300">$k_B$</td>
+                                <td class="py-2 px-3">Boltzmann Constant</td>
+                                <td class="py-2 px-3 font-mono">$1.380649 \times 10^{-23}$</td>
+                                <td class="py-2 px-3 font-mono text-emerald-300 font-semibold">J · K⁻¹</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 px-3 font-mono text-blue-300">$h$</td>
+                                <td class="py-2 px-3">Planck Constant</td>
+                                <td class="py-2 px-3 font-mono">$6.62607015 \times 10^{-34}$</td>
+                                <td class="py-2 px-3 font-mono text-emerald-300 font-semibold">J · s</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 px-3 font-mono text-blue-300">$S, \Delta S$</td>
+                                <td class="py-2 px-3">Entropy / Mixing Entropy</td>
+                                <td class="py-2 px-3 font-mono font-semibold">Calculated in units of $k_B$</td>
+                                <td class="py-2 px-3 font-mono text-emerald-300 font-semibold">J · K⁻¹</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 px-3 font-mono text-blue-300">$m$</td>
+                                <td class="py-2 px-3">Particle Mass</td>
+                                <td class="py-2 px-3 font-mono">Molecular / Atomic Mass</td>
+                                <td class="py-2 px-3 font-mono text-emerald-300 font-semibold">kg</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 px-3 font-mono text-blue-300">$U$</td>
+                                <td class="py-2 px-3">Internal Kinetic Energy</td>
+                                <td class="py-2 px-3 font-mono font-semibold">$\frac{3}{2} N k_B T$</td>
+                                <td class="py-2 px-3 font-mono text-emerald-300 font-semibold">J (Joules)</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 px-3 font-mono text-blue-300">$V$</td>
+                                <td class="py-2 px-3">Container Volume</td>
+                                <td class="py-2 px-3 font-mono">$V_L + V_R$</td>
+                                <td class="py-2 px-3 font-mono text-emerald-300 font-semibold">m³</td>
+                            </tr>
+                            <tr>
+                                <td class="py-2 px-3 font-mono text-blue-300">$T$</td>
+                                <td class="py-2 px-3">Absolute Temperature</td>
+                                <td class="py-2 px-3 font-mono">Thermodynamic Temperature</td>
+                                <td class="py-2 px-3 font-mono text-emerald-300 font-semibold">K (Kelvin)</td>
+                            </tr>
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+
+        <!-- Right Side: Live Graph, Formulas & Theory -->
+        <div class="lg:col-span-5 space-y-6">
+            <!-- Graph Panel -->
+            <div class="glass-panel p-6 rounded-2xl h-80">
+                <div class="flex justify-between items-center mb-2">
+                    <h2 class="text-lg font-semibold">Mixing Entropy ($\Delta S / k_B$)</h2>
+                    <span class="text-xs text-slate-400 font-mono">Real-time Simulation</span>
+                </div>
+                <div class="h-60 w-full">
+                    <canvas id="entropyChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Mathematical Formulas Used Section -->
+            <div class="glass-panel p-6 rounded-2xl space-y-4">
+                <h2 class="text-xl font-semibold text-blue-400 flex items-center gap-2">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path></svg>
+                    Mathematical Formulas Used
+                </h2>
+                
+                <div class="space-y-3 text-xs md:text-sm text-slate-300">
+                    <div class="bg-slate-900/80 p-3 rounded-lg border border-slate-800">
+                        <div class="text-xs text-amber-400 font-semibold mb-1">1. Classical Uncorrected Entropy of Mixing (Distinguishable)</div>
+                        <p class="font-mono text-center text-slate-200 py-1">
+                            $$\Delta S_{\text{classical}} = -k_B \sum_{i} N_i \ln x_i = 2 N k_B \ln 2$$
+                        </p>
+                        <p class="text-xs text-slate-400 mt-1 leading-normal">
+                            Predicts non-zero entropy increase when mixing identical gases (The Paradox).
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-900/80 p-3 rounded-lg border border-slate-800">
+                        <div class="text-xs text-emerald-400 font-semibold mb-1">2. Quantum Corrected Entropy of Mixing (Indistinguishable)</div>
+                        <p class="font-mono text-center text-slate-200 py-1">
+                            $$\Delta S_{\text{identical}} = 0 \quad (\text{Identical Species})$$
+                        </p>
+                        <p class="font-mono text-center text-slate-200 py-1">
+                            $$\Delta S_{\text{different}} = 2 N k_B \ln 2 \quad (\text{Different Species})$$
+                        </p>
+                    </div>
+
+                    <div class="bg-slate-900/80 p-3 rounded-lg border border-slate-800">
+                        <div class="text-xs text-blue-400 font-semibold mb-1">3. Sackur-Tetrode Equation (Absolute Entropy)</div>
+                        <p class="font-mono text-center text-slate-200 py-1">
+                            $$S = N k_B \left[ \ln\left( \frac{V}{N} \left(\frac{4\pi m U}{3 h^2 N}\right)^{3/2} \right) + \frac{5}{2} \right]$$
+                        </p>
+                        <p class="text-xs text-slate-400 mt-1 leading-normal">
+                            Derived via microstate division by $N!$. The specific volume term $\frac{V}{N}$ makes entropy strictly <strong>extensive</strong>.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Theoretical Background Card -->
+            <div class="glass-panel p-6 rounded-2xl">
+                <h2 class="text-xl font-semibold mb-3">Theoretical Background</h2>
+                <div class="text-xs md:text-sm space-y-3 text-slate-300 leading-relaxed max-h-60 overflow-y-auto pr-2">
+                    <p>
+                        <strong class="text-blue-400">The Paradox:</strong> Classical statistical mechanics treats identical particles as distinguishable trajectories in phase space. Mixing two equal volumes $V$ of the same gas leads to an unphysical entropy increase $\Delta S = 2Nk_B \ln 2$.
+                    </p>
+                    <p>
+                        <strong class="text-emerald-400">Quantum Resolution:</strong> Identical particles are fundamental quantum entities with overlapping wavefunctions. Dividing phase space volume $\Omega$ by $N!$ accounts for indistinguishability, ensuring $\Delta S = 0$ for identical gases.
+                    </p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Interactive Quiz Section -->
+    <div class="glass-panel p-6 md:p-8 rounded-2xl space-y-6 border border-slate-700/80">
+        <div class="border-b border-slate-700/80 pb-4">
+            <h2 class="text-2xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-emerald-400 flex items-center gap-3">
+                <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
+                Interactive Concept Quiz
+            </h2>
+            <p class="text-xs text-slate-400 mt-1">Test your statistical mechanics understanding of mixing entropy, indistinguishability, and $1/N!$ state counting.</p>
+        </div>
+
+        <div class="space-y-6" id="quiz-container">
+            <!-- Q1 -->
+            <div class="bg-slate-900/60 p-5 rounded-xl border border-slate-800 space-y-3" id="q1-box">
+                <h3 class="font-bold text-slate-200 text-sm md:text-base">Q1. Mixing Two Different Gases</h3>
+                <p class="text-xs md:text-sm text-slate-300 leading-relaxed">
+                    Set <strong>Species Type = Different Species (A &amp; B)</strong> and keep the particle number at $N = 100$. Make sure the partition is initially closed, then click <strong>Remove Partition</strong> and observe the simulation and the $\Delta S/k_B$ graph. What do you observe?
+                </p>
+                <div class="grid grid-cols-1 gap-2 pt-1 text-xs md:text-sm">
+                    <button onclick="checkAnswer('q1', 'A')" class="q1-opt text-left p-3 rounded-lg bg-slate-800/80 border border-slate-700 hover:border-blue-500 transition-colors flex items-start gap-2">
+                        <span class="font-bold text-blue-400 shrink-0">A)</span>
+                        <span>The two species mix and the entropy of mixing increases toward a non-zero value.</span>
+                    </button>
+                    <button onclick="checkAnswer('q1', 'B')" class="q1-opt text-left p-3 rounded-lg bg-slate-800/80 border border-slate-700 hover:border-blue-500 transition-colors flex items-start gap-2">
+                        <span class="font-bold text-blue-400 shrink-0">B)</span>
+                        <span>The two species mix but the entropy remains exactly zero.</span>
+                    </button>
+                    <button onclick="checkAnswer('q1', 'C')" class="q1-opt text-left p-3 rounded-lg bg-slate-800/80 border border-slate-700 hover:border-blue-500 transition-colors flex items-start gap-2">
+                        <span class="font-bold text-blue-400 shrink-0">C)</span>
+                        <span>The particles remain confined to their original sides after the partition is removed.</span>
+                    </button>
+                    <button onclick="checkAnswer('q1', 'D')" class="q1-opt text-left p-3 rounded-lg bg-slate-800/80 border border-slate-700 hover:border-blue-500 transition-colors flex items-start gap-2">
+                        <span class="font-bold text-blue-400 shrink-0">D)</span>
+                        <span>The entropy decreases continuously as the gases mix.</span>
+                    </button>
+                </div>
+                <div id="q1-exp" class="hidden mt-3 p-4 rounded-lg bg-slate-800 border text-xs md:text-sm text-slate-300 leading-relaxed space-y-2"></div>
+            </div>
+
+            <!-- Q2 -->
+            <div class="bg-slate-900/60 p-5 rounded-xl border border-slate-800 space-y-3" id="q2-box">
+                <h3 class="font-bold text-slate-200 text-sm md:text-base">Q2. The Gibbs Paradox</h3>
+                <p class="text-xs md:text-sm text-slate-300 leading-relaxed">
+                    Now change <strong>Species Type = Identical Species (A &amp; A)</strong>. Keep the other parameters unchanged. First ensure that <strong>Apply Gibbs $1/N!$ Correction</strong> is ON. Remove the partition and observe the $\Delta S/k_B$ graph. What happens?
+                </p>
+                <div class="grid grid-cols-1 gap-2 pt-1 text-xs md:text-sm">
+                    <button onclick="checkAnswer('q2', 'A')" class="q2-opt text-left p-3 rounded-lg bg-slate-800/80 border border-slate-700 hover:border-blue-500 transition-colors flex items-start gap-2">
+                        <span class="font-bold text-blue-400 shrink-0">A)</span>
+                        <span>The gases mix and the entropy increases to the same value as for different gases.</span>
+                    </button>
+                    <button onclick="checkAnswer('q2', 'B')" class="q2-opt text-left p-3 rounded-lg bg-slate-800/80 border border-slate-700 hover:border-blue-500 transition-colors flex items-start gap-2">
+                        <span class="font-bold text-blue-400 shrink-0">B)</span>
+                        <span>The gases mix, but the corrected entropy of mixing remains zero.</span>
+                    </button>
+                    <button onclick="checkAnswer('q2', 'C')" class="q2-opt text-left p-3 rounded-lg bg-slate-800/80 border border-slate-700 hover:border-blue-500 transition-colors flex items-start gap-2">
+                        <span class="font-bold text-blue-400 shrink-0">C)</span>
+                        <span>The particles cannot cross the partition because they are identical.</span>
+                    </button>
+                    <button onclick="checkAnswer('q2', 'D')" class="q2-opt text-left p-3 rounded-lg bg-slate-800/80 border border-slate-700 hover:border-blue-500 transition-colors flex items-start gap-2">
+                        <span class="font-bold text-blue-400 shrink-0">D)</span>
+                        <span>The entropy decreases because the particles become indistinguishable.</span>
+                    </button>
+                </div>
+                <div id="q2-exp" class="hidden mt-3 p-4 rounded-lg bg-slate-800 border text-xs md:text-sm text-slate-300 leading-relaxed space-y-2"></div>
+            </div>
+
+            <!-- Q3 -->
+            <div class="bg-slate-900/60 p-5 rounded-xl border border-slate-800 space-y-3" id="q3-box">
+                <h3 class="font-bold text-slate-200 text-sm md:text-base">Q3. What Happens If the $1/N!$ Correction Is Removed?</h3>
+                <p class="text-xs md:text-sm text-slate-300 leading-relaxed">
+                    Keep <strong>Species Type = Identical Species (A &amp; A)</strong>. Turn <strong>Apply Gibbs $1/N!$ Correction</strong> OFF. Reset the system, remove the partition, and observe the entropy graph. What happens?
+                </p>
+                <div class="grid grid-cols-1 gap-2 pt-1 text-xs md:text-sm">
+                    <button onclick="checkAnswer('q3', 'A')" class="q3-opt text-left p-3 rounded-lg bg-slate-800/80 border border-slate-700 hover:border-blue-500 transition-colors flex items-start gap-2">
+                        <span class="font-bold text-blue-400 shrink-0">A)</span>
+                        <span>The simulator now predicts a non-zero entropy increase, even though the gases are identical.</span>
+                    </button>
+                    <button onclick="checkAnswer('q3', 'B')" class="q3-opt text-left p-3 rounded-lg bg-slate-800/80 border border-slate-700 hover:border-blue-500 transition-colors flex items-start gap-2">
+                        <span class="font-bold text-blue-400 shrink-0">B)</span>
+                        <span>The entropy remains exactly zero because identical gases can never mix.</span>
+                    </button>
+                    <button onclick="checkAnswer('q3', 'C')" class="q3-opt text-left p-3 rounded-lg bg-slate-800/80 border border-slate-700 hover:border-blue-500 transition-colors flex items-start gap-2">
+                        <span class="font-bold text-blue-400 shrink-0">C)</span>
+                        <span>The entropy becomes negative as the particles mix.</span>
+                    </button>
+                    <button onclick="checkAnswer('q3', 'D')" class="q3-opt text-left p-3 rounded-lg bg-slate-800/80 border border-slate-700 hover:border-blue-500 transition-colors flex items-start gap-2">
+                        <span class="font-bold text-blue-400 shrink-0">D)</span>
+                        <span>The entropy is independent of whether the correction is applied.</span>
+                    </button>
+                </div>
+                <div id="q3-exp" class="hidden mt-3 p-4 rounded-lg bg-slate-800 border text-xs md:text-sm text-slate-300 leading-relaxed space-y-2"></div>
+            </div>
+
+            <!-- Q4 -->
+            <div class="bg-slate-900/60 p-5 rounded-xl border border-slate-800 space-y-3" id="q4-box">
+                <h3 class="font-bold text-slate-200 text-sm md:text-base">Q4. Effect of the Number of Particles</h3>
+                <p class="text-xs md:text-sm text-slate-300 leading-relaxed">
+                    Set <strong>Species Type = Different Species (A &amp; B)</strong> and <strong>Apply Gibbs $1/N!$ Correction</strong> ON. Run the simulation first with $N = 50$ and then with $N = 200$. Compare the entropy increase after mixing. What do you observe?
+                </p>
+                <div class="grid grid-cols-1 gap-2 pt-1 text-xs md:text-sm">
+                    <button onclick="checkAnswer('q4', 'A')" class="q4-opt text-left p-3 rounded-lg bg-slate-800/80 border border-slate-700 hover:border-blue-500 transition-colors flex items-start gap-2">
+                        <span class="font-bold text-blue-400 shrink-0">A)</span>
+                        <span>The entropy increase becomes larger as the number of particles increases.</span>
+                    </button>
+                    <button onclick="checkAnswer('q4', 'B')" class="q4-opt text-left p-3 rounded-lg bg-slate-800/80 border border-slate-700 hover:border-blue-500 transition-colors flex items-start gap-2">
+                        <span class="font-bold text-blue-400 shrink-0">B)</span>
+                        <span>The entropy increase becomes smaller as the number of particles increases.</span>
+                    </button>
+                    <button onclick="checkAnswer('q4', 'C')" class="q4-opt text-left p-3 rounded-lg bg-slate-800/80 border border-slate-700 hover:border-blue-500 transition-colors flex items-start gap-2">
+                        <span class="font-bold text-blue-400 shrink-0">C)</span>
+                        <span>The entropy increase is independent of $N$.</span>
+                    </button>
+                    <button onclick="checkAnswer('q4', 'D')" class="q4-opt text-left p-3 rounded-lg bg-slate-800/80 border border-slate-700 hover:border-blue-500 transition-colors flex items-start gap-2">
+                        <span class="font-bold text-blue-400 shrink-0">D)</span>
+                        <span>The entropy is always zero regardless of $N$.</span>
+                    </button>
+                </div>
+                <div id="q4-exp" class="hidden mt-3 p-4 rounded-lg bg-slate-800 border text-xs md:text-sm text-slate-300 leading-relaxed space-y-2"></div>
+            </div>
+
+            <!-- Q5 -->
+            <div class="bg-slate-900/60 p-5 rounded-xl border border-slate-800 space-y-3" id="q5-box">
+                <h3 class="font-bold text-slate-200 text-sm md:text-base">Q5. Why Does the Gibbs Paradox Disappear?</h3>
+                <div class="text-xs md:text-sm text-slate-300 leading-relaxed space-y-2">
+                    <p class="mb-1">Run two experiments with the same $N$:</p>
+                    <ol class="list-decimal list-inside space-y-1 text-slate-300 pl-2 font-medium">
+                        <li><strong>Different Species (A &amp; B)</strong></li>
+                        <li><strong>Identical Species (A &amp; A)</strong> with the $1/N!$ correction ON.</li>
+                    </ol>
+                    <p class="mt-2">Remove the partition in both cases and compare the final entropy changes. Which conclusion is best supported by the simulator?</p>
+                </div>
+                <div class="grid grid-cols-1 gap-2 pt-1 text-xs md:text-sm">
+                    <button onclick="checkAnswer('q5', 'A')" class="q5-opt text-left p-3 rounded-lg bg-slate-800/80 border border-slate-700 hover:border-blue-500 transition-colors flex items-start gap-2">
+                        <span class="font-bold text-blue-400 shrink-0">A)</span>
+                        <span>The entropy difference arises because different gases produce physically distinguishable macrostates, whereas exchanging identical particles does not create new physically distinguishable states.</span>
+                    </button>
+                    <button onclick="checkAnswer('q5', 'B')" class="q5-opt text-left p-3 rounded-lg bg-slate-800/80 border border-slate-700 hover:border-blue-500 transition-colors flex items-start gap-2">
+                        <span class="font-bold text-blue-400 shrink-0">B)</span>
+                        <span>Identical gases do not mix, while different gases do.</span>
+                    </button>
+                    <button onclick="checkAnswer('q5', 'C')" class="q5-opt text-left p-3 rounded-lg bg-slate-800/80 border border-slate-700 hover:border-blue-500 transition-colors flex items-start gap-2">
+                        <span class="font-bold text-blue-400 shrink-0">C)</span>
+                        <span>The entropy difference is caused only by the particle speed.</span>
+                    </button>
+                    <button onclick="checkAnswer('q5', 'D')" class="q5-opt text-left p-3 rounded-lg bg-slate-800/80 border border-slate-700 hover:border-blue-500 transition-colors flex items-start gap-2">
+                        <span class="font-bold text-blue-400 shrink-0">D)</span>
+                        <span>The entropy difference occurs because identical particles have zero kinetic energy.</span>
+                    </button>
+                </div>
+                <div id="q5-exp" class="hidden mt-3 p-4 rounded-lg bg-slate-800 border text-xs md:text-sm text-slate-300 leading-relaxed space-y-2"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+const canvas = document.getElementById('simCanvas');
+const ctx = canvas.getContext('2d');
+const toggleBtn = document.getElementById('togglePartition');
+const resetBtn = document.getElementById('resetSim');
+const speciesSelect = document.getElementById('speciesType');
+const particleSlider = document.getElementById('particleCount');
+const tempSlider = document.getElementById('tempRange');
+const correctedToggle = document.getElementById('showCorrected');
+const statusTag = document.getElementById('status-tag');
+
+let particles = [];
+let partitionOpen = false;
+let animationId;
+let N = parseInt(particleSlider.value);
+let T = parseFloat(tempSlider.value);
+
+const chartCtx = document.getElementById('entropyChart').getContext('2d');
+const entropyChart = new Chart(chartCtx, {
+    type: 'line',
+    data: {
+        labels: [],
+        datasets: [{
+            label: 'Mixing Entropy (ΔS/k_B)',
+            data: [],
+            borderColor: '#38bdf8',
+            backgroundColor: 'rgba(56, 189, 248, 0.1)',
+            fill: true,
+            tension: 0.3,
+            borderWidth: 2,
+            pointRadius: 0
+        }]
+    },
+    options: {
+        responsive: true,
+        maintainAspectRatio: false,
+        scales: {
+            y: { 
+                grid: { color: '#334155' }, 
+                ticks: { color: '#94a3b8', font: { family: 'Inter', size: 10 } },
+                title: { display: true, text: 'ΔS / k_B', color: '#94a3b8' }
+            },
+            x: { 
+                grid: { display: false }, 
+                ticks: { display: false } 
+            }
+        },
+        plugins: { legend: { display: false } }
+    }
+});
+
+class Particle {
+    constructor(x, y, vx, vy, color, species) {
+        this.x = x;
+        this.y = y;
+        this.vx = vx;
+        this.vy = vy;
+        this.radius = 4;
+        this.color = color;
+        this.species = species; // 'A' or 'B'
+    }
+
+    draw() {
+        ctx.beginPath();
+        ctx.arc(this.x, this.y, this.radius, 0, Math.PI * 2);
+        ctx.fillStyle = this.color;
+        ctx.fill();
+        ctx.closePath();
+    }
+
+    update() {
+        this.x += this.vx * (T/3);
+        this.y += this.vy * (T/3);
+
+        // Boundary collisions
+        if (this.x + this.radius > canvas.width || this.x - this.radius < 0) this.vx *= -1;
+        if (this.y + this.radius > canvas.height || this.y - this.radius < 0) this.vy *= -1;
+
+        // Partition enforcement
+        if (!partitionOpen) {
+            const mid = canvas.width / 2;
+            if (this.species === 'A') {
+                if (this.x + this.radius > mid) {
+                    this.x = mid - this.radius;
+                    this.vx *= -1;
+                }
+            } else {
+                if (this.x - this.radius < mid) {
+                    this.x = mid + this.radius;
+                    this.vx *= -1;
+                }
+            }
+        }
+
+        // Maintain bounds safety
+        this.x = Math.max(this.radius, Math.min(canvas.width - this.radius, this.x));
+        this.y = Math.max(this.radius, Math.min(canvas.height - this.radius, this.y));
+    }
+}
+
+function initSim() {
+    canvas.width = canvas.parentElement.clientWidth;
+    canvas.height = canvas.parentElement.clientHeight;
+    particles = [];
+    N = parseInt(particleSlider.value);
+    const isIdentical = speciesSelect.value === 'identical';
+    
+    // Left side (Species A)
+    for (let i = 0; i < N / 2; i++) {
+        particles.push(new Particle(
+            Math.random() * (canvas.width / 2 - 12) + 6,
+            Math.random() * (canvas.height - 12) + 6,
+            (Math.random() - 0.5) * 4,
+            (Math.random() - 0.5) * 4,
+            '#60a5fa', // Blue
+            'A'
+        ));
+    }
+
+    // Right side (Species B)
+    for (let i = 0; i < N / 2; i++) {
+        particles.push(new Particle(
+            Math.random() * (canvas.width / 2 - 12) + canvas.width / 2 + 6,
+            Math.random() * (canvas.height - 12) + 6,
+            (Math.random() - 0.5) * 4,
+            (Math.random() - 0.5) * 4,
+            isIdentical ? '#60a5fa' : '#f87171', // Red or Blue
+            'B'
+        ));
+    }
+
+    entropyChart.data.labels = [];
+    entropyChart.data.datasets[0].data = [];
+    entropyChart.update();
+}
+
+function calculateEntropy() {
+    if (!partitionOpen) return 0;
+
+    const isIdentical = speciesSelect.value === 'identical';
+    const useCorrection = correctedToggle.checked;
+    
+    let leftA = 0, leftB = 0, rightA = 0, rightB = 0;
+    const mid = canvas.width / 2;
+
+    particles.forEach(p => {
+        if (p.x < mid) {
+            if (p.species === 'A') leftA++; else leftB++;
+        } else {
+            if (p.species === 'A') rightA++; else rightB++;
+        }
+    });
+
+    if (isIdentical) {
+        if (!useCorrection) {
+            // Classical view (incorrect) treating identical particles as distinguishable
+            const totalL = leftA + leftB;
+            const totalR = rightA + rightB;
+            const pL = totalL / N;
+            const pR = totalR / N;
+            const sMix = -N * ( (pL > 0 ? pL * Math.log(pL) : 0) + (pR > 0 ? pR * Math.log(pR) : 0) );
+            return sMix;
+        } else {
+            return 0; // Corrected Quantum view: ΔS = 0
+        }
+    } else {
+        // Spatial entropy calculation for distinguishable species mixing
+        const entropyA = calculateSpeciesEntropy(leftA, rightA);
+        const entropyB = calculateSpeciesEntropy(leftB, rightB);
+        return entropyA + entropyB;
+    }
+}
+
+function calculateSpeciesEntropy(nLeft, nRight) {
+    const total = nLeft + nRight;
+    if (total === 0) return 0;
+    const pL = nLeft / total;
+    const pR = nRight / total;
+    const valL = pL > 0 ? pL * Math.log(pL) : 0;
+    const valR = pR > 0 ? pR * Math.log(pR) : 0;
+    return -total * (valL + valR);
+}
+
+function animate(time) {
+    ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+    // Draw central partition barrier
+    if (!partitionOpen) {
+        ctx.strokeStyle = '#38bdf8';
+        ctx.setLineDash([6, 6]);
+        ctx.lineWidth = 2;
+        ctx.beginPath();
+        ctx.moveTo(canvas.width / 2, 0);
+        ctx.lineTo(canvas.width / 2, canvas.height);
+        ctx.stroke();
+        ctx.setLineDash([]);
+    }
+
+    particles.forEach(p => {
+        p.update();
+        p.draw();
+    });
+
+    // Update real-time entropy plot periodically
+    if (Math.floor(time / 16) % 8 === 0) {
+        const s = calculateEntropy();
+        entropyChart.data.labels.push("");
+        entropyChart.data.datasets[0].data.push(s);
+        if (entropyChart.data.labels.length > 60) {
+            entropyChart.data.labels.shift();
+            entropyChart.data.datasets[0].data.shift();
+        }
+        entropyChart.update('none');
+    }
+
+    animationId = requestAnimationFrame(animate);
+}
+
+toggleBtn.addEventListener('click', () => {
+    partitionOpen = !partitionOpen;
+    toggleBtn.textContent = partitionOpen ? "Close Partition" : "Remove Partition";
+    statusTag.textContent = partitionOpen ? "SYSTEM MIXING" : "PARTITION CLOSED";
+    statusTag.className = partitionOpen 
+        ? "px-3 py-1 rounded-full text-xs font-mono bg-emerald-500/20 text-emerald-400 border border-emerald-500/30"
+        : "px-3 py-1 rounded-full text-xs font-mono bg-blue-500/20 text-blue-400 border border-blue-500/30";
+});
+
+resetBtn.addEventListener('click', () => {
+    partitionOpen = false;
+    toggleBtn.textContent = "Remove Partition";
+    statusTag.textContent = "PARTITION CLOSED";
+    statusTag.className = "px-3 py-1 rounded-full text-xs font-mono bg-blue-500/20 text-blue-400 border border-blue-500/30";
+    initSim();
+});
+
+speciesSelect.addEventListener('change', initSim);
+particleSlider.addEventListener('input', () => {
+    document.getElementById('particleDisplay').textContent = particleSlider.value;
+    initSim();
+});
+tempSlider.addEventListener('input', () => {
+    T = parseFloat(tempSlider.value);
+});
+
+correctedToggle.addEventListener('change', function() {
+    const dot = this.nextElementSibling.nextElementSibling;
+    if(this.checked) {
+        dot.style.transform = 'translateX(100%)';
+    } else {
+        dot.style.transform = 'translateX(0)';
+    }
+});
+
+document.addEventListener('DOMContentLoaded', () => {
+    const dot = document.querySelector('.dot');
+    if (dot) dot.style.transform = 'translateX(100%)';
+    initSim();
+    animate();
+});
+
+window.addEventListener('resize', () => {
+    if (canvas && canvas.parentElement) {
+        canvas.width = canvas.parentElement.clientWidth;
+        canvas.height = canvas.parentElement.clientHeight;
+    }
+});
+
+const quizData = {
+    q1: {
+        correct: 'A',
+        exp: "<strong>Correct answer: A</strong><br><br>The simulator treats the two species as distinguishable, so mixing produces a non-zero entropy increase. For equal amounts, the theoretical result displayed by the simulator is $\\Delta S_{\\text{different}} = 2 N k_B \\ln 2$."
+    },
+    q2: {
+        correct: 'B',
+        exp: "<strong>Correct answer: B</strong><br><br>This is the key observation of the simulator: identical gases can mix physically, but the mixing does not produce a new thermodynamic entropy when identical-particle indistinguishability is correctly accounted for ($\\Delta S = 0$)."
+    },
+    q3: {
+        correct: 'A',
+        exp: "<strong>Correct answer: A</strong><br><br>This demonstrates the paradox directly. Without the indistinguishability correction, treating identical particles as distinguishable produces the classical result $\\Delta S_{\\text{classical}} = 2 N k_B \\ln 2$, which is physically inappropriate for mixing identical gases."
+    },
+    q4: {
+        correct: 'A',
+        exp: "<strong>Correct answer: A</strong><br><br>For equal amounts of two different gases, $\\Delta S = 2 N k_B \\ln 2$, so the entropy of mixing is proportional to the number of particles. This illustrates the extensive nature of entropy."
+    },
+    q5: {
+        correct: 'A',
+        exp: "<strong>Correct answer: A</strong><br><br>This is the central conceptual conclusion of the simulator. The paradox is resolved by recognizing that identical particles are fundamentally indistinguishable and that the $1/N!$ correction prevents overcounting of physically identical microstates."
+    }
+};
+
+function checkAnswer(qId, selected) {
+    const data = quizData[qId];
+    const buttons = document.querySelectorAll(`.${qId}-opt`);
+    const expDiv = document.getElementById(`${qId}-exp`);
+
+    buttons.forEach(btn => {
+        btn.disabled = true;
+        const optLetter = btn.querySelector('span').innerText.trim().charAt(0);
+        if (optLetter === data.correct) {
+            btn.className = "text-left p-3 rounded-lg bg-emerald-950/60 border border-emerald-500/80 text-emerald-200 font-medium flex items-start gap-2";
+        } else if (optLetter === selected) {
+            btn.className = "text-left p-3 rounded-lg bg-red-950/60 border border-red-500/80 text-red-200 flex items-start gap-2";
+        } else {
+            btn.className = "text-left p-3 rounded-lg bg-slate-900/40 border border-slate-800 text-slate-500 opacity-60 flex items-start gap-2";
+        }
+    });
+
+    expDiv.innerHTML = data.exp;
+    expDiv.className = selected === data.correct 
+        ? "mt-3 p-4 rounded-lg bg-emerald-950/40 border border-emerald-500/30 text-xs md:text-sm text-emerald-300 leading-relaxed space-y-2"
+        : "mt-3 p-4 rounded-lg bg-amber-950/40 border border-amber-500/30 text-xs md:text-sm text-amber-300 leading-relaxed space-y-2";
+    expDiv.classList.remove('hidden');
+
+    if (window.MathJax && window.MathJax.typesetPromise) {
+        window.MathJax.typesetPromise([expDiv]);
+    }
+}
+</script>
+</body>
+</html>
