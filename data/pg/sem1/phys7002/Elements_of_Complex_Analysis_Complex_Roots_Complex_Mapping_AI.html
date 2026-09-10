@@ -600,7 +600,7 @@ let rootStage=0,rootTimer=null,rootSpeech=null,rootData=null;
 function drawRoots(){
  const coefs=parseCoeffs();
  document.getElementById('iterOut').textContent=document.getElementById('iter').value;
- if(!coefs){document.getElementById('rootStatus').textContent='INVALID COEFFICIENTS';return}
+ if(!coefs){document.getElementById('rootStatus').textContent='INVALID COEFFICIENTS';return;}
  const n=coefs.length-1, maxIter=+document.getElementById('iter').value,tol=+document.getElementById('tol').value;
  rootData=durandKerner(coefs,maxIter,tol);
  const roots=rootData.roots;
