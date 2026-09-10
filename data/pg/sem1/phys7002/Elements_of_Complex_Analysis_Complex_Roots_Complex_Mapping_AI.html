@@ -692,7 +692,7 @@ function gridLines(R,n,type,stage){
    for(let k=0;k<=samples;k++){
      const t=-R+2*R*k/samples;
      const z=C(vals[i],t),w=mapC(z,type);
-     if(Number.isFinite(w.re)&&Number.isFinite(w.im)&&Math.abs(w.re)<1e5&&Math.abs(w.im)<1e5){lineX.push(z.re);lineY.push(z.im);lineWX.push(w.re);lineWY.push(w.im)}
+     if(Number.isFinite(w.re)&&Number.isFinite(w.im)&&Math.abs(w.re)<1e5&&Math.abs(w.im)<1e5){lineX.push(z.re);lineY.push(z.im);lineWX.push(w.re);lineWY.push(w.im);}
    }
    traces.push({x:lineX,y:lineY,type:'scatter',mode:'lines',line:{width:1,color:'#29b6e8'},name:'z grid',showlegend:false});
    if(stage>=2)traces.push({x:lineWX,y:lineWY,type:'scatter',mode:'lines',line:{width:1,color:'#e8720c'},name:'w image',showlegend:false});
